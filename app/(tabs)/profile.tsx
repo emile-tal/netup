@@ -1,11 +1,11 @@
 import { Text, View } from "react-native";
 
-const Contacts = () => {
+const Profile = () => {
     return (
         <View>
-            <Text>Contacts</Text>
+            <Text>Profile</Text>
         </View>
     );
 };
 
-export default Contacts;
+export default Profile;
