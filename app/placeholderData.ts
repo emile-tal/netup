@@ -18,12 +18,7 @@ export const contactsData: Contact[] = [
     jobTitle: 'Software Engineer',
     createdAt: new Date('2024-01-15T10:00:00Z'),
     updatedAt: new Date('2025-07-30T09:30:00Z'),
-    communicationPreferences: {
-      email: true,
-      phone: false,
-      linkedin: true,
-    },
-    schoolAlumni: 'Harvard University',
+    alumni: 'Harvard University',
     relationshipStrength: 3,
     outreachGoal: 10,
     source: 'LinkedIn',
@@ -39,11 +34,6 @@ export const contactsData: Contact[] = [
     email: 'minh.nguyen@example.com',
     createdAt: new Date('2024-06-10T12:00:00Z'),
     updatedAt: new Date('2025-07-25T14:15:00Z'),
-    communicationPreferences: {
-      email: true,
-      phone: true,
-      instagram: true,
-    },
     relationshipStrength: 5,
     outreachGoal: 7,
     source: 'Referral',
@@ -62,9 +52,6 @@ export const contactsData: Contact[] = [
     jobTitle: 'Investor',
     createdAt: new Date('2023-03-20T08:00:00Z'),
     updatedAt: new Date('2025-07-15T16:45:00Z'),
-    communicationPreferences: {
-      whatsapp: true,
-    },
     relationshipStrength: 1,
     outreachGoal: 9,
     firstMeeting: {
@@ -79,10 +66,7 @@ export const contactsData: Contact[] = [
     email: 'fatima.af@example.com',
     createdAt: new Date('2022-12-05T14:30:00Z'),
     updatedAt: new Date('2025-07-29T10:10:00Z'),
-    schoolAlumni: 'Oxford',
-    communicationPreferences: {
-      linkedin: true,
-    },
+    alumni: 'Oxford',
     source: 'Conference panel',
     notes: 'Expressed interest in mentoring.',
     relationshipStrength: 3,
@@ -92,7 +76,18 @@ export const contactsData: Contact[] = [
     lastName: 'Okoro',
     createdAt: new Date('2024-09-01T07:00:00Z'),
     updatedAt: new Date('2025-07-28T18:00:00Z'),
-    communicationPreferences: {},
     outreachGoal: 3,
   },
 ];
+
+export const myContactData: Contact = {
+  id: '0',
+  firstName: 'Sathine',
+  lastName: 'Jacquemin',
+  email: 'sathine.jacquemi@example.com',
+  phone: '+1-555-1234',
+  company: 'Bro LLC',
+  jobTitle: 'Chief Executive Officer',
+  createdAt: new Date('2024-01-15T10:00:00Z'),
+  updatedAt: new Date('2025-07-30T09:30:00Z'),
+};

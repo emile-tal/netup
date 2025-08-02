@@ -1,34 +1,31 @@
+export interface Address {
+  street?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  country?: string;
+}
+
+export interface FirstMeeting {
+  date?: Date;
+  location?: string;
+}
+
 export interface Contact {
   id: string;
   firstName?: string;
   lastName: string;
   email?: string;
   phone?: string;
-  address?: {
-    street?: string;
-    city?: string;
-    state?: string;
-    zip?: string;
-    country?: string;
-  };
+  address?: Address;
   company?: string;
   jobTitle?: string;
   createdAt: Date;
   updatedAt: Date;
-  communicationPreferences?: {
-    email?: boolean;
-    phone?: boolean;
-    linkedin?: boolean;
-    instagram?: boolean;
-    whatsapp?: boolean;
-  };
-  schoolAlumni?: string;
+  alumni?: string;
   relationshipStrength?: number;
   outreachGoal?: number;
   source?: string;
-  firstMeeting?: {
-    date?: Date;
-    location?: string;
-  };
+  firstMeeting?: FirstMeeting;
   notes?: string;
 }

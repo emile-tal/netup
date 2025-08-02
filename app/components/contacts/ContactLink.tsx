@@ -11,8 +11,8 @@ interface ContactLinkProps {
 const ContactLink = ({ firstName, lastName, id }: ContactLinkProps) => {
   return (
     <Link href={`/contacts/${id}`} asChild>
-      <TouchableHighlight underlayColor='#e5e5e5' className='w-full'>
-        <View className='w-full flex-row items-center py-3 px-4'>
+      <TouchableHighlight underlayColor='#e5e5e5' className='w-full rounded-lg'>
+        <View className='w-full flex-row items-center py-3 px-4 rounded-lg'>
           {firstName && <Text className='mr-1 text-lg'>{firstName}</Text>}
           <Text className='font-bold text-lg'>{lastName}</Text>
         </View>
