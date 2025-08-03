@@ -1,4 +1,5 @@
 import { Contact } from './types/contacts';
+import { Reminder } from './types/reminders';
 
 export const contactsData: Contact[] = [
   {
@@ -91,3 +92,42 @@ export const myContactData: Contact = {
   createdAt: new Date('2024-01-15T10:00:00Z'),
   updatedAt: new Date('2025-07-30T09:30:00Z'),
 };
+
+export const myRemindersData: Reminder[] = [
+  {
+    id: '1',
+    contactId: '1',
+    date: new Date('2025-08-10'),
+    createdAt: new Date('2025-08-01'),
+  },
+  {
+    id: '2',
+    contactId: '1',
+    date: new Date('2025-08-12'),
+    createdAt: new Date('2025-08-01'),
+  },
+  {
+    id: '3',
+    contactId: '2',
+    date: new Date('2025-09-10'),
+    createdAt: new Date('2025-08-01'),
+  },
+  {
+    id: '4',
+    contactId: '3',
+    date: new Date('2026-01-01'),
+    createdAt: new Date('2025-08-01'),
+  },
+  {
+    id: '5',
+    contactId: '3',
+    date: new Date('2025-06-21'),
+    createdAt: new Date('2025-08-01'),
+  },
+  {
+    id: '6',
+    contactId: '1',
+    date: new Date('2025-08-10'),
+    createdAt: new Date('2025-08-01'),
+  },
+];
