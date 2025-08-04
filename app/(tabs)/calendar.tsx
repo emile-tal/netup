@@ -11,7 +11,11 @@ export default function CalendarPage() {
 
   return (
     <SafeAreaView className='pr-4 flex-1'>
-      <Header title='Calendar' />
+      <Header
+        title='Calendar'
+        onBackPress={() => setShowExpandable(false)}
+        backButton={showExpandable}
+      />
       {showExpandable ? (
         <ExpandableCalendarView weekView={true} />
       ) : (

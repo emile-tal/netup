@@ -22,7 +22,7 @@ const ExpandableCalendarScreen = (props: Props) => {
   });
 
   const mockAgendaItems = reminders.map(reminder => ({
-    data: [{ hour: '9am', duration: '1h', title: `Reach out to ${reminder.contactId}` }],
+    data: [{ title: `Reach out to ${reminder.contactId}` }],
     title: reminder.date.toISOString(),
   }));
 
@@ -116,7 +116,7 @@ const ExpandableCalendarScreen = (props: Props) => {
             //   renderHeader={renderHeader}
             ref={calendarRef}
             onCalendarToggled={onCalendarToggled}
-            // horizontal={false}
+            horizontal={false}
             // hideArrows
             // disablePan
             // hideKnob
@@ -149,22 +149,3 @@ const ExpandableCalendarScreen = (props: Props) => {
 };
 
 export default ExpandableCalendarScreen;
-
-// const styles = StyleSheet.create({
-//   calendar: {
-//     paddingLeft: 20,
-//     paddingRight: 20,
-//   },
-//   header: {
-//     flexDirection: 'row',
-//     justifyContent: 'center',
-//     alignItems: 'center',
-//     marginVertical: 10,
-//   },
-//   headerTitle: { fontSize: 16, fontWeight: 'bold', marginRight: 6 },
-//   section: {
-//     backgroundColor: 'red',
-//     color: 'grey',
-//     textTransform: 'capitalize',
-//   },
-// });
