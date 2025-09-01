@@ -97,13 +97,13 @@ export const myRemindersData: Reminder[] = [
   {
     id: '1',
     contactId: '1',
-    date: new Date('2025-08-10'),
+    date: new Date('2025-09-10'),
     createdAt: new Date('2025-08-01'),
   },
   {
     id: '2',
     contactId: '1',
-    date: new Date('2025-08-12'),
+    date: new Date('2025-09-12'),
     createdAt: new Date('2025-08-01'),
   },
   {
@@ -122,12 +122,12 @@ export const myRemindersData: Reminder[] = [
     id: '5',
     contactId: '3',
     date: new Date('2025-06-21'),
-    createdAt: new Date('2025-08-01'),
+    createdAt: new Date('2025-09-01'),
   },
   {
     id: '6',
     contactId: '1',
     date: new Date('2025-08-10'),
-    createdAt: new Date('2025-08-01'),
+    createdAt: new Date('2025-09-01'),
   },
 ];

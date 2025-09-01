@@ -1,30 +1,32 @@
+import React, { useCallback, useRef } from 'react';
+import { Animated, Easing, Text, View } from 'react-native';
 import {
   AgendaList,
   CalendarProvider,
+  DateData,
   ExpandableCalendar,
   WeekCalendar,
 } from 'react-native-calendars';
-import { Animated, Easing, Text, View } from 'react-native';
-import React, { useCallback, useRef } from 'react';
 
-import { myRemindersData } from '@/app/placeholderData';
+import useCalendarStore from '@/app/stores/calendarStore';
 
 interface Props {
   weekView?: boolean;
+  onDateChanged: (date: DateData, updateSource: any) => void;
 }
-const ExpandableCalendarScreen = (props: Props) => {
-  const reminders = myRemindersData;
-  const { weekView } = props;
+const ExpandableCalendarScreen = ({ weekView, onDateChanged }: Props) => {
+  const reminders = useCalendarStore(state => state.reminders);
+  const setAgendaStartDate = useCalendarStore(state => state.setAgendaStartDate);
+  const setAgendaEndDate = useCalendarStore(state => state.setAgendaEndDate);
+  const agendaStartDate = useCalendarStore(state => state.agendaStartDate);
+  const agendaEndDate = useCalendarStore(state => state.agendaEndDate);
+  const selectedDate = useCalendarStore(state => state.selectedDate);
   //   const marked = useRef(getMarkedDates());
-  //   const theme = useRef(getTheme());
-  const todayBtnTheme = useRef({
-    todayButtonTextColor: 'red',
-  });
 
-  const mockAgendaItems = reminders.map(reminder => ({
-    data: [{ title: `Reach out to ${reminder.contactId}` }],
-    title: reminder.date.toISOString(),
-  }));
+  const agendaItems = reminders.filter(reminder => {
+    const reminderDate = new Date(reminder.date);
+    return reminderDate >= agendaStartDate && reminderDate <= agendaEndDate;
+  });
 
   // const onDateChanged = useCallback((date, updateSource) => {
   //   console.log('ExpandableCalendarScreen onDateChanged: ', date, updateSource);
@@ -34,21 +36,10 @@ const ExpandableCalendarScreen = (props: Props) => {
   //   console.log('ExpandableCalendarScreen onMonthChange: ', dateString);
   // }, []);
 
-  const getInitialDate = () => {
-    if (reminders.length > 0) {
-      return reminders[0].date.toISOString().split('T')[0]; // Format: YYYY-MM-DD
-    }
-    return new Date().toISOString().split('T')[0]; // Fallback to today
-  };
-
   const renderItem = useCallback(({ item }: { item: any }) => {
     return (
       <View>
-        <Text>{item.hour}</Text>
-        <View>
-          <Text>{item.title}</Text>
-          {item.description && <Text>{item.description}</Text>}
-        </View>
+        <Text>Reach out to {item.contactId}</Text>
       </View>
     );
   }, []);
@@ -92,15 +83,28 @@ const ExpandableCalendarScreen = (props: Props) => {
     [rotation]
   );
 
+  const onDayPress = useCallback(
+    (date: DateData) => {
+      onDateChanged(date, 'dayPress');
+    },
+
+    [onDateChanged]
+  );
+
+  const getInitialDate = () => {
+    return selectedDate.toISOString().split('T')[0];
+  };
+
   return (
     <View style={{ flex: 1 }}>
       <CalendarProvider
         date={getInitialDate()}
-        // onDateChanged={onDateChanged}
+        onDateChanged={(date, updateSource) =>
+          onDateChanged(date as unknown as DateData, updateSource)
+        }
         // onMonthChange={onMonthChange}
         showTodayButton
         // disabledOpacity={0.6}
-        theme={todayBtnTheme.current}
         // todayBottomMargin={16}
         // disableAutoDaySelection={[ExpandableCalendar.navigationTypes.MONTH_SCROLL, ExpandableCalendar.navigationTypes.MONTH_ARROWS]}
       >
@@ -117,6 +121,7 @@ const ExpandableCalendarScreen = (props: Props) => {
             ref={calendarRef}
             onCalendarToggled={onCalendarToggled}
             horizontal={false}
+            onDayPress={onDayPress}
             // hideArrows
             // disablePan
             // hideKnob
@@ -136,7 +141,10 @@ const ExpandableCalendarScreen = (props: Props) => {
         )}
         <View style={{ flex: 1 }}>
           <AgendaList
-            sections={mockAgendaItems}
+            sections={agendaItems.map(reminder => ({
+              data: [reminder],
+              title: reminder.date.toISOString(),
+            }))}
             renderItem={renderItem}
             // scrollToNextEvent
             // sectionStyle={styles.section}
