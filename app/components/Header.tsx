@@ -25,7 +25,7 @@ const Header = ({
           <TouchableHighlight
             onPress={onBackPress || (() => router.back())}
             underlayColor='#e5e5e5'
-            className='items-center justify-center p-2 rounded-full'
+            className='w-8 h-8 rounded-full items-center justify-center p-1 pr-0 pl-2'
           >
             <BackIcon />
           </TouchableHighlight>
@@ -39,7 +39,7 @@ const Header = ({
           <TouchableHighlight
             onPress={onActionPress}
             underlayColor='#e5e5e5'
-            className='items-center justify-center p-2 rounded-full'
+            className='w-8 h-8 rounded-full items-center justify-center p-1'
           >
             {actionIcon}
           </TouchableHighlight>

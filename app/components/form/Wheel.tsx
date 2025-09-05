@@ -3,24 +3,16 @@ import {
   FlatList,
   NativeScrollEvent,
   NativeSyntheticEvent,
-  StyleSheet,
   Text,
   View,
 } from 'react-native';
 
 type WheelProps<T> = {
   data: T[];
-  // how to render each row's label
   getLabel: (item: T, index: number) => string;
-  selectedIndex: number; // controlled
-  onChange: (index: number) => void; // emits selected index on snap
-  itemHeight?: number; // default 44
-  visibleRows?: 5 | 3 | 7; // must be odd so the center aligns
-  // optional styling hooks
-  containerStyle?: object;
-  itemStyle?: object;
-  selectedItemStyle?: object;
-  testID?: string;
+  selectedIndex: number;
+  onChange: (index: number) => void;
+  containerClassName?: string;
 };
 
 const Wheel = <T,>({
@@ -28,14 +20,11 @@ const Wheel = <T,>({
   getLabel,
   selectedIndex,
   onChange,
-  itemHeight = 44,
-  visibleRows = 5,
-  containerStyle,
-  itemStyle,
-  selectedItemStyle,
-  testID,
+  containerClassName,
 }: WheelProps<T>) => {
   const listRef = useRef<FlatList<T>>(null);
+  const itemHeight = 32;
+  const visibleRows = 3;
 
   const halfPadding = useMemo(
     () => ((visibleRows - 1) / 2) * itemHeight,
@@ -63,16 +52,9 @@ const Wheel = <T,>({
     ({ item, index }: { item: T; index: number }) => {
       const isSelected = index === selectedIndex;
       return (
-        <View
-          style={[
-            styles.item,
-            { height: itemHeight },
-            itemStyle,
-            isSelected && selectedItemStyle,
-          ]}
-        >
+        <View className='justify-center items-center' style={{ height: itemHeight }}>
           <Text
-            style={[styles.itemText, isSelected && styles.itemTextSelected]}
+            className={`text-sm text-black opacity-65 ${isSelected && 'font-semibold text-[16px] opacity-100'}`}
             accessibilityRole='text'
             accessibilityState={{ selected: isSelected }}
             accessible
@@ -82,21 +64,18 @@ const Wheel = <T,>({
         </View>
       );
     },
-    [itemHeight, itemStyle, selectedItemStyle, selectedIndex, getLabel]
+    [itemHeight, selectedIndex, getLabel]
   );
 
   return (
     <View
-      style={[{ height: itemHeight * visibleRows }, styles.container, containerStyle]}
-      testID={testID}
+      className={`relative overflow-hidde ${containerClassName}`}
+      style={{ height: itemHeight * visibleRows }}
     >
-      {/* selection highlight */}
       <View
         pointerEvents='none'
-        style={[
-          styles.selectionOverlay,
-          { top: halfPadding, height: itemHeight, borderRadius: 8 },
-        ]}
+        className='absolute left-0 right-0 border-width-1 border-color-black bg-rgba-0-0-0-0.03 rounded-8'
+        style={{ top: halfPadding, height: itemHeight }}
         accessibilityElementsHidden
         importantForAccessibility='no-hide-descendants'
       />
@@ -125,18 +104,3 @@ const Wheel = <T,>({
 };
 
 export default Wheel;
-
-const styles = StyleSheet.create({
-  container: { position: 'relative', overflow: 'hidden' },
-  item: { justifyContent: 'center', alignItems: 'center' },
-  itemText: { fontSize: 16, opacity: 0.7 },
-  itemTextSelected: { fontWeight: '600', opacity: 1 },
-  selectionOverlay: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    backgroundColor: 'rgba(0,0,0,0.03)',
-  },
-});
