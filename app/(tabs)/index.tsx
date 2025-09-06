@@ -1,9 +1,9 @@
 import { FlatList, SafeAreaView, View } from 'react-native';
 
-import ContactLink from '../components/contacts/ContactLink';
-import Header from '../components/Header';
 import SearchBar from '@/app/components/SearchBar';
 import { contactsData } from '@/app/placeholderData';
+import ContactLink from '../components/contacts/ContactLink';
+import Header from '../components/Header';
 
 const Contacts = () => {
   const contacts = contactsData;
