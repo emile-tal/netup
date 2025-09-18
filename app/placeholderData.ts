@@ -127,7 +127,49 @@ export const myRemindersData: Reminder[] = [
   {
     id: '6',
     contactId: '1',
-    date: new Date('2025-08-10'),
+    date: new Date('2025-09-18'),
+    createdAt: new Date('2025-09-01'),
+  },
+  {
+    id: '7',
+    contactId: '1',
+    date: new Date('2025-09-19'),
+    createdAt: new Date('2025-09-01'),
+  },
+  {
+    id: '8',
+    contactId: '3',
+    date: new Date('2025-09-20'),
+    createdAt: new Date('2025-09-01'),
+  },
+  {
+    id: '9',
+    contactId: '2',
+    date: new Date('2025-09-21'),
+    createdAt: new Date('2025-09-01'),
+  },
+  {
+    id: '10',
+    contactId: '4',
+    date: new Date('2025-09-22'),
+    createdAt: new Date('2025-09-01'),
+  },
+  {
+    id: '6',
+    contactId: '5',
+    date: new Date('2025-09-23'),
+    createdAt: new Date('2025-09-01'),
+  },
+  {
+    id: '12',
+    contactId: '5',
+    date: new Date('2025-09-24'),
+    createdAt: new Date('2025-09-01'),
+  },
+  {
+    id: '13',
+    contactId: '2',
+    date: new Date('2025-09-25'),
     createdAt: new Date('2025-09-01'),
   },
 ];

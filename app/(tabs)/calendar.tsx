@@ -1,13 +1,11 @@
-import { SafeAreaView, View } from 'react-native';
+import { FlatList, SafeAreaView, View } from 'react-native';
 import { useMemo, useState } from 'react';
 
-import Header from '../components/Header';
 import MonthView from '../components/calendar/MonthView';
 
 const CalendarPage = () => {
   const [year, setYear] = useState(new Date().getFullYear());
   const [month, setMonth] = useState(new Date().getMonth());
-  const title = new Date(year, month, 1).toLocaleString('en-US', { month: 'long' });
 
   const maxYear = 2050;
   const minYear = 2000;
@@ -21,7 +19,11 @@ const CalendarPage = () => {
   return (
     <SafeAreaView>
       <View className='px-4'>
-        <Header title={title} />
+        <FlatList
+          data={months}
+          renderItem={({ item }) => <MonthView month={item} year={year} />}
+          keyExtractor={item => item.toString()}
+        />
         <MonthView month={month} year={year} />
       </View>
     </SafeAreaView>

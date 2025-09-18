@@ -15,6 +15,7 @@ const MonthView = ({ year, month }: MonthViewProps) => {
   const firstDayOfMonth = new Date(year, month, 1).getDay() - 1;
   const screenWidth = Dimensions.get('window').width;
   const screenHeight = Dimensions.get('window').height;
+  const title = new Date(year, month, 1).toLocaleString('en-US', { month: 'long' });
 
   const columnWidth = (screenWidth - 36) / 7;
   const rowHeight = (screenHeight - 200) / 6;
@@ -26,6 +27,7 @@ const MonthView = ({ year, month }: MonthViewProps) => {
 
   return (
     <View className='flex-col w-full align-center justify-center py-2'>
+      <Text className='text-3xl font-bold text-left px-3'>{title}</Text>
       <FlatList
         data={daysOfWeek}
         renderItem={({ item }: { item: string }) => (
@@ -39,12 +41,18 @@ const MonthView = ({ year, month }: MonthViewProps) => {
           gap: 2,
         }}
         scrollEnabled={false}
-        className='mb-4'
+        className='mt-8 mb-4 border-b border-gray-400 pb-4'
       />
       <FlatList
         data={cells}
         renderItem={({ item }: { item: string }) => (
-          <DayCell day={item} columnWidth={columnWidth} rowHeight={rowHeight} />
+          <DayCell
+            day={item}
+            month={month}
+            year={year}
+            columnWidth={columnWidth}
+            rowHeight={rowHeight}
+          />
         )}
         keyExtractor={item => item}
         numColumns={7}
