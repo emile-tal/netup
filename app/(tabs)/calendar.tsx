@@ -1,93 +1,31 @@
-import { useCallback, useEffect, useState } from 'react';
-import { CalendarList, DateData } from 'react-native-calendars';
+import { SafeAreaView, View } from 'react-native';
+import { useMemo, useState } from 'react';
 
-import { SafeAreaView } from 'react-native';
-import AddReminderModal from '../components/calendar/AddReminderModal';
-import ExpandableCalendarView from '../components/calendar/ExpandableCalendarView';
 import Header from '../components/Header';
-import AddIcon from '../icons/AddIcon';
-import { myRemindersData } from '../placeholderData';
-import useCalendarStore from '../stores/calendarStore';
+import MonthView from '../components/calendar/MonthView';
 
-export default function CalendarPage() {
-  const setReminders = useCalendarStore(state => state.setReminders);
-  const reminders = useCalendarStore(state => state.reminders);
-  const selectedDate = useCalendarStore(state => state.selectedDate);
-  const [showExpandable, setShowExpandable] = useState(false);
-  const setSelectedDate = useCalendarStore(state => state.setSelectedDate);
-  const setAgendaStartDate = useCalendarStore(state => state.setAgendaStartDate);
-  const setAgendaEndDate = useCalendarStore(state => state.setAgendaEndDate);
-  const [showAddReminderModal, setShowAddReminderModal] = useState(false);
-  useEffect(() => {
-    setReminders(myRemindersData);
-  }, []);
+const CalendarPage = () => {
+  const [year, setYear] = useState(new Date().getFullYear());
+  const [month, setMonth] = useState(new Date().getMonth());
+  const title = new Date(year, month, 1).toLocaleString('en-US', { month: 'long' });
 
-  const onDateChanged = useCallback(
-    (date: any, updateSource: any) => {
-      const [year, month, day] = date.split('-').map(Number);
-      const selectedDate = new Date(year, month - 1, day);
-      setSelectedDate(selectedDate);
+  const maxYear = 2050;
+  const minYear = 2000;
 
-      const startDate = new Date(selectedDate);
-      const dayOfWeek = startDate.getDay();
-      startDate.setDate(startDate.getDate() - dayOfWeek);
-      const endDate = new Date(startDate);
-      endDate.setDate(endDate.getDate() + 6);
-
-      setAgendaStartDate(startDate);
-      setAgendaEndDate(endDate);
-    },
-    [setAgendaStartDate, setAgendaEndDate]
+  const years = useMemo(
+    () => Array.from({ length: maxYear - minYear + 1 }, (_, i) => minYear + i),
+    [minYear, maxYear]
   );
-
-  const onDayPress = (date: DateData) => {
-    setShowExpandable(true);
-    onDateChanged(date.dateString, 'dayPress');
-  };
-
-  const renderMonthHeader = (date: Date) => {
-    const months = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
-    ];
-    return months[date.getMonth()];
-  };
+  const months = useMemo(() => Array.from({ length: 12 }, (_, i) => i), []);
 
   return (
-    <SafeAreaView className='pr-4 flex-1'>
-      <Header
-        title={showExpandable ? renderMonthHeader(selectedDate) : 'Calendar'}
-        onBackPress={() => setShowExpandable(false)}
-        backButton={showExpandable}
-        actionIcon={<AddIcon />}
-        onActionPress={() => setShowAddReminderModal(true)}
-      />
-      {showExpandable ? (
-        <ExpandableCalendarView weekView={true} onDateChanged={onDateChanged} />
-      ) : (
-        <CalendarList
-          theme={{
-            calendarBackground: 'transparent',
-            textSectionTitleColor: 'black',
-          }}
-          onDayPress={onDayPress}
-          style={{ height: '100%' }}
-        />
-      )}
-      <AddReminderModal
-        visible={showAddReminderModal}
-        onRequestClose={() => setShowAddReminderModal(false)}
-      />
+    <SafeAreaView>
+      <View className='px-4'>
+        <Header title={title} />
+        <MonthView month={month} year={year} />
+      </View>
     </SafeAreaView>
   );
-}
+};
+
+export default CalendarPage;

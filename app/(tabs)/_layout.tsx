@@ -1,3 +1,4 @@
+import AgendaIcon from '../icons/AgendaIcon';
 import CalendarIcon from '../icons/CalendarIcon';
 import ContactsIcon from '../icons/ContactsIcon';
 import ProfileIcon from '../icons/ProfileIcon';
@@ -34,6 +35,14 @@ const Layout = () => {
             title: 'Calendar',
             headerShown: false,
             tabBarIcon: () => <CalendarIcon />,
+          }}
+        />
+        <Tabs.Screen
+          name='agenda'
+          options={{
+            title: 'Agenda',
+            headerShown: false,
+            tabBarIcon: () => <AgendaIcon />,
           }}
         />
         <Tabs.Screen
