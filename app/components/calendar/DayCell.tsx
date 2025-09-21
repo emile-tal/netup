@@ -13,7 +13,7 @@ const DayCell = ({ day, month, year, columnWidth, rowHeight }: DayCellProps) => 
   const myReminders = myRemindersData;
   const date = new Date(year, month, parseInt(day));
   const reminders = myReminders.filter(
-    reminder => reminder.date.toDateString() === date.toDateString()
+    reminder => reminder.date?.toDateString() === date.toDateString()
   );
 
   const isToday = date.toDateString() === new Date().toDateString();

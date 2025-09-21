@@ -16,6 +16,8 @@ const CalendarPage = () => {
   );
   const months = useMemo(() => Array.from({ length: 12 }, (_, i) => i), []);
 
+  const getItemLayout = (data: any, index: number) => ({});
+
   return (
     <SafeAreaView>
       <View className='px-4'>
@@ -23,6 +25,7 @@ const CalendarPage = () => {
           data={months}
           renderItem={({ item }) => <MonthView month={item} year={year} />}
           keyExtractor={item => item.toString()}
+          initialScrollIndex={month}
         />
         <MonthView month={month} year={year} />
       </View>
