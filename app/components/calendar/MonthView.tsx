@@ -1,7 +1,7 @@
 import { Dimensions, FlatList, Text, View } from 'react-native';
 
-import DayCell from './DayCell';
 import { useMemo } from 'react';
+import DayCell from './DayCell';
 
 interface MonthViewProps {
   year: number;
@@ -27,6 +27,7 @@ const MonthView = ({ year, month }: MonthViewProps) => {
 
   return (
     <View className='flex-col w-full align-center justify-center py-2'>
+      {month === 0 && <Text className='text-3xl font-bold text-left px-3'>{year}</Text>}
       <Text className='text-3xl font-bold text-left px-3'>{title}</Text>
       <FlatList
         data={daysOfWeek}
@@ -54,7 +55,7 @@ const MonthView = ({ year, month }: MonthViewProps) => {
             rowHeight={rowHeight}
           />
         )}
-        keyExtractor={item => item}
+        keyExtractor={(item, index) => `${item}-${index}`}
         numColumns={7}
         columnWrapperStyle={{
           gap: 2,
