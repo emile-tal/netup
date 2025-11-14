@@ -1,7 +1,7 @@
 import { Dimensions, FlatList, Text, View } from 'react-native';
 
-import { useMemo } from 'react';
 import DayCell from './DayCell';
+import { useMemo } from 'react';
 
 interface MonthViewProps {
   year: number;
@@ -42,7 +42,7 @@ const MonthView = ({ year, month }: MonthViewProps) => {
           gap: 2,
         }}
         scrollEnabled={false}
-        className='mt-8 mb-4 border-b border-gray-400 pb-4'
+        className='mt-8 mb-4 border-b border-gray-400 pb-4 pl-2'
       />
       <FlatList
         data={cells}
@@ -61,6 +61,7 @@ const MonthView = ({ year, month }: MonthViewProps) => {
           gap: 2,
         }}
         scrollEnabled={false}
+        className='pl-2'
       />
     </View>
   );
