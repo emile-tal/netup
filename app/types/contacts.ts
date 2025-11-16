@@ -1,31 +1,58 @@
+export interface Email {
+  id: string;
+  label: string;
+  email: string;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt?: Date;
+}
+export interface Phone {
+  id: string;
+  label: string;
+  areaCode: string;
+  phoneNumber: string;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt?: Date;
+}
 export interface Address {
-  street?: string;
-  city?: string;
-  state?: string;
-  zip?: string;
-  country?: string;
+  id: string;
+  label: string;
+  street: string;
+  city: string;
+  state: string;
+  zip: string;
+  country: string;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt?: Date;
 }
 
 export interface FirstMeeting {
+  id: string;
   date?: Date;
   location?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt?: Date;
 }
 
 export interface Contact {
   id: string;
-  firstName?: string;
+  firstName: string;
   lastName: string;
-  email?: string;
-  phone?: string;
-  address?: Address;
-  company?: string;
-  jobTitle?: string;
+  company: string;
+  jobTitle: string;
+  alumni: string;
+  relationshipStrength: number;
+  outreachGoal: number;
+  source: string;
+  notes: string;
+  emails: Email[];
+  phones: Phone[];
+  addresses: Address[];
+  firstMeeting: FirstMeeting;
   createdAt: Date;
   updatedAt: Date;
-  alumni?: string;
-  relationshipStrength?: number;
-  outreachGoal?: number;
-  source?: string;
-  firstMeeting?: FirstMeeting;
-  notes?: string;
+  deletedAt?: Date;
 }

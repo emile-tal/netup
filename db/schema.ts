@@ -47,21 +47,19 @@ export const schema = appSchema({
       ],
     }),
     tableSchema({
-      name: 'reminders',
-      columns: [
-        { name: 'title', type: 'string' },
-        { name: 'date_ts', type: 'number', isIndexed: true },
-        { name: 'contact_id', type: 'string', isIndexed: true, isOptional: true },
-        { name: 'updated_at', type: 'number' },
-        { name: 'deleted_at', type: 'number', isOptional: true },
-      ],
-    }),
-    tableSchema({
       name: 'firstMeetings',
       columns: [
         { name: 'date', type: 'string', isIndexed: true },
         { name: 'location', type: 'string', isIndexed: true },
         { name: 'contact_id', type: 'string', isIndexed: true },
+      ],
+    }),
+    tableSchema({
+      name: 'reminders',
+      columns: [
+        { name: 'title', type: 'string' },
+        { name: 'date_ts', type: 'number', isIndexed: true },
+        { name: 'contact_id', type: 'string', isIndexed: true, isOptional: true },
       ],
     }),
     tableSchema({
