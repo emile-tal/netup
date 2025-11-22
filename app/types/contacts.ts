@@ -2,39 +2,28 @@ export interface Email {
   id: string;
   label: string;
   email: string;
-  createdAt: Date;
-  updatedAt: Date;
-  deletedAt?: Date;
 }
 export interface Phone {
   id: string;
   label: string;
-  areaCode: string;
+  areaCode?: string;
   phoneNumber: string;
-  createdAt: Date;
-  updatedAt: Date;
-  deletedAt?: Date;
 }
+
 export interface Address {
   id: string;
   label: string;
-  street: string;
-  city: string;
-  state: string;
-  zip: string;
-  country: string;
-  createdAt: Date;
-  updatedAt: Date;
-  deletedAt?: Date;
+  street?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  country?: string;
 }
 
 export interface FirstMeeting {
   id: string;
   date?: Date;
   location?: string;
-  createdAt: Date;
-  updatedAt: Date;
-  deletedAt?: Date;
 }
 
 export interface Contact {
@@ -52,7 +41,4 @@ export interface Contact {
   phones: Phone[];
   addresses: Address[];
   firstMeeting: FirstMeeting;
-  createdAt: Date;
-  updatedAt: Date;
-  deletedAt?: Date;
 }

@@ -2,7 +2,8 @@ import { useRef, useState } from 'react';
 import { Modal, Pressable, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 import useCalendarStore from '@/app/stores/calendarStore';
-import DateWheel from '../form/DateWheel';
+
+// import DateWheel from '../form/DateWheel';
 
 interface AddReminderModalProps {
   visible: boolean;
@@ -39,7 +40,7 @@ const AddReminderModal = ({ visible, onRequestClose }: AddReminderModalProps) =>
         <View className='bg-white rounded-2xl p-8 w-4/5 shadow-lg'>
           <Text className='text-xl font-semibold mb-8 text-center'>New Reminder</Text>
           <View className='flex-row justify-between items-center mb-4'>
-            <DateWheel value={selectedDate} onChange={changeDate} />
+            {/* <DateWheel value={selectedDate} onChange={changeDate} /> */}
           </View>
           <View className='items-center mb-8'>
             <TextInput

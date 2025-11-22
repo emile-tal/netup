@@ -27,9 +27,4 @@ export default class Contact extends Model {
   @children('addresses') addresses!: any;
   @children('firstMeetings') firstMeetings!: any;
   @children('reminders') reminders!: any;
-
-  // Convenience methods
-  get idStr() {
-    return this.id;
-  }
 }
