@@ -3,5 +3,4 @@ export interface Reminder {
   contactId: string;
   title: string;
   date?: Date;
-  createdAt: Date;
 }

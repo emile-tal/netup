@@ -1,11 +1,11 @@
-import { Address, Contact, FirstMeeting } from '../../types/contacts';
 import { ScrollView, Text, View } from 'react-native';
+import { Address, Contact, Email, FirstMeeting } from '../../types/contacts';
 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ProfileAddressCard from './ProfileAddressCard';
-import ProfileDataCard from './ProfileTextDataCard';
 import ProfileFirstMeetingCard from './ProfileFirstMeetingCard';
 import ProfileNumberDataCard from './ProfileNumberDataCard';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import ProfileDataCard from './ProfileTextDataCard';
 
 const ProfileCard = ({ contact }: { contact: Contact }) => {
   const insets = useSafeAreaInsets();
@@ -39,8 +39,10 @@ const ProfileCard = ({ contact }: { contact: Contact }) => {
         </View>
       </View>
       {Object.entries(contact).map(([key, value]) => {
-        if (key === 'address') {
-          return <ProfileAddressCard key={key} address={value as Address} />;
+        if (key === 'addresses') {
+          return value.map((address: Address) => (
+            <ProfileAddressCard key={address.id} address={address} />
+          ));
         } else if (key === 'firstMeeting') {
           return (
             <ProfileFirstMeetingCard key={key} firstMeeting={value as FirstMeeting} />
@@ -63,6 +65,10 @@ const ProfileCard = ({ contact }: { contact: Contact }) => {
               unit='/year'
             />
           );
+        } else if (key === 'emails' || key === 'phones') {
+          return value.map((item: Email) => (
+            <ProfileDataCard key={item.id} label={item.label} value={item.email} />
+          ));
         } else if (!hiddenFields.includes(key)) {
           return <ProfileDataCard key={key} label={key} value={value as string} />;
         }

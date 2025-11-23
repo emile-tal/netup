@@ -1,9 +1,9 @@
+import { Tabs } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import AgendaIcon from '../icons/AgendaIcon';
 import CalendarIcon from '../icons/CalendarIcon';
 import ContactsIcon from '../icons/ContactsIcon';
 import ProfileIcon from '../icons/ProfileIcon';
-import { StatusBar } from 'expo-status-bar';
-import { Tabs } from 'expo-router';
 
 const Layout = () => {
   return (
