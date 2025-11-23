@@ -6,7 +6,9 @@ const ProfileAddressCard = ({ address }: { address: Address }) => {
   return (
     <View className='w-full p-4 bg-white rounded-lg my-2 flex-row gap-2'>
       <View className='w-28'>
-        <Text className='text-base text-gray-500'>Address</Text>
+        <Text className='text-base text-gray-500'>
+          {address.label.charAt(0).toUpperCase() + address.label.slice(1)}
+        </Text>
       </View>
       <View className='flex-col gap-0'>
         {address.street && <Text className='text-base'>{address.street}</Text>}
