@@ -11,6 +11,7 @@ export default function RootLayout() {
         <Stack>
           <Stack.Screen name='(tabs)' options={{ headerShown: false }} />
           <Stack.Screen name='contacts/[id]' options={{ headerShown: false }} />
+          <Stack.Screen name='contacts/new' options={{ headerShown: false }} />
         </Stack>
       </DBRootProvider>
     </SafeAreaProvider>
