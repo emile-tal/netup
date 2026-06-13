@@ -1,7 +1,7 @@
-import { SafeAreaView } from 'react-native-safe-area-context';
 import Header from '../components/Header';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-const NewContactPage = () => {
+const AddContactPage = () => {
   return (
     <SafeAreaView>
       <Header title='New Contact' backButton />
@@ -9,4 +9,4 @@ const NewContactPage = () => {
   );
 };
 
-export default NewContactPage;
+export default AddContactPage;

@@ -1,37 +1,22 @@
-import { ScrollView, Text, View } from 'react-native';
 import { Address, Contact, Email, FirstMeeting, Phone } from '../../types/contacts';
+import { hiddenFields, sortOrder } from './utils';
 
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ProfileAddressCard from './ProfileAddressCard';
+import ProfileDataCard from './ProfileTextDataCard';
 import ProfileFirstMeetingCard from './ProfileFirstMeetingCard';
+import ProfileKeyDataCard from './ProfileKeyDataCard';
 import ProfileNumberDataCard from './ProfileNumberDataCard';
 import ProfilePhoneCard from './ProfilePhoneCard';
-import ProfileDataCard from './ProfileTextDataCard';
+import { ScrollView } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const ProfileCard = ({ contact }: { contact: Contact }) => {
+interface ProfileCardProps {
+  contact: Contact;
+  editable?: boolean;
+}
+
+const ProfileCard = ({ contact, editable }: ProfileCardProps) => {
   const insets = useSafeAreaInsets();
-
-  const hiddenFields = [
-    'id',
-    'firstName',
-    'lastName',
-    'jobTitle',
-    'company',
-    'createdAt',
-    'updatedAt',
-  ];
-
-  const sortOrder = [
-    'emails',
-    'phones',
-    'addresses',
-    'firstMeeting',
-    'relationshipStrength',
-    'outreachGoal',
-    'notes',
-    'alumni',
-    'source',
-  ];
 
   return (
     <ScrollView
@@ -39,18 +24,12 @@ const ProfileCard = ({ contact }: { contact: Contact }) => {
       className='h-full w-full'
       showsVerticalScrollIndicator={false}
     >
-      <View className='w-full p-4 bg-white rounded-lg mb-4'>
-        <View className='flex-row items-center gap-4'>
-          <View className='rounded-xl bg-gray-200 w-24 h-24'></View>
-          <View className='flex-col'>
-            <Text className='text-xl font-bold'>
-              {contact.firstName} {contact.lastName}
-            </Text>
-            <Text className='text-base text-gray-500 italic'>{contact.jobTitle}</Text>
-            <Text className='text-base text-gray-500'>{contact.company}</Text>
-          </View>
-        </View>
-      </View>
+      <ProfileKeyDataCard
+        firstName={contact.firstName}
+        lastName={contact.lastName}
+        jobTitle={contact.jobTitle}
+        company={contact.company}
+      />
       {Object.entries(contact)
         .sort((a, b) => sortOrder.indexOf(a[0]) - sortOrder.indexOf(b[0]))
         .map(([key, value]) => {

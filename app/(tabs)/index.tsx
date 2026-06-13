@@ -1,15 +1,16 @@
 import { FlatList, SafeAreaView, Text, TouchableOpacity, View } from 'react-native';
 
-import { useDB } from '@/db/dbProvider';
-import { resetAndSeed } from '@/db/devTools';
-import { observeContactSummaries } from '@/db/repo/contacts';
-import { router } from 'expo-router';
-import { useEffect } from 'react';
+import AddIcon from '../icons/AddIcon';
 import ContactLink from '../components/contacts/ContactLink';
 import ContactSearchBar from '../components/contacts/ContactSearchBar';
 import Header from '../components/Header';
-import AddIcon from '../icons/AddIcon';
+import { observeContactSummaries } from '@/db/repo/contacts';
+import { resetAndSeed } from '@/db/devTools';
+import { router } from 'expo-router';
 import useContactStore from '../stores/contactStore';
+import { useDB } from '@/db/dbProvider';
+import { useEffect } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const Contacts = () => {
   const db = useDB();
@@ -17,6 +18,7 @@ const Contacts = () => {
   const searchLoading = useContactStore(state => state.searchLoading);
   const setSearchLoading = useContactStore(state => state.setSearchLoading);
   const setContactSummaries = useContactStore(state => state.setContactSummaries);
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     const subscription = observeContactSummaries(db).subscribe({
@@ -48,7 +50,7 @@ const Contacts = () => {
         <Header
           title='Contacts'
           actionIcon={<AddIcon />}
-          onActionPress={() => router.navigate('/contacts/new')}
+          onActionPress={() => router.navigate('/contacts/add')}
         />
         <View className='pb-4'>
           <TouchableOpacity onPress={handleResetAndSeed} disabled={searchLoading}>
@@ -69,6 +71,8 @@ const Contacts = () => {
             />
           )}
           keyExtractor={item => item.id}
+          className='min-h-full'
+          contentContainerStyle={{ paddingBottom: insets.bottom }}
         />
       </View>
     </SafeAreaView>
