@@ -1,7 +1,7 @@
 import { appSchema, tableSchema } from '@nozbe/watermelondb';
 
 export const schema = appSchema({
-  version: 1,
+  version: 2,
   tables: [
     tableSchema({
       name: 'contacts',
@@ -15,6 +15,9 @@ export const schema = appSchema({
         { name: 'outreachGoal', type: 'number', isOptional: true },
         { name: 'source', type: 'string', isOptional: true },
         { name: 'notes', type: 'string', isOptional: true },
+        // firstMeeting folded in (logically 1:1). Dates stored as epoch-ms to match reminders.date_ts.
+        { name: 'firstMetDate', type: 'number', isOptional: true },
+        { name: 'firstMetLocation', type: 'string', isOptional: true },
       ],
     }),
     tableSchema({
@@ -43,14 +46,6 @@ export const schema = appSchema({
         { name: 'state', type: 'string', isOptional: true },
         { name: 'zip', type: 'string', isOptional: true },
         { name: 'country', type: 'string', isOptional: true },
-        { name: 'contact_id', type: 'string', isIndexed: true },
-      ],
-    }),
-    tableSchema({
-      name: 'firstMeetings',
-      columns: [
-        { name: 'date', type: 'string', isOptional: true },
-        { name: 'location', type: 'string', isOptional: true },
         { name: 'contact_id', type: 'string', isIndexed: true },
       ],
     }),

@@ -17,8 +17,8 @@ Key constraints / intent:
   **WatermelonDB** (SQLite) database. There is **no backend yet**.
 - The schema is **sync-ready**: `metadata` (timestamps + soft-delete) and `outbox`
   (queued ops) tables already exist so a real backend can be bolted on later.
-- Most of the **frontend is built**; the **data wiring (writes) is incomplete** and the
-  schema needs a **normalization pass** (see TODOs / Bugs).
+- Most of the **frontend is built**; the schema **normalization pass is done** (v2, see §7)
+  but the **data wiring (writes) is still incomplete** (see TODOs / Bugs).
 
 ---
 
@@ -160,35 +160,42 @@ entries and delegates to typed sub-cards, using `profile/utils.ts` (`hiddenField
 
 ---
 
-## 7. Database schema reference (`db/schema.ts`, v1)
+## 7. Database schema reference (`db/schema.ts`, v2)
 
 `contacts` is the aggregate root. Child tables carry an indexed `contact_id`.
 
 | Table | Key columns | Relationship |
 |-------|-------------|--------------|
-| `contacts` | firstName, lastName, company, jobTitle, alumni, relationshipStrength, outreachGoal, source, notes | root |
+| `contacts` | firstName, lastName, company, jobTitle, alumni, relationshipStrength, outreachGoal, source, notes, firstMetDate (epoch-ms), firstMetLocation | root |
 | `emails` | label, email, contact_id | belongs_to contact |
 | `phoneNumbers` | label, areaCode?, phoneNumber, contact_id | belongs_to contact |
 | `addresses` | label, street?, city?, state?, zip?, country?, contact_id | belongs_to contact |
-| `firstMeetings` | date (ISO string), location?, contact_id | belongs_to contact (logically one-to-one) |
-| `reminders` | title, date_ts (number), contact_id? | belongs_to contact |
+| `reminders` | title, date_ts (epoch-ms number), contact_id? | belongs_to contact |
 | `metadata` | entity, entity_id, created_at, updated_at, deleted_at? | sync side-table (no FK) |
 | `outbox` | entity, op, payload_json, queued_at, attempts | sync queue |
 
 Models live in `db/models/*` with WatermelonDB decorators (`@text`, `@field`,
-`@children`, `@relation`). `Contact` declares `has_many` for all child collections.
+`@children`, `@relation`). `Contact` declares `has_many` for emails/phoneNumbers/
+addresses/reminders.
 
-**Normalization decisions to make (see TODOs):**
-- `firstMeetings` is logically **one-to-one** but declared/queried as `has_many`
-  (`readContact` uses `fmRows[0]`). Pick one model and enforce it.
-- **Inconsistent date storage:** `firstMeetings.date` is an ISO **string** while
-  `reminders.date_ts` is a numeric timestamp. Standardize.
-- `Contact` model's `@children` collections are typed `any` — type them.
-- Schema marks most `contacts` columns optional, but model decorators are non-optional
-  (`!`). Align nullability and add null checks where needed.
-- **No cascade delete:** deleting a contact orphans its children and leaves `metadata`.
-- `outbox.entity`/`op` are free-form strings — constrain to enums/unions.
+**Normalization done in v2 (see git history):**
+- **firstMeeting folded into `contacts`** as `firstMetDate` (epoch-ms) + `firstMetLocation`
+  (was a `has_many` `firstMeetings` table queried via `fmRows[0]`). The `firstMeetings`
+  table + model are removed; `readContact` still emits the nested `firstMeeting` DTO so the
+  UI is unchanged.
+- **Dates standardized to epoch-ms** everywhere (`firstMetDate`, `reminders.date_ts`).
+  Repo converts to/from JS `Date` at the DTO boundary.
+- **`Contact` `@children` collections typed** as `Query<T>` (no more `any`).
+- **Optional `contacts` columns** are now `?` on the model to match the schema; the repo
+  defaults them (`?? ''` / `?? 0`) so the DTO stays non-optional.
+- **Cascade delete:** `deleteContact` destroys child rows and marks `metadata` deleted.
+- **`outbox.entity`/`op`** constrained via `OutboxEntity`/`OutboxOp` unions in
+  `app/types/sync.ts`.
+
+**Still open:**
 - No uniqueness constraints on emails/phones (duplicates allowed) — confirm if intended.
+- v2 is not in-place migratable (folded table + type changes); `migrations.ts` is empty
+  and dev DBs must be reset (`resetAndSeed`).
 
 ---
 
@@ -206,12 +213,12 @@ Models live in `db/models/*` with WatermelonDB decorators (`@text`, `@field`,
 
 ## 9. High-level TODOs (prioritized for deploy)
 
-1. **DB normalization pass** — resolve `firstMeeting` cardinality, standardize date
-   storage, type `@children` collections, align optional/nullable fields, add cascade
-   delete (clean up children + `metadata` on contact delete), enum-constrain
-   `outbox.entity`/`op`. Bump schema version + add a migration in `db/migrations.ts`.
-2. **Complete the contacts repo** — add `updateContact(db, id, changes)` and
-   `deleteContact(db, id)` following the `createContact` transaction pattern.
+1. ~~**DB normalization pass**~~ ✅ DONE (schema v2) — firstMeeting folded into `contacts`,
+   dates standardized to epoch-ms, `@children` typed, optional fields aligned, cascade
+   delete added (`deleteContact`), `outbox.entity`/`op` enum-constrained. v2 requires a dev
+   DB reset (`migrations.ts` left empty — not in-place migratable). See §7.
+2. **Complete the contacts repo** — add `updateContact(db, id, changes)` following the
+   `createContact` transaction pattern. (`deleteContact(db, id)` with cascade now exists.)
 3. **Wire the write flows:**
    - Build the contact form in `app/contacts/add.tsx` and call `createContact`.
    - Make `app/contacts/edit/[id].tsx` actually save (via `updateContact` + the existing

@@ -3,12 +3,12 @@ import { Contact as ContactType } from '../../app/types/contacts';
 import Address from '../models/Address';
 import Contact from '../models/Contact';
 import Email from '../models/Email';
-import FirstMeeting from '../models/FirstMeeting';
 import PhoneNumber from '../models/PhoneNumber';
+import Reminder from '../models/Reminder';
 // src/db/repo/contactsList.ts
 import { Q } from '@nozbe/watermelondb';
 import { map } from 'rxjs/operators';
-import { upsertMeta } from './metadata';
+import { markDeletedMeta, upsertMeta } from './metadata';
 
 export type ContactSummary = { id: string; firstName: string; lastName: string };
 
@@ -34,7 +34,11 @@ export function observeContactSummaries(db: Database, search?: string) {
     .observe()
     .pipe(
       map(rows =>
-        rows.map(c => ({ id: c.id, firstName: c.firstName, lastName: c.lastName }))
+        rows.map(c => ({
+          id: c.id,
+          firstName: c.firstName ?? '',
+          lastName: c.lastName ?? '',
+        }))
       )
     );
 }
@@ -46,11 +50,10 @@ export async function readContact(db: Database, id: string): Promise<ContactType
     .catch(() => null);
   if (!contact) return null;
 
-  const [emailRows, phoneRows, addrRows, fmRows] = await Promise.all([
+  const [emailRows, phoneRows, addrRows] = await Promise.all([
     db.get<Email>('emails').query(Q.where('contact_id', id)).fetch(),
     db.get<PhoneNumber>('phoneNumbers').query(Q.where('contact_id', id)).fetch(),
     db.get<Address>('addresses').query(Q.where('contact_id', id)).fetch(),
-    db.get<FirstMeeting>('firstMeetings').query(Q.where('contact_id', id)).fetch(),
   ]);
 
   return {
@@ -60,8 +63,8 @@ export async function readContact(db: Database, id: string): Promise<ContactType
     company: contact.company ?? '',
     jobTitle: contact.jobTitle ?? '',
     alumni: contact.alumni ?? '',
-    relationshipStrength: contact.relationshipStrength,
-    outreachGoal: contact.outreachGoal,
+    relationshipStrength: contact.relationshipStrength ?? 0,
+    outreachGoal: contact.outreachGoal ?? 0,
     source: contact.source ?? '',
     notes: contact.notes ?? '',
 
@@ -89,9 +92,9 @@ export async function readContact(db: Database, id: string): Promise<ContactType
     })),
 
     firstMeeting: {
-      id: fmRows[0]?.id ?? '',
-      date: fmRows[0]?.date ? new Date(fmRows[0].date) : undefined,
-      location: fmRows[0]?.location ?? '',
+      id: contact.id,
+      date: contact.firstMetDate ? new Date(contact.firstMetDate) : undefined,
+      location: contact.firstMetLocation ?? '',
     },
   };
 }
@@ -110,6 +113,8 @@ export async function createContact(db: Database, input: ContactType) {
       c.outreachGoal = input.outreachGoal;
       c.source = input.source;
       c.notes = input.notes;
+      c.firstMetDate = input.firstMeeting?.date?.getTime();
+      c.firstMetLocation = input.firstMeeting?.location;
     });
 
     const ops: Promise<any>[] = [];
@@ -143,19 +148,28 @@ export async function createContact(db: Database, input: ContactType) {
       )
     );
 
-    if (input.firstMeeting) {
-      ops.push(
-        db.get<FirstMeeting>('firstMeetings').create((fm: FirstMeeting) => {
-          fm.contactId = newContact.id;
-          fm.date = input.firstMeeting.date?.toISOString();
-          fm.location = input.firstMeeting.location;
-        })
-      );
-    }
-
     await Promise.all(ops);
     await upsertMeta(db, 'contact', newContact.id);
   });
 
   return newContact;
+}
+
+export async function deleteContact(db: Database, id: string) {
+  await db.write(async () => {
+    const [emailRows, phoneRows, addrRows, reminderRows] = await Promise.all([
+      db.get<Email>('emails').query(Q.where('contact_id', id)).fetch(),
+      db.get<PhoneNumber>('phoneNumbers').query(Q.where('contact_id', id)).fetch(),
+      db.get<Address>('addresses').query(Q.where('contact_id', id)).fetch(),
+      db.get<Reminder>('reminders').query(Q.where('contact_id', id)).fetch(),
+    ]);
+
+    const children = [...emailRows, ...phoneRows, ...addrRows, ...reminderRows];
+    await Promise.all(children.map(row => row.destroyPermanently()));
+
+    const contact = await db.get<Contact>('contacts').find(id).catch(() => null);
+    if (contact) await contact.destroyPermanently();
+
+    await markDeletedMeta(db, 'contact', id);
+  });
 }

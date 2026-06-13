@@ -7,7 +7,6 @@ import { migrations } from './migrations';
 import Address from './models/Address';
 import Contact from './models/Contact';
 import Email from './models/Email';
-import FirstMeeting from './models/FirstMeeting';
 import Metadata from './models/Metadata';
 import Outbox from './models/Outbox';
 import PhoneNumber from './models/PhoneNumber';
@@ -30,7 +29,6 @@ export function makeDatabase(dbName = 'app-anon.db') {
       Email,
       PhoneNumber,
       Address,
-      FirstMeeting,
       Reminder,
       Metadata,
       Outbox,
