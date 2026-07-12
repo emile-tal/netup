@@ -217,13 +217,17 @@ addresses/reminders.
    dates standardized to epoch-ms, `@children` typed, optional fields aligned, cascade
    delete added (`deleteContact`), `outbox.entity`/`op` enum-constrained. v2 requires a dev
    DB reset (`migrations.ts` left empty — not in-place migratable). See §7.
-2. **Complete the contacts repo** — add `updateContact(db, id, changes)` following the
-   `createContact` transaction pattern. (`deleteContact(db, id)` with cascade now exists.)
+2. ~~**Complete the contacts repo**~~ ✅ DONE — `createContact`, `updateContact(db, id, changes)`
+   (scalar + firstMeeting; child collections not diffed yet), and `deleteContact(db, id)`
+   (cascade) all exist in `db/repo/contacts.ts`.
 3. **Wire the write flows:**
-   - Build the contact form in `app/contacts/add.tsx` and call `createContact`.
-   - Make `app/contacts/edit/[id].tsx` actually save (via `updateContact` + the existing
-     `contactEditStore`) instead of navigating to itself.
-   - Make `ProfileCard` forward `editable` to sub-cards and bind inputs to the store.
+   - Build the contact form in `app/contacts/add.tsx` and call `createContact`. ⬅️ still TODO
+   - ~~Make `app/contacts/edit/[id].tsx` actually save~~ ✅ DONE — seeds `workingContact` from
+     `readContact`, saves via `updateContact` on the check action, navigates to the view.
+   - ~~Make `ProfileCard` forward `editable` to sub-cards and bind inputs to the store~~ ✅ DONE
+     for scalar fields (Key/Text/Number cards via `contactEditStore.updateField`).
+     **Still read-only in edit mode:** emails, phones, addresses, firstMeeting (the store has
+     no child-collection editing yet — wire alongside `updateContact` child diffing).
 4. **Reminders data layer** — create `db/repo/reminders.ts` (create/read/update/delete +
    observe), then wire `calendar/`, `agenda/`, and `AddReminderModal` to it. Stop reading
    `app/placeholderData.ts` in production paths.
@@ -242,15 +246,11 @@ addresses/reminders.
 
 ## 10. Known bugs / issues
 
-- **Edit mode crashes:** `app/components/profile/ProfileKeyDataCard.tsx` calls
-  `setFirstName` / `setLastName` in its editable `TextInput`s, but those are **undefined**
-  in scope → runtime error when editing. Must come from props or `contactEditStore`.
-- **`editable` is inert:** `app/components/profile/ProfileCard.tsx` accepts `editable` but
-  never forwards it to sub-cards, so edit mode doesn't actually enable editing.
-- **Edit save is a no-op:** `app/contacts/edit/[id].tsx` `CheckIcon` handler calls
-  `router.navigate` to the same edit screen — nothing is persisted.
-- **Dead store:** `app/stores/contactEditStore.tsx` is never imported anywhere; its 9
-  near-identical field setters are boilerplate (candidate for a factory / Immer) once wired.
+- ~~**Edit mode crashes** / **`editable` is inert** / **Edit save is a no-op** / **Dead
+  store**~~ ✅ FIXED — the edit flow is wired: `contactEditStore` now exposes a type-safe
+  `updateField` + `workingContact`; `ProfileCard` forwards `editable` to the scalar sub-cards
+  which bind to the store; `edit/[id].tsx` saves via `updateContact`. (Child-collection /
+  firstMeeting editing is still not wired — see §9.3.)
 - **Reminders don't persist:** `app/components/agenda/AgendaItem.tsx` (title + completed
   toggle) and `app/components/calendar/AddReminderModal.tsx` have `TODO` handlers that
   mutate local state only.

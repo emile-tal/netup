@@ -1,5 +1,7 @@
 import { Text, TextInput, View } from 'react-native';
 
+import { useContactEditStore } from '../../stores/contactEditStore';
+
 interface ProfileKeyDataCardProps {
   firstName: string;
   lastName: string;
@@ -15,6 +17,9 @@ const ProfileKeyDataCard = ({
   company,
   editable,
 }: ProfileKeyDataCardProps) => {
+  const working = useContactEditStore(s => s.workingContact);
+  const updateField = useContactEditStore(s => s.updateField);
+
   return (
     <View className='w-full p-4 bg-white rounded-lg mb-4'>
       <View className='flex-row items-center gap-4'>
@@ -23,23 +28,39 @@ const ProfileKeyDataCard = ({
           {editable ? (
             <>
               <TextInput
-                value={firstName}
-                onChangeText={setFirstName}
+                value={working?.firstName ?? ''}
+                onChangeText={text => updateField('firstName', text)}
+                placeholder='First name'
                 className='text-xl font-bold'
               />
               <TextInput
-                value={lastName}
-                onChangeText={setLastName}
+                value={working?.lastName ?? ''}
+                onChangeText={text => updateField('lastName', text)}
+                placeholder='Last name'
                 className='text-xl font-bold'
+              />
+              <TextInput
+                value={working?.jobTitle ?? ''}
+                onChangeText={text => updateField('jobTitle', text)}
+                placeholder='Job title'
+                className='text-base text-gray-500 italic'
+              />
+              <TextInput
+                value={working?.company ?? ''}
+                onChangeText={text => updateField('company', text)}
+                placeholder='Company'
+                className='text-base text-gray-500'
               />
             </>
           ) : (
-            <Text className='text-xl font-bold'>
-              {firstName} {lastName}
-            </Text>
+            <>
+              <Text className='text-xl font-bold'>
+                {firstName} {lastName}
+              </Text>
+              <Text className='text-base text-gray-500 italic'>{jobTitle}</Text>
+              <Text className='text-base text-gray-500'>{company}</Text>
+            </>
           )}
-          <Text className='text-base text-gray-500 italic'>{jobTitle}</Text>
-          <Text className='text-base text-gray-500'>{company}</Text>
         </View>
       </View>
     </View>

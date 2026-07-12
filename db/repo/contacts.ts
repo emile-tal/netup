@@ -155,6 +155,38 @@ export async function createContact(db: Database, input: ContactType) {
   return newContact;
 }
 
+// Updates the contact root scalar fields and the folded firstMeeting.
+// Child collections (emails/phones/addresses) are not diffed here yet — they are not
+// editable from the UI/store, so wire that alongside collection editing later.
+export async function updateContact(
+  db: Database,
+  id: string,
+  changes: Partial<ContactType>
+) {
+  await db.write(async () => {
+    const contact = await db.get<Contact>('contacts').find(id);
+
+    await contact.update((c: Contact) => {
+      if (changes.firstName !== undefined) c.firstName = changes.firstName;
+      if (changes.lastName !== undefined) c.lastName = changes.lastName;
+      if (changes.company !== undefined) c.company = changes.company;
+      if (changes.jobTitle !== undefined) c.jobTitle = changes.jobTitle;
+      if (changes.alumni !== undefined) c.alumni = changes.alumni;
+      if (changes.relationshipStrength !== undefined)
+        c.relationshipStrength = changes.relationshipStrength;
+      if (changes.outreachGoal !== undefined) c.outreachGoal = changes.outreachGoal;
+      if (changes.source !== undefined) c.source = changes.source;
+      if (changes.notes !== undefined) c.notes = changes.notes;
+      if (changes.firstMeeting !== undefined) {
+        c.firstMetDate = changes.firstMeeting.date?.getTime();
+        c.firstMetLocation = changes.firstMeeting.location;
+      }
+    });
+
+    await upsertMeta(db, 'contact', id);
+  });
+}
+
 export async function deleteContact(db: Database, id: string) {
   await db.write(async () => {
     const [emailRows, phoneRows, addrRows, reminderRows] = await Promise.all([

@@ -29,6 +29,7 @@ const ProfileCard = ({ contact, editable }: ProfileCardProps) => {
         lastName={contact.lastName}
         jobTitle={contact.jobTitle}
         company={contact.company}
+        editable={editable}
       />
       {Object.entries(contact)
         .sort((a, b) => sortOrder.indexOf(a[0]) - sortOrder.indexOf(b[0]))
@@ -48,6 +49,8 @@ const ProfileCard = ({ contact, editable }: ProfileCardProps) => {
                 label='Relationship Strength'
                 value={value as number}
                 unit='/5'
+                fieldKey='relationshipStrength'
+                editable={editable}
               />
             );
           } else if (key === 'outreachGoal') {
@@ -57,6 +60,8 @@ const ProfileCard = ({ contact, editable }: ProfileCardProps) => {
                 label='Outreach Goal'
                 value={value as number}
                 unit='/year'
+                fieldKey='outreachGoal'
+                editable={editable}
               />
             );
           } else if (key === 'emails' && value.length > 0) {
@@ -73,7 +78,15 @@ const ProfileCard = ({ contact, editable }: ProfileCardProps) => {
               />
             ));
           } else if (!hiddenFields.includes(key)) {
-            return <ProfileDataCard key={key} label={key} value={value as string} />;
+            return (
+              <ProfileDataCard
+                key={key}
+                label={key}
+                value={value as string}
+                fieldKey={key as keyof Contact}
+                editable={editable}
+              />
+            );
           }
         })}
     </ScrollView>
