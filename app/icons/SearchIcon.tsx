@@ -1,6 +1,6 @@
 import { Path, Svg } from 'react-native-svg';
 
-const SearchIcon = ({ cssClass }: { cssClass: string }) => {
+const SearchIcon = ({ cssClass }: { cssClass?: string }) => {
   return (
     <Svg
       className={cssClass}

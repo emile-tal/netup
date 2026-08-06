@@ -1,5 +1,6 @@
-import { Text, TextInput, View } from 'react-native';
+import { Text, TextInput } from 'react-native';
 
+import CardRow from './CardRow';
 import { Contact } from '../../types/contacts';
 import { useContactEditStore } from '../../stores/contactEditStore';
 
@@ -17,26 +18,19 @@ const ProfileDataCard = ({ label, value, fieldKey, editable }: ProfileDataCardPr
   const isEditable = editable && fieldKey;
 
   return (
-    <View className='w-full p-4 bg-white rounded-lg my-2 flex-row gap-2'>
-      <View className='w-28'>
-        <Text className='text-base text-gray-500'>
-          {label.charAt(0).toUpperCase() + label.slice(1)}
-        </Text>
-      </View>
-      <View className='flex-1'>
-        {isEditable ? (
-          <TextInput
-            value={(working?.[fieldKey] as string) ?? ''}
-            onChangeText={text => updateField(fieldKey, text)}
-            placeholder={label}
-            multiline
-            className='text-base'
-          />
-        ) : (
-          <Text className='text-base'>{value}</Text>
-        )}
-      </View>
-    </View>
+    <CardRow label={label}>
+      {isEditable ? (
+        <TextInput
+          value={(working?.[fieldKey] as string) ?? ''}
+          onChangeText={text => updateField(fieldKey, text)}
+          placeholder={label}
+          multiline
+          className='text-base'
+        />
+      ) : (
+        <Text className='text-base'>{value}</Text>
+      )}
+    </CardRow>
   );
 };
 

@@ -1,69 +1,30 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 
-import useContactStore from '@/app/stores/contactStore';
-import { useDB } from '@/db/dbProvider';
-import { observeContactSummaries } from '@/db/repo/contacts';
 import SearchBar from '../SearchBar';
+import useContactStore from '@/app/stores/contactStore';
+import { useDebouncedCallback } from '@/app/hooks/useDebouncedCallback';
 
+/**
+ * Owns the text field only. The debounced value is pushed into the contact store; the
+ * list screen holds the single DB subscription that reacts to it.
+ */
 const ContactSearchBar = () => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const setContactSummaries = useContactStore(state => state.setContactSummaries);
+  const [text, setText] = useState('');
+  const setSearchQuery = useContactStore(state => state.setSearchQuery);
   const setSearchLoading = useContactStore(state => state.setSearchLoading);
-  const setNoResults = useContactStore(state => state.setNoResults);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const subscriptionRef = useRef<{ unsubscribe: () => void } | null>(null);
-  const db = useDB();
 
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-      if (subscriptionRef.current) {
-        subscriptionRef.current.unsubscribe();
-      }
-    };
-  }, []);
+  const commitQuery = useDebouncedCallback((value: string) => setSearchQuery(value));
 
-  const handleDebouncedSearch = useCallback(
-    (text: string) => {
-      setSearchQuery(text);
+  const handleChangeText = useCallback(
+    (value: string) => {
+      setText(value);
       setSearchLoading(true);
-      setNoResults(false);
-
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-
-      if (subscriptionRef.current) {
-        subscriptionRef.current.unsubscribe();
-        subscriptionRef.current = null;
-      }
-
-      timeoutRef.current = setTimeout(() => {
-        const subscription = observeContactSummaries(db, text).subscribe({
-          next: data => {
-            if (data.length === 0) {
-              setNoResults(true);
-            } else {
-              setNoResults(false);
-              setContactSummaries(data);
-            }
-            setSearchLoading(false);
-          },
-          error: error => {
-            setSearchLoading(false);
-            console.error('Error loading contacts:', error);
-          },
-        });
-        timeoutRef.current = null;
-        subscriptionRef.current = subscription;
-      }, 500);
+      commitQuery(value);
     },
-    [db, searchQuery]
+    [commitQuery, setSearchLoading]
   );
 
-  return <SearchBar onChangeText={handleDebouncedSearch} value={searchQuery} />;
+  return <SearchBar onChangeText={handleChangeText} value={text} />;
 };
 
 export default ContactSearchBar;

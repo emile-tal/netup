@@ -1,61 +1,99 @@
-import { SafeAreaView, Text, View } from 'react-native';
+import { Alert, Text, TouchableOpacity } from 'react-native';
+import { deleteContact, updateContact } from '@/db/repo/contacts';
 import { useEffect, useState } from 'react';
-import { readContact, updateContact } from '@/db/repo/contacts';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import CheckIcon from '@/app/icons/CheckIcon';
-import { Contact } from '../../types/contacts';
 import Header from '../../components/Header';
 import ProfileCard from '../../components/profile/ProfileCard';
+import ScreenLayout from '../../components/ScreenLayout';
+import ScreenState from '../../components/ScreenState';
 import XIcon from '@/app/icons/XIcon';
+import { useContact } from '../../hooks/useContact';
 import { useContactEditStore } from '../../stores/contactEditStore';
 import { useDB } from '@/db/dbProvider';
 
-const ContactsPage = () => {
-  const { id } = useLocalSearchParams();
+const EditContactPage = () => {
+  const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const db = useDB();
-  const [contact, setContact] = useState<Contact | null>(null);
+  const { contact, loading, error, reload } = useContact(id);
   const setWorkingContact = useContactEditStore(s => s.setWorkingContact);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    const fetchContact = async () => {
-      const contact = await readContact(db, id as string);
-      if (contact) {
-        setContact(contact);
-        setWorkingContact(contact);
-      }
-    };
-    fetchContact();
+    if (contact) setWorkingContact(contact);
     return () => setWorkingContact(null);
-  }, [id, db, setWorkingContact]);
+  }, [contact, setWorkingContact]);
 
   const handleSave = async () => {
     const working = useContactEditStore.getState().workingContact;
-    if (working) {
-      await updateContact(db, id as string, working);
+    if (!working || saving) return;
+
+    setSaving(true);
+    try {
+      await updateContact(db, id, working);
+      router.navigate(`/contacts/${id}`);
+    } catch (err) {
+      console.error('Error saving contact:', err);
+      Alert.alert('Could not save', 'Your changes were not saved. Please try again.');
+    } finally {
+      setSaving(false);
     }
-    router.navigate(`/contacts/${id}`);
+  };
+
+  const handleDelete = () => {
+    Alert.alert(
+      'Delete contact',
+      'This removes the contact and everything attached to it.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteContact(db, id);
+              router.navigate('/');
+            } catch (err) {
+              console.error('Error deleting contact:', err);
+              Alert.alert('Could not delete', 'The contact was not deleted.');
+            }
+          },
+        },
+      ]
+    );
   };
 
   return (
-    <SafeAreaView>
-      <View className='items-start justify-center px-4 mb-4'>
-        <Header
-          backButton
-          actionIcon={<CheckIcon />}
-          onActionPress={handleSave}
-          backIconProp={<XIcon />}
-          onBackPress={() => router.navigate(`/contacts/${id}`)}
+    <ScreenLayout>
+      <Header
+        backButton
+        actionIcon={<CheckIcon />}
+        onActionPress={handleSave}
+        backIconProp={<XIcon />}
+        onBackPress={() => router.navigate(`/contacts/${id}`)}
+      />
+      {loading || error || !contact ? (
+        <ScreenState
+          loading={loading}
+          error={error}
+          emptyMessage='Contact not found'
+          onRetry={reload}
         />
-        {contact ? (
-          <ProfileCard contact={contact} editable />
-        ) : (
-          <Text>Contact not found</Text>
-        )}
-      </View>
-    </SafeAreaView>
+      ) : (
+        <ProfileCard
+          contact={contact}
+          editable
+          footer={
+            <TouchableOpacity onPress={handleDelete} className='py-3 self-start'>
+              <Text className='text-base text-red-500'>Delete contact</Text>
+            </TouchableOpacity>
+          }
+        />
+      )}
+    </ScreenLayout>
   );
 };
 
-export default ContactsPage;
+export default EditContactPage;

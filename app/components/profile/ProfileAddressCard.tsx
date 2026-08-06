@@ -1,25 +1,64 @@
-import { Text, View } from 'react-native';
+import { Text, TextInput, View } from 'react-native';
 
 import { Address } from '@/app/types/contacts';
+import CardRow from './CardRow';
+import { useContactEditStore } from '../../stores/contactEditStore';
 
-const ProfileAddressCard = ({ address }: { address: Address }) => {
-  return (
-    <View className='w-full p-4 bg-white rounded-lg my-2 flex-row gap-2'>
-      <View className='w-28'>
-        <Text className='text-base text-gray-500'>
-          {address.label.charAt(0).toUpperCase() + address.label.slice(1)}
-        </Text>
-      </View>
-      <View className='flex-col gap-0'>
-        {address.street && <Text className='text-base'>{address.street}</Text>}
-        <View className='flex-row gap-1'>
-          {address.city && <Text className='text-base'>{address.city}</Text>}
-          {address.state && <Text className='text-base'>{address.state}</Text>}
-          {address.zip && <Text className='text-base'>{address.zip}</Text>}
+interface ProfileAddressCardProps {
+  address: Address;
+  editable?: boolean;
+}
+
+/** The address parts, in display order, so edit mode stays a config not a wall of JSX. */
+const addressFields: { key: keyof Omit<Address, 'id' | 'label'>; placeholder: string }[] =
+  [
+    { key: 'street', placeholder: 'Street' },
+    { key: 'city', placeholder: 'City' },
+    { key: 'state', placeholder: 'State' },
+    { key: 'zip', placeholder: 'ZIP' },
+    { key: 'country', placeholder: 'Country' },
+  ];
+
+const ProfileAddressCard = ({ address, editable }: ProfileAddressCardProps) => {
+  const updateItem = useContactEditStore(s => s.updateItem);
+  const removeItem = useContactEditStore(s => s.removeItem);
+
+  if (!editable) {
+    return (
+      <CardRow label={address.label}>
+        <View className='flex-col gap-0'>
+          {address.street && <Text className='text-base'>{address.street}</Text>}
+          <View className='flex-row gap-1'>
+            {address.city && <Text className='text-base'>{address.city}</Text>}
+            {address.state && <Text className='text-base'>{address.state}</Text>}
+            {address.zip && <Text className='text-base'>{address.zip}</Text>}
+          </View>
+          {address.country && <Text className='text-base'>{address.country}</Text>}
         </View>
-        {address.country && <Text className='text-base'>{address.country}</Text>}
+      </CardRow>
+    );
+  }
+
+  return (
+    <CardRow
+      label={address.label}
+      onLabelChange={label => updateItem('addresses', address.id, { label })}
+      onRemove={() => removeItem('addresses', address.id)}
+    >
+      <View className='flex-col gap-0'>
+        {addressFields.map(({ key, placeholder }) => (
+          <TextInput
+            key={key}
+            value={address[key] ?? ''}
+            onChangeText={value =>
+              updateItem('addresses', address.id, { [key]: value || undefined })
+            }
+            placeholder={placeholder}
+            className='text-base'
+          />
+        ))}
       </View>
-    </View>
+    </CardRow>
   );
 };
 

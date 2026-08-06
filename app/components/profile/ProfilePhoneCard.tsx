@@ -1,24 +1,54 @@
-import { Text, View } from 'react-native';
+import { Text, TextInput, View } from 'react-native';
+
+import CardRow from './CardRow';
+import { Phone } from '../../types/contacts';
+import { useContactEditStore } from '../../stores/contactEditStore';
 
 interface ProfilePhoneCardProps {
-  label: string;
-  areaCode?: string;
-  phoneNumber: string;
+  phone: Phone;
+  editable?: boolean;
 }
 
-const ProfilePhoneCard = ({ label, areaCode, phoneNumber }: ProfilePhoneCardProps) => {
+const ProfilePhoneCard = ({ phone, editable }: ProfilePhoneCardProps) => {
+  const updateItem = useContactEditStore(s => s.updateItem);
+  const removeItem = useContactEditStore(s => s.removeItem);
+
+  if (!editable) {
+    return (
+      <CardRow label={phone.label}>
+        <View className='flex-row items-center gap-1'>
+          {phone.areaCode && <Text className='text-base'>+{phone.areaCode}</Text>}
+          <Text className='text-base'>{phone.phoneNumber}</Text>
+        </View>
+      </CardRow>
+    );
+  }
+
   return (
-    <View className='w-full p-4 bg-white rounded-lg my-2 flex-row gap-2'>
-      <View className='w-28'>
-        <Text className='text-base text-gray-500'>
-          {label.charAt(0).toUpperCase() + label.slice(1)}
-        </Text>
+    <CardRow
+      label={phone.label}
+      onLabelChange={label => updateItem('phones', phone.id, { label })}
+      onRemove={() => removeItem('phones', phone.id)}
+    >
+      <View className='flex-row items-center gap-1'>
+        <TextInput
+          value={phone.areaCode ?? ''}
+          onChangeText={value =>
+            updateItem('phones', phone.id, { areaCode: value || undefined })
+          }
+          placeholder='+1'
+          keyboardType='phone-pad'
+          className='text-base w-12'
+        />
+        <TextInput
+          value={phone.phoneNumber}
+          onChangeText={value => updateItem('phones', phone.id, { phoneNumber: value })}
+          placeholder='555-1234'
+          keyboardType='phone-pad'
+          className='text-base flex-1'
+        />
       </View>
-      <View className='flex-1 flex-row items-center gap-1'>
-        {areaCode && <Text className='text-base'>+{areaCode}</Text>}
-        <Text className='text-base'>{phoneNumber}</Text>
-      </View>
-    </View>
+    </CardRow>
   );
 };
 

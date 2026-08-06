@@ -1,27 +1,45 @@
-import { Reminder } from '../types/reminders';
+import { ReminderSummary } from '../types/reminders';
 import { create } from 'zustand';
-import { myRemindersData } from '../placeholderData';
+import { toDayKey } from '../utils/date';
 
 interface CalendarStore {
   selectedDate: Date;
   setSelectedDate: (date: Date) => void;
-  reminders: Reminder[];
-  setReminders: (reminders: Reminder[]) => void;
-  agendaStartDate: Date;
-  setAgendaStartDate: (date: Date) => void;
-  agendaEndDate: Date;
-  setAgendaEndDate: (date: Date) => void;
+  /** Reminders loaded from the DB (see observeReminderSummaries). */
+  reminders: ReminderSummary[];
+  /**
+   * The same reminders bucketed by `YYYY-MM-DD`, built once per update so the calendar's
+   * day cells look their reminders up instead of each filtering the whole list.
+   */
+  remindersByDay: Record<string, ReminderSummary[]>;
+  setReminders: (reminders: ReminderSummary[]) => void;
+  remindersLoading: boolean;
+  setRemindersLoading: (loading: boolean) => void;
+  remindersError: Error | null;
+  setRemindersError: (error: Error | null) => void;
 }
 
-const useCalendarStore = create<CalendarStore>((set, get) => ({
+function groupByDay(reminders: ReminderSummary[]): Record<string, ReminderSummary[]> {
+  const byDay: Record<string, ReminderSummary[]> = {};
+  for (const reminder of reminders) {
+    if (!reminder.date) continue;
+    const key = toDayKey(reminder.date);
+    (byDay[key] ??= []).push(reminder);
+  }
+  return byDay;
+}
+
+const useCalendarStore = create<CalendarStore>(set => ({
   selectedDate: new Date(),
-  reminders: myRemindersData,
   setSelectedDate: (date: Date) => set({ selectedDate: date }),
-  setReminders: (reminders: Reminder[]) => set({ reminders }),
-  agendaStartDate: new Date(),
-  setAgendaStartDate: (date: Date) => set({ agendaStartDate: date }),
-  agendaEndDate: new Date(),
-  setAgendaEndDate: (date: Date) => set({ agendaEndDate: date }),
+  reminders: [],
+  remindersByDay: {},
+  setReminders: (reminders: ReminderSummary[]) =>
+    set({ reminders, remindersByDay: groupByDay(reminders) }),
+  remindersLoading: true,
+  setRemindersLoading: (loading: boolean) => set({ remindersLoading: loading }),
+  remindersError: null,
+  setRemindersError: (error: Error | null) => set({ remindersError: error }),
 }));
 
 export default useCalendarStore;

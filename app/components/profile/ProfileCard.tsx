@@ -1,46 +1,105 @@
 import { Address, Contact, Email, FirstMeeting, Phone } from '../../types/contacts';
 import { hiddenFields, sortOrder } from './utils';
 
+import AddItemButton from './AddItemButton';
+import { Fragment } from 'react';
 import ProfileAddressCard from './ProfileAddressCard';
 import ProfileDataCard from './ProfileTextDataCard';
+import ProfileEmailCard from './ProfileEmailCard';
 import ProfileFirstMeetingCard from './ProfileFirstMeetingCard';
 import ProfileKeyDataCard from './ProfileKeyDataCard';
 import ProfileNumberDataCard from './ProfileNumberDataCard';
 import ProfilePhoneCard from './ProfilePhoneCard';
 import { ScrollView } from 'react-native';
+import { useContactEditStore } from '../../stores/contactEditStore';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface ProfileCardProps {
   contact: Contact;
   editable?: boolean;
+  /** Rendered inside the scroll view, below the cards (e.g. the delete action). */
+  footer?: React.ReactNode;
 }
 
-const ProfileCard = ({ contact, editable }: ProfileCardProps) => {
+const ProfileCard = ({ contact, editable, footer }: ProfileCardProps) => {
   const insets = useSafeAreaInsets();
+  const working = useContactEditStore(s => s.workingContact);
+  const addItem = useContactEditStore(s => s.addItem);
+
+  // In edit mode the store is the source of truth so newly added/removed child rows
+  // render immediately; the scalar cards bind to the store themselves.
+  const source = editable ? (working ?? contact) : contact;
 
   return (
     <ScrollView
       contentContainerStyle={{ paddingBottom: insets.bottom }}
       className='h-full w-full'
       showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps='handled'
     >
       <ProfileKeyDataCard
-        firstName={contact.firstName}
-        lastName={contact.lastName}
-        jobTitle={contact.jobTitle}
-        company={contact.company}
+        firstName={source.firstName}
+        lastName={source.lastName}
+        jobTitle={source.jobTitle}
+        company={source.company}
         editable={editable}
       />
-      {Object.entries(contact)
+      {Object.entries(source)
         .sort((a, b) => sortOrder.indexOf(a[0]) - sortOrder.indexOf(b[0]))
         .map(([key, value]) => {
-          if (key === 'addresses') {
-            return value.map((address: Address) => (
-              <ProfileAddressCard key={address.id} address={address} />
-            ));
+          if (key === 'emails') {
+            const emails = value as Email[];
+            if (!editable && emails.length === 0) return null;
+            return (
+              <Fragment key={key}>
+                {emails.map(email => (
+                  <ProfileEmailCard key={email.id} email={email} editable={editable} />
+                ))}
+                {editable && (
+                  <AddItemButton label='Add email' onPress={() => addItem('emails')} />
+                )}
+              </Fragment>
+            );
+          } else if (key === 'phones') {
+            const phones = value as Phone[];
+            if (!editable && phones.length === 0) return null;
+            return (
+              <Fragment key={key}>
+                {phones.map(phone => (
+                  <ProfilePhoneCard key={phone.id} phone={phone} editable={editable} />
+                ))}
+                {editable && (
+                  <AddItemButton label='Add phone' onPress={() => addItem('phones')} />
+                )}
+              </Fragment>
+            );
+          } else if (key === 'addresses') {
+            const addresses = value as Address[];
+            if (!editable && addresses.length === 0) return null;
+            return (
+              <Fragment key={key}>
+                {addresses.map(address => (
+                  <ProfileAddressCard
+                    key={address.id}
+                    address={address}
+                    editable={editable}
+                  />
+                ))}
+                {editable && (
+                  <AddItemButton
+                    label='Add address'
+                    onPress={() => addItem('addresses')}
+                  />
+                )}
+              </Fragment>
+            );
           } else if (key === 'firstMeeting') {
             return (
-              <ProfileFirstMeetingCard key={key} firstMeeting={value as FirstMeeting} />
+              <ProfileFirstMeetingCard
+                key={key}
+                firstMeeting={value as FirstMeeting}
+                editable={editable}
+              />
             );
           } else if (key === 'relationshipStrength') {
             return (
@@ -64,19 +123,6 @@ const ProfileCard = ({ contact, editable }: ProfileCardProps) => {
                 editable={editable}
               />
             );
-          } else if (key === 'emails' && value.length > 0) {
-            return value.map((item: Email) => (
-              <ProfileDataCard key={item.id} label={item.label} value={item.email} />
-            ));
-          } else if (key === 'phones' && value.length > 0) {
-            return value.map((item: Phone) => (
-              <ProfilePhoneCard
-                key={item.id}
-                label={item.label}
-                areaCode={item.areaCode}
-                phoneNumber={item.phoneNumber}
-              />
-            ));
           } else if (!hiddenFields.includes(key)) {
             return (
               <ProfileDataCard
@@ -88,7 +134,9 @@ const ProfileCard = ({ contact, editable }: ProfileCardProps) => {
               />
             );
           }
+          return null;
         })}
+      {footer}
     </ScrollView>
   );
 };

@@ -1,8 +1,10 @@
 import type { Database } from '@nozbe/watermelondb';
 import Metadata from '../models/Metadata';
 import { Q } from '@nozbe/watermelondb';
+// Metadata tracks the same entities the outbox queues, so it shares the union.
+import type { OutboxEntity } from '../../app/types/sync';
 
-export async function readMeta(db: Database, entity: string, entityId: string) {
+export async function readMeta(db: Database, entity: OutboxEntity, entityId: string) {
   const rows = await db
     .get<Metadata>('metadata')
     .query(Q.where('entity', entity), Q.where('entity_id', entityId))
@@ -18,7 +20,7 @@ export async function readMeta(db: Database, entity: string, entityId: string) {
 
 export async function upsertMeta(
   db: Database,
-  entity: string,
+  entity: OutboxEntity,
   entityId: string,
   now = Date.now()
 ) {
@@ -43,7 +45,7 @@ export async function upsertMeta(
 
 export async function markDeletedMeta(
   db: Database,
-  entity: string,
+  entity: OutboxEntity,
   entityId: string,
   now = Date.now()
 ) {

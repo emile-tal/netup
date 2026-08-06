@@ -10,8 +10,11 @@ export default class Reminder extends Model {
   } as const;
 
   @text('title') title!: string;
-  @field('date_ts') dateTs!: number;
-  @text('contact_id') contactId!: string;
+  // Optional to match the schema: an undated reminder is a plain to-do.
+  @field('date_ts') dateTs?: number;
+  // Optional to match the schema: a reminder need not belong to a contact.
+  @text('contact_id') contactId?: string;
+  @field('completed') completed?: boolean;
 
   @relation('contacts', 'contact_id') contact!: Contact;
 }

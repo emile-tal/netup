@@ -1,5 +1,7 @@
+// Dev-only fixtures. `contactsData` seeds a fresh dev DB (see db/devTools.ts) and
+// `myContactData` still backs the "My Profile" tab, which has no owner-profile storage
+// yet. Reminders are no longer mocked here — they come from the DB.
 import { Contact } from './types/contacts';
-import { Reminder } from './types/reminders';
 
 export const contactsData: Contact[] = [
   {
@@ -564,89 +566,3 @@ export const myContactData: Contact = {
   },
   notes: 'My own contact information.',
 };
-
-export const myRemindersData: Reminder[] = [
-  {
-    id: '1',
-    contactId: '1',
-    title: 'Reach out to Alice',
-    date: new Date('2025-09-10'),
-  },
-  {
-    id: '2',
-    contactId: '1',
-    title: 'Reach out to Alice',
-    date: new Date('2025-09-12'),
-  },
-  {
-    id: '3',
-    contactId: '2',
-    title: 'Reach out to Minh',
-    date: new Date('2025-09-10'),
-  },
-  {
-    id: '4',
-    contactId: '3',
-    title: 'Reach out to Carlos',
-    date: new Date('2026-01-01'),
-  },
-  {
-    id: '5',
-    contactId: '3',
-    title: 'Reach out to Carlos',
-    date: new Date('2025-06-21'),
-  },
-  {
-    id: '6',
-    contactId: '1',
-    title: 'Reach out to Alice',
-    date: new Date('2025-09-18'),
-  },
-  {
-    id: '7',
-    contactId: '1',
-    title: 'Reach out to Alice',
-    date: new Date('2025-09-19'),
-  },
-  {
-    id: '8',
-    contactId: '3',
-    title: 'Reach out to Carlos',
-    date: new Date('2025-09-20'),
-  },
-  {
-    id: '9',
-    contactId: '2',
-    title: 'Reach out to Minh',
-    date: new Date('2025-09-21'),
-  },
-  {
-    id: '10',
-    contactId: '4',
-    title: 'Reach out to Fatima',
-    date: new Date('2025-09-22'),
-  },
-  {
-    id: '11',
-    contactId: '5',
-    title: 'Reach out to Chukwuemeka',
-    date: new Date('2025-09-23'),
-  },
-  {
-    id: '12',
-    contactId: '5',
-    title: 'Reach out to Chukwuemeka',
-    date: new Date('2025-09-24'),
-  },
-  {
-    id: '13',
-    contactId: '2',
-    title: 'Reach out to Minh',
-    date: new Date('2025-09-25'),
-  },
-  {
-    id: '14',
-    contactId: '4',
-    title: 'Undated reminder',
-  },
-];

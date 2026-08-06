@@ -17,8 +17,9 @@ Key constraints / intent:
   **WatermelonDB** (SQLite) database. There is **no backend yet**.
 - The schema is **sync-ready**: `metadata` (timestamps + soft-delete) and `outbox`
   (queued ops) tables already exist so a real backend can be bolted on later.
-- Most of the **frontend is built**; the schema **normalization pass is done** (v2, see §7)
-  but the **data wiring (writes) is still incomplete** (see TODOs / Bugs).
+- Most of the **frontend is built**, the schema **normalization pass is done** (v3, see §7),
+  and the **contact + reminder write flows are wired end to end**. What is left is listed
+  in §9 (chiefly the owner profile, the sync push loop, and tests).
 
 ---
 
@@ -69,37 +70,40 @@ app/
   _layout.tsx              # Root: SafeAreaProvider + DBRootProvider + Stack
   (tabs)/
     _layout.tsx            # Bottom tabs: Contacts / Calendar / Agenda / Profile
-    index.tsx              # Contacts list (observes summaries + search) ✅ wired
-    calendar.tsx           # Wraps InfiniteListCalendar
-    agenda.tsx             # Reminder list grouped by date
-    profile.tsx            # "My profile" via ProfileCard (placeholder data)
+    index.tsx              # Contacts list — owns the ONE contacts subscription ✅
+    calendar.tsx           # Header + InfiniteListCalendar + AddReminderModal ✅
+    agenda.tsx             # Reminder list grouped by date (from the DB) ✅
+    profile.tsx            # "My profile" — ⚠️ still placeholder-backed (see §9.1)
   contacts/
-    [id].tsx               # View one contact (read-only) ✅ read wired
-    add.tsx                # ⚠️ STUB — header only, no form, no save
-    edit/[id].tsx          # ⚠️ Edit screen — save button is a no-op
+    [id].tsx               # View one contact + its reminders ✅
+    add.tsx                # New-contact form (ProfileCard editable → createContact) ✅
+    edit/[id].tsx          # Edit + delete (→ updateContact / deleteContact) ✅
   components/
     Header.tsx             # Reusable 3-column header (back / title / action)
+    ScreenLayout.tsx       # Safe area + standard screen padding
+    ScreenState.tsx        # Shared loading / error+retry / empty rendering
     SearchBar.tsx          # Generic search input
-    contacts/              # ContactLink, ContactSearchBar (debounced)
-    profile/               # ProfileCard + per-field sub-cards + utils.ts
+    contacts/              # ContactLink, ContactSearchBar, ContactReminders
+    profile/               # ProfileCard + per-field sub-cards + CardRow + utils.ts
     calendar/              # InfiniteListCalendar, MonthView, DayCell, AddReminderModal
     agenda/                # AgendaItem
+  hooks/                   # useContact, useReminders, useDebouncedCallback
+  utils/                   # date.ts, string.ts, id.ts
   stores/                  # zustand: contactStore, calendarStore, contactEditStore
-  types/                   # Frontend DTOs: contacts.ts, reminders.ts
-  icons/                   # SVG icon components
-  placeholderData.ts       # ⚠️ Seed/mock data — still wired into calendar/agenda/profile
+  types/                   # Frontend DTOs: contacts.ts, reminders.ts, sync.ts
+  icons/                   # SVG icon components (all take an optional `cssClass`)
+  placeholderData.ts       # ⚠️ Dev fixtures only: DB seed + the profile tab
 
 db/
   makeDatabase.ts          # SQLiteAdapter + schema + migrations + uuid generator
   dbProvider.tsx           # DBRootProvider + useDB() hook
-  schema.ts                # appSchema v1 (8 tables)
-  migrations.ts            # empty (v1)
+  schema.ts                # appSchema v3 (7 tables)
+  migrations.ts            # v3 step (adds reminders.completed); see §7 for why no v2
   models/                  # WatermelonDB model classes (one per table)
-  repo/                    # ✅ THE MIDDLE LAYER: contacts.ts, metadata.ts
-  devTools.ts              # resetAndSeed(db) for dev
+  repo/                    # ✅ THE MIDDLE LAYER: contacts.ts, reminders.ts,
+                           #    metadata.ts, outbox.ts
+  devTools.ts              # resetAndSeed(db) for dev (contacts + relative-dated reminders)
 ```
-
-There is currently **no `app/utils/`** — create it when extracting shared helpers.
 
 ---
 
@@ -135,11 +139,19 @@ WatermelonDB (SQLite)       db/models/*, db/schema.ts
 ```ts
 export async function readContact(db, id): Promise<Contact | null> { /* maps model→DTO */ }
 export async function createContact(db, input) {
-  await db.write(async () => { /* create root + children atomically */ await upsertMeta(...) });
+  await db.write(async () => {
+    /* create root + children atomically */
+    await upsertMeta(db, 'contact', id);              // timestamps / soft-delete
+    await enqueueOutbox(db, 'contact', 'create', dto); // change log, same transaction
+  });
 }
 ```
-Add new persistence as repo functions (e.g. `updateContact`, `deleteContact`,
-`createReminder`) — never inline DB queries in screens.
+Every write goes through this shape: mutate, `upsertMeta`/`markDeletedMeta`, then
+`enqueueOutbox` — all inside one `db.write`. Never inline DB queries in screens.
+
+**Child-collection diffing** — `syncChildren` in `db/repo/contacts.ts` reconciles an
+incoming DTO array against the DB rows (destroy removed, update matched, insert unknown
+ids). `updateContact` only touches a collection when that key is present on `changes`.
 
 **Reactive read + cleanup** — `app/(tabs)/index.tsx`:
 ```ts
@@ -149,18 +161,29 @@ useEffect(() => {
 }, [db]);
 ```
 
-**Debounced search** — `app/components/contacts/ContactSearchBar.tsx` (timeoutRef +
-subscriptionRef + cleanup). Reuse this shape for any debounced live query.
+**Debouncing** — `app/hooks/useDebouncedCallback.ts`. Stable identity, latest callback in
+a ref, cancels on unmount. Used by the search bar and the agenda title field; reach for it
+rather than hand-rolling a `timeoutRef`.
+
+**One subscription per collection** — the contacts list screen owns the only
+`observeContactSummaries` subscription and re-runs it when `contactStore.searchQuery`
+changes; `useReminders()` does the same for the calendar store. Don't add a second
+subscription that writes the same store slice.
 
 **Config-driven rendering** — `app/components/profile/ProfileCard.tsx` iterates contact
 entries and delegates to typed sub-cards, using `profile/utils.ts` (`hiddenFields`,
-`sortOrder`) to control visibility/order. Extend the config, not the JSX.
+`sortOrder`) to control visibility/order. Extend the config, not the JSX. All cards share
+`CardRow` (label column + value column + optional remove control), and `editable` flows
+from the screen down to every card.
+
+**Screen shell** — wrap screens in `ScreenLayout`, and render loading/error/empty through
+`ScreenState` (with `onRetry`) instead of bespoke per-screen states.
 
 **State** — small zustand stores in `app/stores/`. **DB access** — always via `useDB()`.
 
 ---
 
-## 7. Database schema reference (`db/schema.ts`, v2)
+## 7. Database schema reference (`db/schema.ts`, v3)
 
 `contacts` is the aggregate root. Child tables carry an indexed `contact_id`.
 
@@ -170,7 +193,7 @@ entries and delegates to typed sub-cards, using `profile/utils.ts` (`hiddenField
 | `emails` | label, email, contact_id | belongs_to contact |
 | `phoneNumbers` | label, areaCode?, phoneNumber, contact_id | belongs_to contact |
 | `addresses` | label, street?, city?, state?, zip?, country?, contact_id | belongs_to contact |
-| `reminders` | title, date_ts (epoch-ms number), contact_id? | belongs_to contact |
+| `reminders` | title, date_ts? (epoch-ms), contact_id?, completed? | belongs_to contact |
 | `metadata` | entity, entity_id, created_at, updated_at, deleted_at? | sync side-table (no FK) |
 | `outbox` | entity, op, payload_json, queued_at, attempts | sync queue |
 
@@ -192,10 +215,20 @@ addresses/reminders.
 - **`outbox.entity`/`op`** constrained via `OutboxEntity`/`OutboxOp` unions in
   `app/types/sync.ts`.
 
+**Added in v3:**
+- **`reminders.completed`** (optional boolean) backs the agenda check-off. Additive, so
+  `migrations.ts` migrates v2 → v3 in place with `addColumns`.
+
+**Migration policy (`db/migrations.ts`):**
+- There is deliberately **no `toVersion: 2` entry**. v2 folded a table and changed column
+  types, which WatermelonDB migrations cannot express. Leaving 1 → 2 uncovered makes the
+  SQLite adapter log *"Migrations not available for this version range, resetting database
+  instead"* and rebuild from the schema — the correct outcome for a v1 dev DB. An empty
+  `steps: []` entry would be **worse than nothing**: it reports a successful migration
+  while leaving `contacts` without `firstMetDate`/`firstMetLocation`.
+
 **Still open:**
 - No uniqueness constraints on emails/phones (duplicates allowed) — confirm if intended.
-- v2 is not in-place migratable (folded table + type changes); `migrations.ts` is empty
-  and dev DBs must be reset (`resetAndSeed`).
 
 ---
 
@@ -213,64 +246,64 @@ addresses/reminders.
 
 ## 9. High-level TODOs (prioritized for deploy)
 
-1. ~~**DB normalization pass**~~ ✅ DONE (schema v2) — firstMeeting folded into `contacts`,
-   dates standardized to epoch-ms, `@children` typed, optional fields aligned, cascade
-   delete added (`deleteContact`), `outbox.entity`/`op` enum-constrained. v2 requires a dev
-   DB reset (`migrations.ts` left empty — not in-place migratable). See §7.
-2. ~~**Complete the contacts repo**~~ ✅ DONE — `createContact`, `updateContact(db, id, changes)`
-   (scalar + firstMeeting; child collections not diffed yet), and `deleteContact(db, id)`
-   (cascade) all exist in `db/repo/contacts.ts`.
-3. **Wire the write flows:**
-   - Build the contact form in `app/contacts/add.tsx` and call `createContact`. ⬅️ still TODO
-   - ~~Make `app/contacts/edit/[id].tsx` actually save~~ ✅ DONE — seeds `workingContact` from
-     `readContact`, saves via `updateContact` on the check action, navigates to the view.
-   - ~~Make `ProfileCard` forward `editable` to sub-cards and bind inputs to the store~~ ✅ DONE
-     for scalar fields (Key/Text/Number cards via `contactEditStore.updateField`).
-     **Still read-only in edit mode:** emails, phones, addresses, firstMeeting (the store has
-     no child-collection editing yet — wire alongside `updateContact` child diffing).
-4. **Reminders data layer** — create `db/repo/reminders.ts` (create/read/update/delete +
-   observe), then wire `calendar/`, `agenda/`, and `AddReminderModal` to it. Stop reading
-   `app/placeholderData.ts` in production paths.
-5. **Sync plumbing** — enqueue an `outbox` op and `upsertMeta`/`markDeletedMeta` on every
-   write (create/update/delete), so the future backend has a complete change log.
-6. **DRY extractions** — `app/utils/date.ts` (date formatting used in 3+ places),
-   `capitalize()` string helper, a `useContact(id)` hook (dedupe fetch effect across
-   `[id].tsx` and `edit/[id].tsx`), a `ScreenLayout` wrapper, and a shared `CardRow`
-   container for the profile cards.
-7. **UX hardening** — real loading + error states (replace `console.error`-only handling
-   and `readContact`'s silent `.catch(() => null)`); user-facing feedback on failures.
-8. **Cleanup** — remove `placeholderData` once real data flows; standardize icon props
-   (`cssClass`).
+Items 1–8 of the previous list are **done**: schema normalization (v2/v3), the full
+contacts repo, both write flows (add + edit + delete, including child collections), the
+reminders data layer, outbox/metadata on every write, the DRY extractions, loading/error
+states, and the icon-prop cleanup. What remains:
+
+1. **Owner profile** — `app/(tabs)/profile.tsx` is the last placeholder-backed screen.
+   It needs a storage decision before it can be wired: a singleton `profile` table, an
+   `isMe` flag on `contacts` (list queries would then have to exclude it), or app
+   settings. Deliberately left undecided — it changes contact semantics.
+2. **Sync push loop** — the change log is complete (`metadata` + `outbox` on every write,
+   `readOutboxQueue`/`clearOutboxEntries` in `db/repo/outbox.ts`), but nothing drains it.
+   Add the transport when a backend exists.
+3. **Tests** — there is no test setup at all. The repo layer (child diffing in
+   `syncChildren`, date parsing in `app/utils/date.ts`) is the highest-value target.
+4. **Contact picker for reminders** — a reminder can be linked to a contact only from
+   that contact's screen (`ContactReminders`). The calendar/agenda "+" creates unlinked
+   reminders.
+5. **Date entry** — `firstMeeting` and the reminder modal use `YYYY-MM-DD` text inputs
+   with validation, not a picker (no date-picker dependency is installed).
+6. **Theme constants** — colors are still hardcoded Tailwind classes across components.
 
 ---
 
 ## 10. Known bugs / issues
 
-- ~~**Edit mode crashes** / **`editable` is inert** / **Edit save is a no-op** / **Dead
-  store**~~ ✅ FIXED — the edit flow is wired: `contactEditStore` now exposes a type-safe
-  `updateField` + `workingContact`; `ProfileCard` forwards `editable` to the scalar sub-cards
-  which bind to the store; `edit/[id].tsx` saves via `updateContact`. (Child-collection /
-  firstMeeting editing is still not wired — see §9.3.)
-- **Reminders don't persist:** `app/components/agenda/AgendaItem.tsx` (title + completed
-  toggle) and `app/components/calendar/AddReminderModal.tsx` have `TODO` handlers that
-  mutate local state only.
-- **Calendar uses mock data:** `app/components/calendar/DayCell.tsx` / `calendarStore`
-  read from `app/placeholderData.ts`, not the DB.
-- **Silent errors:** `readContact` swallows errors with `.catch(() => null)`; other
-  failures only `console.error` with no UI feedback.
-- **Search handler churn:** `ContactSearchBar.tsx` includes `searchQuery` in its
-  `useCallback` deps, recreating the debounced handler unnecessarily.
+All previously listed bugs are fixed:
+
+- ~~Edit mode inert / save no-op / dead store~~ ✅ the full edit flow is wired, including
+  emails, phones, addresses and firstMeeting (add + edit + remove).
+- ~~Reminders don't persist~~ ✅ `AgendaItem` (debounced title, completed toggle, delete)
+  and `AddReminderModal` write through `db/repo/reminders.ts`.
+- ~~Calendar uses mock data~~ ✅ `DayCell` reads `calendarStore.remindersByDay`, which
+  `useReminders()` fills from `observeReminderSummaries`.
+- ~~Silent errors~~ ✅ `readContact` queries by id instead of `.catch(() => null)`;
+  screens render `ScreenState` (loading / error + retry / empty) and write failures
+  raise an `Alert`.
+- ~~Search handler churn~~ ✅ debouncing moved into `useDebouncedCallback`; the search bar
+  only pushes the query into `contactStore`, and the list screen owns the single
+  subscription (previously two subscriptions raced over `contactSummaries`).
+
+Open, but not defects: **none of this has been run on a device** — the repo has no tests
+and WatermelonDB needs a native build, so the changes are typechecked and linted only.
 
 ---
 
 ## 11. Gotchas
 
-- `app/placeholderData.ts` is still wired into calendar / agenda / profile — treat any
-  data there as **mock**, not real persisted data.
-- `contactEditStore` exists but is **not used yet** — wire it when implementing edit.
-- Dev seeding: `db/devTools.ts` exports `resetAndSeed(db)` (calls
-  `db.unsafeResetDatabase()` then seeds) — used from the contacts list screen during dev.
+- `app/placeholderData.ts` is now **dev fixtures only**: `contactsData` seeds the dev DB
+  and `myContactData` backs the profile tab. Reminders are seeded relative to today in
+  `db/devTools.ts` so a fresh dev DB always has visible calendar entries.
+- **Never hand zustand a selector that builds a new object/array per call** (e.g.
+  `s => s.map[key] ?? []`) — select the stable container and derive outside the selector,
+  as `DayCell` does. Otherwise `useSyncExternalStore` re-renders in a loop.
+- `enqueueOutbox` must be called **inside** the surrounding `db.write(...)` so the queued
+  op and the change it describes land in one transaction.
+- Child rows created in the edit store carry a **client-side uuid**; `syncChildren` treats
+  an id it doesn't find in the DB as an insert and lets WatermelonDB assign the real id.
+- The "Reset and Seed Database" control on the contacts list is `__DEV__`-gated.
 - WatermelonDB requires a native build; **Expo Go won't work**.
 - The root `README.md` is still the default Expo boilerplate; **this `CLAUDE.md` is the
   source of truth** for project context.
-```

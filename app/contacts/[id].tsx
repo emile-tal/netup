@@ -1,41 +1,39 @@
-import { SafeAreaView, Text, View } from 'react-native';
-import { useEffect, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
-import { Contact } from '../types/contacts';
+import ContactReminders from '../components/contacts/ContactReminders';
 import EditIcon from '../icons/EditIcon';
 import Header from '../components/Header';
 import ProfileCard from '../components/profile/ProfileCard';
-import { readContact } from '@/db/repo/contacts';
-import { useDB } from '@/db/dbProvider';
+import ScreenLayout from '../components/ScreenLayout';
+import ScreenState from '../components/ScreenState';
+import { useContact } from '../hooks/useContact';
 
 const ContactsPage = () => {
-  const { id } = useLocalSearchParams();
+  const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const db = useDB();
-  const [contact, setContact] = useState<Contact | null>(null);
-
-  useEffect(() => {
-    const fetchContact = async () => {
-      const contact = await readContact(db, id as string);
-      if (contact) {
-        setContact(contact);
-      }
-    };
-    fetchContact();
-  }, [id, db]);
+  const { contact, loading, error, reload } = useContact(id);
 
   return (
-    <SafeAreaView>
-      <View className='items-start justify-center px-4 mb-4'>
-        <Header
-          backButton
-          actionIcon={<EditIcon />}
-          onActionPress={() => router.navigate(`/contacts/edit/${id}`)}
+    <ScreenLayout>
+      <Header
+        backButton
+        actionIcon={contact ? <EditIcon /> : undefined}
+        onActionPress={() => router.navigate(`/contacts/edit/${id}`)}
+      />
+      {contact ? (
+        <ProfileCard
+          contact={contact}
+          footer={<ContactReminders contactId={contact.id} />}
         />
-        {contact ? <ProfileCard contact={contact} /> : <Text>Contact not found</Text>}
-      </View>
-    </SafeAreaView>
+      ) : (
+        <ScreenState
+          loading={loading}
+          error={error}
+          emptyMessage='Contact not found'
+          onRetry={reload}
+        />
+      )}
+    </ScreenLayout>
   );
 };
 

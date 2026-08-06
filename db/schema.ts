@@ -1,7 +1,7 @@
 import { appSchema, tableSchema } from '@nozbe/watermelondb';
 
 export const schema = appSchema({
-  version: 2,
+  version: 3,
   tables: [
     tableSchema({
       name: 'contacts',
@@ -55,6 +55,8 @@ export const schema = appSchema({
         { name: 'title', type: 'string', isIndexed: true },
         { name: 'date_ts', type: 'number', isIndexed: true, isOptional: true },
         { name: 'contact_id', type: 'string', isIndexed: true, isOptional: true },
+        // v3: agenda check-off state.
+        { name: 'completed', type: 'boolean', isOptional: true },
       ],
     }),
     tableSchema({

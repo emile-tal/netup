@@ -1,32 +1,28 @@
-import { SafeAreaView } from 'react-native';
+import AddIcon from '../icons/AddIcon';
+import AddReminderModal from '../components/calendar/AddReminderModal';
+import Header from '../components/Header';
 import InfiniteListCalendar from '../components/calendar/InfiniteListCalendar';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useReminders } from '../hooks/useReminders';
+import { useState } from 'react';
 
 const CalendarPage = () => {
-  // const [year, setYear] = useState(new Date().getFullYear());
-  // const [month, setMonth] = useState(new Date().getMonth());
-
-  // const maxYear = 2050;
-  // const minYear = 2000;
-
-  // const years = useMemo(
-  //   () => Array.from({ length: maxYear - minYear + 1 }, (_, i) => minYear + i),
-  //   [minYear, maxYear]
-  // );
-  // const months = useMemo(() => Array.from({ length: 12 }, (_, i) => i), []);
-
-  // const getItemLayout = (data: any, index: number) => ({});
+  // Keeps the calendar store in sync with the reminders table; DayCell reads from it.
+  useReminders();
+  const [addVisible, setAddVisible] = useState(false);
 
   return (
-    <SafeAreaView>
+    <SafeAreaView className='flex-1 bg-white'>
+      <Header
+        title='Calendar'
+        actionIcon={<AddIcon />}
+        onActionPress={() => setAddVisible(true)}
+      />
       <InfiniteListCalendar />
-      {/* <View className='px-4'>
-        <FlatList
-          data={months}
-          renderItem={({ item }) => <MonthView month={item} year={year} />}
-          keyExtractor={item => item.toString()}
-        />
-        <MonthView month={month} year={year} />
-      </View> */}
+      <AddReminderModal
+        visible={addVisible}
+        onRequestClose={() => setAddVisible(false)}
+      />
     </SafeAreaView>
   );
 };
