@@ -1,4 +1,5 @@
-import { Alert, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { confirmDestructive, notify } from '../../utils/alert';
 import { deleteReminder, updateReminder } from '@/db/repo/reminders';
 import { useEffect, useState } from 'react';
 
@@ -24,7 +25,7 @@ const AgendaItem = ({ item }: AgendaItemProps) => {
   const persistTitle = useDebouncedCallback((text: string) => {
     updateReminder(db, item.id, { title: text }).catch(error => {
       console.error('Error updating reminder title:', error);
-      Alert.alert('Could not save', 'The reminder title was not updated.');
+      notify('Could not save', 'The reminder title was not updated.');
     });
   });
 
@@ -38,26 +39,23 @@ const AgendaItem = ({ item }: AgendaItemProps) => {
       await updateReminder(db, item.id, { completed: !item.completed });
     } catch (error) {
       console.error('Error updating reminder:', error);
-      Alert.alert('Could not save', 'The reminder was not updated.');
+      notify('Could not save', 'The reminder was not updated.');
     }
   };
 
   const confirmDelete = () => {
-    Alert.alert('Delete reminder', `Remove "${item.title}"?`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await deleteReminder(db, item.id);
-          } catch (error) {
-            console.error('Error deleting reminder:', error);
-            Alert.alert('Could not delete', 'The reminder was not deleted.');
-          }
-        },
+    confirmDestructive({
+      title: 'Delete reminder',
+      message: `Remove "${item.title}"?`,
+      onConfirm: async () => {
+        try {
+          await deleteReminder(db, item.id);
+        } catch (error) {
+          console.error('Error deleting reminder:', error);
+          notify('Could not delete', 'The reminder was not deleted.');
+        }
       },
-    ]);
+    });
   };
 
   return (

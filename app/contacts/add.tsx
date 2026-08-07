@@ -1,13 +1,13 @@
 import { emptyContact, useContactEditStore } from '../stores/contactEditStore';
 import { useEffect, useState } from 'react';
 
-import { Alert } from 'react-native';
 import CheckIcon from '../icons/CheckIcon';
 import Header from '../components/Header';
 import ProfileCard from '../components/profile/ProfileCard';
 import ScreenLayout from '../components/ScreenLayout';
 import XIcon from '../icons/XIcon';
 import { createContact } from '@/db/repo/contacts';
+import { notify } from '../utils/alert';
 import { useDB } from '@/db/dbProvider';
 import { useRouter } from 'expo-router';
 
@@ -32,7 +32,7 @@ const AddContactPage = () => {
     if (!working || saving) return;
 
     if (!working.firstName.trim() && !working.lastName.trim()) {
-      Alert.alert('Name required', 'Enter a first or last name before saving.');
+      notify('Name required', 'Enter a first or last name before saving.');
       return;
     }
 
@@ -42,7 +42,7 @@ const AddContactPage = () => {
       router.replace(`/contacts/${created.id}`);
     } catch (err) {
       console.error('Error creating contact:', err);
-      Alert.alert('Could not save', 'The contact was not created. Please try again.');
+      notify('Could not save', 'The contact was not created. Please try again.');
     } finally {
       setSaving(false);
     }

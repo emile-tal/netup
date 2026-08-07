@@ -44,13 +44,36 @@ const InfiniteListCalendar = () => {
     [data, today]
   );
 
+  // Key of the row to keep under the viewport after a prepend, and a latch so only one
+  // prepend is in flight at a time.
+  const anchorKeyRef = useRef<string | null>(null);
+  const prependingRef = useRef(false);
+  // Prepending before the initial scroll lands would walk the list backwards forever.
+  const readyRef = useRef(false);
+
   // Scroll to the center on mount (post-render to avoid “out of range”)
   useEffect(() => {
     requestAnimationFrame(() => {
       if (centerIndex >= 0)
         listRef.current?.scrollToIndex({ index: centerIndex, animated: false });
+      readyRef.current = true;
     });
   }, []); // run once
+
+  // maintainVisibleContentPosition is iOS-only, so everywhere else a prepend leaves the
+  // viewport pinned at offset 0 — which re-triggers the prepend. Restore the anchor row
+  // manually once the new rows are in `data`.
+  useEffect(() => {
+    const key = anchorKeyRef.current;
+    if (!key) return;
+    anchorKeyRef.current = null;
+
+    const index = data.findIndex(r => r.key === key);
+    requestAnimationFrame(() => {
+      if (index > 0) listRef.current?.scrollToIndex({ index, animated: false });
+      prependingRef.current = false;
+    });
+  }, [data]);
 
   // Append 2 months when near end
   const onEndReached = useCallback(() => {
@@ -76,10 +99,11 @@ const InfiniteListCalendar = () => {
   }, []);
 
   // Prepend 2 months when near start
-  const maybePrepend = useCallback(() => {
-    // iOS can keep view stable automatically:
-    // maintainVisibleContentPosition handles most jumps when prepending
-    // For Android, we can adjust offset after state update if needed.
+  const maybePrepend = useCallback((anchorKey: string) => {
+    if (!readyRef.current || prependingRef.current) return;
+    prependingRef.current = true;
+    anchorKeyRef.current = anchorKey;
+
     setData(prev => {
       const first = prev[0];
       const b1 = addMonths(first, -1);
@@ -102,11 +126,14 @@ const InfiniteListCalendar = () => {
 
   // Use viewability to decide when we’re “near start”
   const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
-    // If the first real item index in viewport is small, prepend.
-    const minIndex = Math.min(...viewableItems.map((v: any) => v.index ?? Infinity));
-    if (minIndex <= 2) {
-      // tweak threshold
-      maybePrepend();
+    if (!viewableItems.length) return;
+    // If the first real item index in viewport is small, prepend — anchored on that row
+    // so the restore effect can put it back under the viewport.
+    const first = viewableItems.reduce((a: any, b: any) =>
+      (a.index ?? Infinity) <= (b.index ?? Infinity) ? a : b
+    );
+    if ((first.index ?? Infinity) <= 2) {
+      maybePrepend(first.item.key);
     }
   }).current;
 
@@ -121,6 +148,17 @@ const InfiniteListCalendar = () => {
       // Forward growth
       onEndReachedThreshold={0.5}
       onEndReached={onEndReached}
+      // Rows aren't measured yet on the first frame (notably on web); retry once measured
+      // instead of surfacing a scroll error.
+      onScrollToIndexFailed={({ index, averageItemLength }) => {
+        listRef.current?.scrollToOffset({
+          offset: index * averageItemLength,
+          animated: false,
+        });
+        requestAnimationFrame(() =>
+          listRef.current?.scrollToIndex({ index, animated: false })
+        );
+      }}
       // Backward growth
       onViewableItemsChanged={onViewableItemsChanged}
       viewabilityConfig={viewabilityConfig}

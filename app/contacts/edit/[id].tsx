@@ -1,4 +1,5 @@
-import { Alert, Text, TouchableOpacity } from 'react-native';
+import { Text, TouchableOpacity } from 'react-native';
+import { confirmDestructive, notify } from '../../utils/alert';
 import { deleteContact, updateContact } from '@/db/repo/contacts';
 import { useEffect, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -36,33 +37,26 @@ const EditContactPage = () => {
       router.navigate(`/contacts/${id}`);
     } catch (err) {
       console.error('Error saving contact:', err);
-      Alert.alert('Could not save', 'Your changes were not saved. Please try again.');
+      notify('Could not save', 'Your changes were not saved. Please try again.');
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = () => {
-    Alert.alert(
-      'Delete contact',
-      'This removes the contact and everything attached to it.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteContact(db, id);
-              router.navigate('/');
-            } catch (err) {
-              console.error('Error deleting contact:', err);
-              Alert.alert('Could not delete', 'The contact was not deleted.');
-            }
-          },
-        },
-      ]
-    );
+    confirmDestructive({
+      title: 'Delete contact',
+      message: 'This removes the contact and everything attached to it.',
+      onConfirm: async () => {
+        try {
+          await deleteContact(db, id);
+          router.navigate('/');
+        } catch (err) {
+          console.error('Error deleting contact:', err);
+          notify('Could not delete', 'The contact was not deleted.');
+        }
+      },
+    });
   };
 
   return (

@@ -1,5 +1,4 @@
 import {
-  Alert,
   Modal,
   Pressable,
   Text,
@@ -11,6 +10,7 @@ import { parseDateInputValue, toDateInputValue } from '@/app/utils/date';
 import { useEffect, useRef, useState } from 'react';
 
 import { createReminder } from '@/db/repo/reminders';
+import { notify } from '@/app/utils/alert';
 import useCalendarStore from '@/app/stores/calendarStore';
 import { useDB } from '@/db/dbProvider';
 
@@ -57,11 +57,11 @@ const AddReminderModal = ({
   const handleAdd = async () => {
     if (saving) return;
     if (!reminderTitle.trim()) {
-      Alert.alert('Title required', 'Give the reminder a title.');
+      notify('Title required', 'Give the reminder a title.');
       return;
     }
     if (invalidDate) {
-      Alert.alert('Invalid date', 'Use the format YYYY-MM-DD, or clear the date.');
+      notify('Invalid date', 'Use the format YYYY-MM-DD, or clear the date.');
       return;
     }
 
@@ -75,7 +75,7 @@ const AddReminderModal = ({
       reset();
     } catch (error) {
       console.error('Error creating reminder:', error);
-      Alert.alert('Could not save', 'The reminder was not created. Please try again.');
+      notify('Could not save', 'The reminder was not created. Please try again.');
     } finally {
       setSaving(false);
     }

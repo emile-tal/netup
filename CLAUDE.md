@@ -55,11 +55,16 @@ Key constraints / intent:
 npm install
 npm run ios       # or: npm run android / npm run web
 npm run start     # expo start
+npm run build:web # production web export → dist/
 npm run lint
 ```
 
 > Note: WatermelonDB needs a native build (it is **not** Expo Go compatible). Use a dev
 > build / simulator, not Expo Go.
+
+**Web is supported.** The app runs in a browser via `react-native-web`, with the whole
+data layer intact — see §12. No hosting is configured yet; `npm run build:web` produces a
+static `dist/` ready for one.
 
 ---
 
@@ -286,8 +291,15 @@ All previously listed bugs are fixed:
   only pushes the query into `contactStore`, and the list screen owns the single
   subscription (previously two subscriptions raced over `contactSummaries`).
 
+Fixed during the web-enablement pass:
+
+- ~~`InfiniteListCalendar` prepends forever~~ ✅ the calendar used to open decades in the
+  past on web/Android; prepends are now anchored and latched (see §12).
+
 Open, but not defects: **none of this has been run on a device** — the repo has no tests
-and WatermelonDB needs a native build, so the changes are typechecked and linted only.
+and WatermelonDB needs a native build, so the native changes are typechecked and linted
+only. The **web build has been exercised end to end in a browser** (create/edit/delete
+contact, create/complete/delete reminder, persistence across reload).
 
 ---
 
@@ -307,3 +319,47 @@ and WatermelonDB needs a native build, so the changes are typechecked and linted
 - WatermelonDB requires a native build; **Expo Go won't work**.
 - The root `README.md` is still the default Expo boilerplate; **this `CLAUDE.md` is the
   source of truth** for project context.
+
+---
+
+## 12. Web platform
+
+The app runs in a browser. Platform differences are handled with **Metro platform-suffixed
+files** (`foo.web.ts` wins over `foo.ts` on web) rather than `Platform.OS` branches — there
+are still zero `Platform.OS` checks in `app/` or `db/`. When you add a web-divergent
+behaviour, add a `.web.ts` sibling with an **identical exported signature**; TypeScript only
+ever typechecks the non-suffixed file.
+
+| Concern | Native | Web |
+|---------|--------|-----|
+| DB adapter (`db/adapter.ts` / `.web.ts`) | `SQLiteAdapter` | `LokiJSAdapter` → IndexedDB |
+| Alerts (`app/utils/alert.ts` / `.web.ts`) | `Alert.alert` | `window.alert` / `window.confirm` |
+
+- **`db/makeDatabase.ts` is platform-agnostic** — it calls `makeAdapter(dbName)` and owns
+  only `setGenerator` + `modelClasses`. `db/dbProvider.tsx` is unchanged.
+- **Web data is a separate database.** LokiJS persists to IndexedDB per-origin (store
+  `app-anon`); it never sees the device's SQLite data. They converge only once the sync push
+  loop (§9.2) and a backend exist.
+- **Never use `Alert` from react-native directly** — it is an unimplemented no-op under
+  react-native-web, which silently swallows errors *and* destructive confirmations. Use
+  `notify()` / `confirmDestructive()` from `app/utils/alert`.
+- **`web.output` is `"single"` (SPA), not `"static"`.** Static rendering prerenders every
+  route in Node, where `window` doesn't exist — `expo-crypto.randomUUID()` (called eagerly by
+  `setGenerator`) and IndexedDB both blow up. This app is client-only and has no SEO surface,
+  so an SPA is the correct mode. Do not switch it back.
+- **`babel.config.js` needs `@babel/plugin-transform-class-properties` in `loose` mode.**
+  Legacy decorators rewrite WatermelonDB's `@text('x') x!: string` model fields into
+  initialized ones; without loose mode the TypeScript transform rejects that on the web/node
+  targets ("Definitely assigned fields cannot be initialized here"). Native never hit this.
+- **Prefer `useWindowDimensions()` over `Dimensions.get('window')`** — the latter is captured
+  once and never re-measures on browser resize. `MonthView` also clamps against
+  `MAX_GRID_WIDTH`/`MAX_GRID_HEIGHT` so the calendar doesn't stretch on a desktop viewport.
+- **`maintainVisibleContentPosition` is iOS-only.** `InfiniteListCalendar` prepends months
+  when you scroll near the top; on web and Android the viewport stays pinned at offset 0
+  after a prepend, which used to re-trigger it forever (the calendar opened decades in the
+  past). It now anchors on the first viewable row's key and restores it via `scrollToIndex`
+  after each prepend, gated by `readyRef`/`prependingRef`. Keep those guards.
+- Unused native-only deps (`react-native-webview`, `expo-symbols`, `expo-haptics`,
+  `expo-blur`, `expo-dev-client`) have no import sites, so Metro never bundles them for web.
+- The `__DEV__`-gated seed button does not appear in a production export; add data through
+  the UI when testing `dist/`.

@@ -1,7 +1,10 @@
-import { Dimensions, FlatList, Text, View } from 'react-native';
+import { FlatList, Text, View, useWindowDimensions } from 'react-native';
 
 import DayCell from './DayCell';
 import { useMemo } from 'react';
+
+const MAX_GRID_WIDTH = 640;
+const MAX_GRID_HEIGHT = 900;
 
 interface MonthViewProps {
   year: number;
@@ -13,12 +16,15 @@ const MonthView = ({ year, month }: MonthViewProps) => {
     [year, month]
   );
   const firstDayOfMonth = new Date(year, month, 1).getDay() - 1;
-  const screenWidth = Dimensions.get('window').width;
-  const screenHeight = Dimensions.get('window').height;
+  // useWindowDimensions (not Dimensions.get) so the grid reflows when a browser window
+  // is resized — Dimensions.get is captured once at render on web.
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const title = new Date(year, month, 1).toLocaleString('en-US', { month: 'long' });
 
-  const columnWidth = (screenWidth - 36) / 7;
-  const rowHeight = (screenHeight - 200) / 6;
+  // Cap against a phone-sized viewport so the grid doesn't stretch into huge cells on a
+  // desktop browser; on any handset these clamps never bind.
+  const columnWidth = (Math.min(screenWidth, MAX_GRID_WIDTH) - 36) / 7;
+  const rowHeight = (Math.min(screenHeight, MAX_GRID_HEIGHT) - 200) / 6;
 
   const cells = Array.from({ length: firstDayOfMonth + daysInMonth }, (_, k) =>
     k < firstDayOfMonth ? '' : String(k - firstDayOfMonth + 1)
