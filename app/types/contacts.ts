@@ -26,6 +26,12 @@ export interface FirstMeeting {
   location?: string;
 }
 
+/**
+ * The 5-15-50 circles. The number *is* the intended size of the circle, and it drives the
+ * outreach cadence — see `app/utils/outreach.ts`.
+ */
+export type Tier = 5 | 15 | 50;
+
 export interface Contact {
   id: string;
   firstName: string;
@@ -33,8 +39,13 @@ export interface Contact {
   company: string;
   jobTitle: string;
   alumni: string;
-  relationshipStrength: number;
-  outreachGoal: number;
+  /** Which 5-15-50 circle the contact sits in; `null` while unassigned. */
+  tier: Tier | null;
+  /**
+   * When the user last reached out. Set by completing a generated outreach reminder,
+   * and the anchor the next one is counted from.
+   */
+  lastOutreachAt?: Date;
   source: string;
   notes: string;
   emails: Email[];

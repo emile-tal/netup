@@ -15,6 +15,8 @@ export default class Reminder extends Model {
   // Optional to match the schema: a reminder need not belong to a contact.
   @text('contact_id') contactId?: string;
   @field('completed') completed?: boolean;
+  // 'auto' | 'manual'. Optional in the schema; absent means manual.
+  @text('origin') origin?: string;
 
   @relation('contacts', 'contact_id') contact!: Contact;
 }

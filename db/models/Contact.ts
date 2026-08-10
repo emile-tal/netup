@@ -20,8 +20,11 @@ export default class Contact extends Model {
   @text('company') company?: string;
   @text('jobTitle') jobTitle?: string;
   @text('alumni') alumni?: string;
-  @field('relationshipStrength') relationshipStrength?: number;
-  @field('outreachGoal') outreachGoal?: number;
+  // The 5-15-50 circle: 5 | 15 | 50, absent while unassigned. Narrow it with
+  // `toTier()` from app/utils/outreach before using it as a Tier.
+  @field('tier') tier?: number;
+  // Epoch-ms, like every other date column.
+  @field('lastOutreachAt') lastOutreachAt?: number;
   @text('source') source?: string;
   @text('notes') notes?: string;
 

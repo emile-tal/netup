@@ -6,6 +6,8 @@ export const hiddenFields = [
   'company',
   'createdAt',
   'updatedAt',
+  // Rendered by ProfileTierCard alongside the circle it belongs to, not as its own row.
+  'lastOutreachAt',
 ];
 
 export const sortOrder = [
@@ -13,8 +15,7 @@ export const sortOrder = [
   'phones',
   'addresses',
   'firstMeeting',
-  'relationshipStrength',
-  'outreachGoal',
+  'tier',
   'notes',
   'alumni',
   'source',

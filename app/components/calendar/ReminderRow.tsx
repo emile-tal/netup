@@ -12,11 +12,16 @@ import { noFocusRing } from '../../utils/inputStyle';
 import { useDB } from '@/db/dbProvider';
 import { useDebouncedCallback } from '../../hooks/useDebouncedCallback';
 
-interface AgendaItemProps {
+interface ReminderRowProps {
   item: ReminderSummary;
 }
 
-const AgendaItem = ({ item }: AgendaItemProps) => {
+/**
+ * One editable reminder: check off, rename, delete. Generated 5-15-50 reminders are
+ * ordinary rows here — checking one off records the outreach and queues the next touch,
+ * deleting one skips that touch (see `db/repo/outreach.ts`).
+ */
+const ReminderRow = ({ item }: ReminderRowProps) => {
   const db = useDB();
   // Local echo of the title so typing stays responsive; the DB write is debounced and
   // the observable pushes the canonical value back in.
@@ -62,7 +67,14 @@ const AgendaItem = ({ item }: AgendaItemProps) => {
     });
   };
 
-  const contactName = fullName(item.contactFirstName, item.contactLastName);
+  // Marks the row as one the cadence maintains, so a rewritten date or title reads as a
+  // deliberate override rather than a note that mysteriously reappears.
+  const secondary = [
+    fullName(item.contactFirstName, item.contactLastName),
+    item.origin === 'auto' ? '5-15-50' : '',
+  ]
+    .filter(Boolean)
+    .join(' · ');
 
   return (
     <View className='w-full flex-row items-center gap-3 px-4 py-3 hover:bg-surface-muted'>
@@ -91,8 +103,8 @@ const AgendaItem = ({ item }: AgendaItemProps) => {
             { textDecorationLine: item.completed ? 'line-through' : 'none' },
           ]}
         />
-        {contactName.length > 0 && (
-          <Text className='mt-0.5 text-[12px] text-ink-subtle'>{contactName}</Text>
+        {secondary.length > 0 && (
+          <Text className='mt-0.5 text-[12px] text-ink-subtle'>{secondary}</Text>
         )}
       </View>
 
@@ -108,4 +120,4 @@ const AgendaItem = ({ item }: AgendaItemProps) => {
   );
 };
 
-export default AgendaItem;
+export default ReminderRow;

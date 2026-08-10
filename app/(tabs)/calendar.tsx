@@ -3,6 +3,7 @@ import AddReminderModal from '../components/calendar/AddReminderModal';
 import Header from '../components/Header';
 import InfiniteListCalendar from '../components/calendar/InfiniteListCalendar';
 import ScreenLayout from '../components/ScreenLayout';
+import SelectedDayPanel from '../components/calendar/SelectedDayPanel';
 import WeekdayHeader from '../components/calendar/WeekdayHeader';
 import { GRID_BORDER_WIDTH } from '../components/calendar/weekdays';
 import { View } from 'react-native';
@@ -40,6 +41,7 @@ const CalendarPage = () => {
           </>
         )}
       </View>
+      <SelectedDayPanel />
       <AddReminderModal
         visible={addVisible}
         onRequestClose={() => setAddVisible(false)}

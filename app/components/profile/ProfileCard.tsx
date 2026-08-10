@@ -1,4 +1,4 @@
-import { Address, Contact, Email, FirstMeeting, Phone } from '../../types/contacts';
+import { Address, Contact, Email, FirstMeeting, Phone, Tier } from '../../types/contacts';
 import { hiddenFields, sortOrder } from './utils';
 
 import AddItemButton from './AddItemButton';
@@ -9,8 +9,8 @@ import ProfileDataCard from './ProfileTextDataCard';
 import ProfileEmailCard from './ProfileEmailCard';
 import ProfileFirstMeetingCard from './ProfileFirstMeetingCard';
 import ProfileKeyDataCard from './ProfileKeyDataCard';
-import ProfileNumberDataCard from './ProfileNumberDataCard';
 import ProfilePhoneCard from './ProfilePhoneCard';
+import ProfileTierCard from './ProfileTierCard';
 import { ScrollView, View } from 'react-native';
 import { humanizeKey } from '../../utils/string';
 import { useContactEditStore } from '../../stores/contactEditStore';
@@ -92,28 +92,12 @@ const ProfileCard = ({ contact, editable, footer }: ProfileCardProps) => {
       );
     }
 
-    if (key === 'relationshipStrength') {
+    if (key === 'tier') {
       return (
-        <ProfileNumberDataCard
+        <ProfileTierCard
           key={key}
-          label='Relationship'
-          value={value as number}
-          unit='/5'
-          scale={5}
-          fieldKey='relationshipStrength'
-          editable={editable}
-        />
-      );
-    }
-
-    if (key === 'outreachGoal') {
-      return (
-        <ProfileNumberDataCard
-          key={key}
-          label='Outreach goal'
-          value={value as number}
-          unit='/year'
-          fieldKey='outreachGoal'
+          tier={value as Tier | null}
+          lastOutreachAt={source.lastOutreachAt}
           editable={editable}
         />
       );

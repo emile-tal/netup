@@ -21,6 +21,15 @@ export const colors = {
 
   amber: '#F9AB00',
 
+  // One colour per 5-15-50 circle, so a contact's circle reads the same on the board, the
+  // profile and the calendar. Mapped to Tailwind classes in `app/utils/outreach.ts`.
+  tierInner: '#1A73E8',
+  tierInnerLight: '#E8F0FD',
+  tierTrusted: '#0F9D96',
+  tierTrustedLight: '#E3F4F3',
+  tierStrategic: '#B26A00',
+  tierStrategicLight: '#FEF3D9',
+
   ink: '#1A1A1A',
   inkMuted: '#5F6368',
   inkSubtle: '#9AA0A6',

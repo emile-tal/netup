@@ -2,6 +2,7 @@ import type { Database } from '@nozbe/watermelondb';
 import { Q } from '@nozbe/watermelondb';
 import { from, map, of, switchMap } from 'rxjs';
 import type {
+  ReminderOrigin,
   Reminder as ReminderType,
   ReminderInput,
   ReminderSummary,
@@ -10,6 +11,7 @@ import Contact from '../models/Contact';
 import Reminder from '../models/Reminder';
 import { markDeletedMeta, upsertMeta } from './metadata';
 import { enqueueOutbox } from './outbox';
+import { recordOutreach, scheduleNextOutreach } from './outreach';
 
 function toDTO(row: Reminder): ReminderType {
   return {
@@ -18,6 +20,8 @@ function toDTO(row: Reminder): ReminderType {
     title: row.title,
     date: row.dateTs ? new Date(row.dateTs) : undefined,
     completed: row.completed ?? false,
+    // Rows predating the origin column, and every hand-written one, are manual.
+    origin: row.origin === 'auto' ? 'auto' : ('manual' as ReminderOrigin),
   };
 }
 
@@ -94,6 +98,7 @@ export async function createReminder(db: Database, input: ReminderInput) {
       r.dateTs = input.date?.getTime();
       r.contactId = input.contactId;
       r.completed = input.completed ?? false;
+      r.origin = input.origin ?? 'manual';
     });
 
     await upsertMeta(db, 'reminder', created.id);
@@ -110,6 +115,9 @@ export async function updateReminder(
 ) {
   await db.write(async () => {
     const reminder = await db.get<Reminder>('reminders').find(id);
+    const wasCompleted = !!reminder.completed;
+    const isAuto = reminder.origin === 'auto';
+    const contactId = reminder.contactId;
 
     await reminder.update((r: Reminder) => {
       if (changes.title !== undefined) r.title = changes.title;
@@ -120,15 +128,34 @@ export async function updateReminder(
 
     await upsertMeta(db, 'reminder', id);
     await enqueueOutbox(db, 'reminder', 'update', { id, ...changes });
+
+    // Ticking off a generated reminder is the signal that the user actually reached out:
+    // it resets the 5-15-50 clock and queues the next touch. `wasCompleted` keeps a
+    // re-toggle from advancing the schedule twice.
+    if (isAuto && contactId && changes.completed === true && !wasCompleted) {
+      await recordOutreach(db, contactId, new Date());
+    }
   });
 }
 
 export async function deleteReminder(db: Database, id: string) {
   await db.write(async () => {
     const rows = await db.get<Reminder>('reminders').query(Q.where('id', id)).fetch();
-    if (rows[0]) await rows[0].destroyPermanently();
+    const row = rows[0];
+    const isAuto = row?.origin === 'auto';
+    const contactId = row?.contactId;
+
+    if (row) await row.destroyPermanently();
 
     await markDeletedMeta(db, 'reminder', id);
     await enqueueOutbox(db, 'reminder', 'delete', { id });
+
+    // A generated reminder can't simply be deleted while the contact is still in a
+    // circle — a cadence with no next touch isn't a cadence. Deleting one therefore means
+    // "skip this touch", and the next is scheduled a full cadence from today. Dropping
+    // the contact from the 5-15-50 on the board is how you stop the nudges for good.
+    if (isAuto && contactId) {
+      await scheduleNextOutreach(db, contactId, new Date());
+    }
   });
 }

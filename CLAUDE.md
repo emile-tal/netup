@@ -17,9 +17,13 @@ Key constraints / intent:
   **WatermelonDB** (SQLite) database. There is **no backend yet**.
 - The schema is **sync-ready**: `metadata` (timestamps + soft-delete) and `outbox`
   (queued ops) tables already exist so a real backend can be bolted on later.
-- Most of the **frontend is built**, the schema **normalization pass is done** (v3, see §7),
+- Most of the **frontend is built**, the schema **normalization pass is done** (v4, see §7),
   and the **contact + reminder write flows are wired end to end**. What is left is listed
-  in §9 (chiefly the owner profile, the sync push loop, and tests).
+  in §9 (chiefly the sync push loop and tests).
+- The organising idea is **5-15-50**: every contact sits in one of three circles — inner
+  circle (5), trusted network (15), strategic network (50) — or none. The circle *is* the
+  relationship model (it replaced the old `relationshipStrength`/`outreachGoal` pair) and it
+  drives a generated outreach cadence: every 2 weeks / monthly / quarterly. See §14.
 
 ---
 
@@ -77,9 +81,8 @@ app/
   (tabs)/
     _layout.tsx            # Tabs + tabBarPosition, driven by the md breakpoint (§13)
     index.tsx              # Contacts list — owns the ONE contacts subscription ✅
-    calendar.tsx           # Header + InfiniteListCalendar + AddReminderModal ✅
-    agenda.tsx             # Reminder list grouped by date (from the DB) ✅
-    profile.tsx            # "My profile" — ⚠️ still placeholder-backed (see §9.1)
+    calendar.tsx           # Month grid + SelectedDayPanel (the editable day list) ✅
+    network.tsx            # The 5-15-50 board — drag contacts between circles ✅
   contacts/
     [id].tsx               # View one contact + its reminders ✅
     add.tsx                # New-contact form (ProfileCard editable → createContact) ✅
@@ -97,27 +100,35 @@ app/
     nav/                   # NavBar (picks) → SideNav | BottomNav → NavItem
     contacts/              # ContactLink, ContactSearchBar, ContactReminders
     profile/               # ProfileCard + per-field sub-cards + CardRow + utils.ts
-    calendar/              # InfiniteListCalendar, MonthView, DayCell,
-                           #   WeekdayHeader, weekdays.ts, AddReminderModal
-    agenda/                # AgendaSection, AgendaItem
+    calendar/              # InfiniteListCalendar, MonthView, DayCell, WeekdayHeader,
+                           #   weekdays.ts, AddReminderModal, SelectedDayPanel,
+                           #   ReminderRow (one editable reminder)
+    TierPill.tsx           # A contact's 5-15-50 circle as a pill (board + profile)
   hooks/                   # useContact, useReminders, useDebouncedCallback,
-                           #   useIsWideLayout, useNavDestinations
-  utils/                   # date.ts, string.ts, id.ts, avatar.ts, reminders.ts,
+                           #   useIsWideLayout, useNavDestinations, useTierBoard,
+                           #   useOutreachRepair
+  utils/                   # date.ts, string.ts, id.ts, avatar.ts, outreach.ts,
                            #   inputStyle.ts(+.web)
   stores/                  # zustand: contactStore, calendarStore, contactEditStore
   types/                   # Frontend DTOs: contacts.ts, reminders.ts, sync.ts
   icons/                   # SVG icons — all take `{ color?, size? }` (see types.ts)
-  placeholderData.ts       # ⚠️ Dev fixtures only: DB seed + the profile tab
+  placeholderData.ts       # ⚠️ Dev fixtures only: the DB seed
+
+components/                # ⚠️ NOT under app/ — see §12. The 5-15-50 board only.
+  network/                 # TierBoard.tsx (native) | TierBoard.web.tsx (dnd-kit),
+                           #   TierColumn, ContactChip, DraggableChip, DropZone,
+                           #   DndKitChip.web / DndKitColumn.web, board.ts (shared plumbing)
 
 db/
   makeDatabase.ts          # SQLiteAdapter + schema + migrations + uuid generator
   dbProvider.tsx           # DBRootProvider + useDB() hook
-  schema.ts                # appSchema v3 (7 tables)
-  migrations.ts            # v3 step (adds reminders.completed); see §7 for why no v2
+  schema.ts                # appSchema v4 (7 tables)
+  migrations.ts            # v4 step only; see §7 for why older ranges are uncovered
   models/                  # WatermelonDB model classes (one per table)
   repo/                    # ✅ THE MIDDLE LAYER: contacts.ts, reminders.ts,
-                           #    metadata.ts, outbox.ts
-  devTools.ts              # resetAndSeed(db) for dev (contacts + relative-dated reminders)
+                           #    outreach.ts (the 5-15-50 cadence), metadata.ts, outbox.ts
+  devTools.ts              # resetAndSeed(db): tiered contacts (which generate their own
+                           #   outreach reminders) + a few manual, relative-dated ones
 ```
 
 ---
@@ -177,13 +188,17 @@ useEffect(() => {
 ```
 
 **Debouncing** — `app/hooks/useDebouncedCallback.ts`. Stable identity, latest callback in
-a ref, cancels on unmount. Used by the search bar and the agenda title field; reach for it
+a ref, cancels on unmount. Used by the search bar and the reminder title field; reach for it
 rather than hand-rolling a `timeoutRef`.
 
 **One subscription per collection** — the contacts list screen owns the only
 `observeContactSummaries` subscription and re-runs it when `contactStore.searchQuery`
 changes; `useReminders()` does the same for the calendar store. Don't add a second
 subscription that writes the same store slice.
+
+**Tier-driven writes** — the 5-15-50 circle is never written directly. `setContactTier`
+(board) and `updateContact` (edit form) both funnel through `scheduleNextOutreach`, so the
+generated reminder can't drift from the tier. See §14.
 
 **Config-driven rendering** — `app/components/profile/ProfileCard.tsx` iterates contact
 entries through one `renderEntry` function and delegates to typed sub-cards, using
@@ -199,17 +214,17 @@ optional remove control), and `editable` flows from the screen down to every car
 
 ---
 
-## 7. Database schema reference (`db/schema.ts`, v3)
+## 7. Database schema reference (`db/schema.ts`, v4)
 
 `contacts` is the aggregate root. Child tables carry an indexed `contact_id`.
 
 | Table | Key columns | Relationship |
 |-------|-------------|--------------|
-| `contacts` | firstName, lastName, company, jobTitle, alumni, relationshipStrength, outreachGoal, source, notes, firstMetDate (epoch-ms), firstMetLocation | root |
+| `contacts` | firstName, lastName, company, jobTitle, alumni, **tier** (5\|15\|50, null = unassigned), **lastOutreachAt** (epoch-ms), source, notes, firstMetDate (epoch-ms), firstMetLocation | root |
 | `emails` | label, email, contact_id | belongs_to contact |
 | `phoneNumbers` | label, areaCode?, phoneNumber, contact_id | belongs_to contact |
 | `addresses` | label, street?, city?, state?, zip?, country?, contact_id | belongs_to contact |
-| `reminders` | title, date_ts? (epoch-ms), contact_id?, completed? | belongs_to contact |
+| `reminders` | title, date_ts? (epoch-ms), contact_id?, completed?, **origin** ('auto'\|'manual') | belongs_to contact |
 | `metadata` | entity, entity_id, created_at, updated_at, deleted_at? | sync side-table (no FK) |
 | `outbox` | entity, op, payload_json, queued_at, attempts | sync queue |
 
@@ -232,16 +247,31 @@ addresses/reminders.
   `app/types/sync.ts`.
 
 **Added in v3:**
-- **`reminders.completed`** (optional boolean) backs the agenda check-off. Additive, so
-  `migrations.ts` migrates v2 → v3 in place with `addColumns`.
+- **`reminders.completed`** (optional boolean) backs the check-off in the calendar's day
+  panel.
+
+**Added in v4 (the 5-15-50 pass):**
+- **`contacts.tier`** (`5 | 15 | 50`, optional, indexed) **replaces `relationshipStrength`
+  and `outreachGoal`**, which are gone. Narrow the raw column with `toTier()` from
+  `app/utils/outreach.ts` before treating it as a `Tier`.
+- **`contacts.lastOutreachAt`** (epoch-ms) — the anchor the generated cadence counts from.
+  Written only by completing a generated reminder, never typed in.
+- **`reminders.origin`** (`'auto' | 'manual'`, absent = manual). This is the load-bearing
+  column: it is how a completion knows to advance the cadence, and how the board tells the
+  rows it owns from the ones the user wrote. See §14.
 
 **Migration policy (`db/migrations.ts`):**
-- There is deliberately **no `toVersion: 2` entry**. v2 folded a table and changed column
-  types, which WatermelonDB migrations cannot express. Leaving 1 → 2 uncovered makes the
-  SQLite adapter log *"Migrations not available for this version range, resetting database
-  instead"* and rebuild from the schema — the correct outcome for a v1 dev DB. An empty
-  `steps: []` entry would be **worse than nothing**: it reports a successful migration
-  while leaving `contacts` without `firstMetDate`/`firstMetLocation`.
+- **The highest `toVersion` must equal `schema.version`.** This is not optional: the LokiJS
+  (web) adapter **throws** *"Missing migration"* at startup when the range falls short,
+  where the SQLite adapter would quietly reset. An empty `migrations: []` alongside a v4
+  schema is a hard crash on web — verified the hard way.
+- Only **v3 → v4** is covered, and only its additive half (`addColumns` for `tier`,
+  `lastOutreachAt`, `origin`). The dropped columns cannot be expressed, so they linger
+  unread in a migrated v3 DB — harmless, since the schema is what the repo reads.
+- Older ranges are deliberately uncovered: v2 folded a table *and* changed column types.
+  A v1/v2 dev DB therefore falls outside the range and the adapter rebuilds from the
+  schema — the right outcome pre-production. An entry with `steps: []` would be **worse
+  than nothing**: it reports success while leaving the columns missing.
 
 **Still open:**
 - No uniqueness constraints on emails/phones (duplicates allowed) — confirm if intended.
@@ -263,27 +293,24 @@ addresses/reminders.
 
 ## 9. High-level TODOs (prioritized for deploy)
 
-Items 1–8 of the previous list are **done**: schema normalization (v2/v3), the full
+Items 1–8 of the previous list are **done**: schema normalization (v2/v3/v4), the full
 contacts repo, both write flows (add + edit + delete, including child collections), the
 reminders data layer, outbox/metadata on every write, the DRY extractions, loading/error
 states, and the icon-prop cleanup. The **design system + responsive shell pass** (§13) is
 also done. What remains:
 
-1. **Owner profile** — `app/(tabs)/profile.tsx` is the last placeholder-backed screen.
-   It needs a storage decision before it can be wired: a singleton `profile` table, an
-   `isMe` flag on `contacts` (list queries would then have to exclude it), or app
-   settings. Deliberately left undecided — it changes contact semantics.
-2. **Sync push loop** — the change log is complete (`metadata` + `outbox` on every write,
+1. **Sync push loop** — the change log is complete (`metadata` + `outbox` on every write,
    `readOutboxQueue`/`clearOutboxEntries` in `db/repo/outbox.ts`), but nothing drains it.
    Add the transport when a backend exists.
-3. **Tests** — there is no test setup at all. The repo layer (child diffing in
-   `syncChildren`, date parsing in `app/utils/date.ts`) is the highest-value target.
-4. **Contact picker for reminders** — a reminder can be linked to a contact only from
-   that contact's screen (`ContactReminders`). The calendar/agenda "+" creates unlinked
-   reminders.
-5. **Date entry** — `firstMeeting` and the reminder modal use `YYYY-MM-DD` text inputs
+2. **Tests** — there is no test setup at all. The highest-value targets are the repo
+   layer's pure logic: `nextOutreachDate`/`addMonths` in `app/utils/outreach.ts` (month-end
+   clamping, the past-date clamp), child diffing in `syncChildren`, and date parsing in
+   `app/utils/date.ts`.
+3. **Contact picker for reminders** — a reminder can be linked to a contact only from
+   that contact's screen (`ContactReminders`). The calendar "+" creates unlinked reminders.
+4. **Date entry** — `firstMeeting` and the reminder modal use `YYYY-MM-DD` text inputs
    with validation, not a picker (no date-picker dependency is installed).
-6. **Contact routes sit outside `(tabs)`** — `app/contacts/*` are Stack screens, so on
+5. **Contact routes sit outside `(tabs)`** — `app/contacts/*` are Stack screens, so on
    desktop the side rail disappears while viewing/editing a contact. Moving them under
    `app/(tabs)/contacts/` (with `href: null`) would keep the rail, at the cost of the
    push transition on mobile. Left undecided: it is a routing/URL change, not styling.
@@ -296,13 +323,16 @@ All previously listed bugs are fixed:
 
 - ~~Edit mode inert / save no-op / dead store~~ ✅ the full edit flow is wired, including
   emails, phones, addresses and firstMeeting (add + edit + remove).
-- ~~Reminders don't persist~~ ✅ `AgendaItem` (debounced title, completed toggle, delete)
+- ~~Reminders don't persist~~ ✅ `ReminderRow` (debounced title, completed toggle, delete)
   and `AddReminderModal` write through `db/repo/reminders.ts`.
 - ~~Calendar uses mock data~~ ✅ `DayCell` reads `calendarStore.remindersByDay`, which
   `useReminders()` fills from `observeReminderSummaries`.
 - ~~Silent errors~~ ✅ `readContact` queries by id instead of `.catch(() => null)`;
   screens render `ScreenState` (loading / error + retry / empty) and write failures
   raise an `Alert`.
+- ~~`observeContactSummaries` used `observe()`~~ ✅ it uses `observeWithColumns`; plain
+  `observe` only re-emits when the matching row *set* changes, so a rename or a tier move
+  never reached the list or the board.
 - ~~Search handler churn~~ ✅ debouncing moved into `useDebouncedCallback`; the search bar
   only pushes the query into `contactStore`, and the list screen owns the single
   subscription (previously two subscriptions raced over `contactSummaries`).
@@ -313,17 +343,28 @@ Fixed during the web-enablement pass:
   past on web/Android; prepends are now anchored and latched (see §12).
 
 Open, but not defects: **none of this has been run on a device** — the repo has no tests
-and WatermelonDB needs a native build, so the native changes are typechecked and linted
-only. The **web build has been exercised end to end in a browser** (create/edit/delete
-contact, create/complete/delete reminder, persistence across reload).
+and WatermelonDB needs a native build, so the native changes are typechecked, linted, and
+verified to *bundle* (`expo export -p ios`) only. In particular **the native drag gesture
+in `components/network/DraggableChip.tsx` has never been touched by a finger.**
+
+The **web build has been exercised end to end in a browser**: create/edit/delete contact,
+create/complete/delete reminder, persistence across reload, and every 5-15-50 transition
+(assign, move between circles, unassign, complete → cadence reset, delete → skip).
+
+Known web-only gap: `TierPill`'s `accessibilityState={{ checked }}` does not surface as
+`aria-checked` under react-native-web, so the tier picker's selected option is conveyed
+visually but not to a screen reader. Correct on native.
 
 ---
 
 ## 11. Gotchas
 
-- `app/placeholderData.ts` is now **dev fixtures only**: `contactsData` seeds the dev DB
-  and `myContactData` backs the profile tab. Reminders are seeded relative to today in
-  `db/devTools.ts` so a fresh dev DB always has visible calendar entries.
+- `app/placeholderData.ts` is **dev fixtures only**: `contactsData` seeds the dev DB. The
+  fixtures carry a `tier`, so seeding generates real outreach reminders through
+  `createContact`; `db/devTools.ts` adds a few *manual* ones dated relative to today, so a
+  fresh dev DB exercises both origins and always has visible calendar entries.
+- **`db.unsafeResetDatabase()` must be called inside a `db.write(...)`.** Outside one it
+  throws, and `resetAndSeed` then *appends* to the existing rows instead of replacing them.
 - **Never hand zustand a selector that builds a new object/array per call** (e.g.
   `s => s.map[key] ?? []`) — select the stable container and derive outside the selector,
   as `DayCell` does. Otherwise `useSyncExternalStore` re-renders in a loop.
@@ -335,6 +376,8 @@ contact, create/complete/delete reminder, persistence across reload).
 - WatermelonDB requires a native build; **Expo Go won't work**.
 - The root `README.md` is still the default Expo boilerplate; **this `CLAUDE.md` is the
   source of truth** for project context.
+- **Never write a generated outreach reminder by hand.** Go through `db/repo/outreach.ts`
+  so `origin`, `lastOutreachAt` and the one-open-reminder invariant stay consistent (§14).
 
 ---
 
@@ -346,10 +389,32 @@ are still zero `Platform.OS` checks in `app/` or `db/`. When you add a web-diver
 behaviour, add a `.web.ts` sibling with an **identical exported signature**; TypeScript only
 ever typechecks the non-suffixed file.
 
+> **A platform suffix decides which file wins an import. It does not keep a file out of a
+> bundle.** expo-router builds its route table with `require.context` over the *whole* `app/`
+> directory, so every `.ts`/`.tsx` under `app/` is bundled on every platform — `.web.tsx`
+> included, whether or not anything imports it. (That is also why the dev server logs
+> "Route ... is missing the required default export" for every non-route file under `app/`.)
+>
+> This matters when a web-only file pulls in a **web-only dependency**. `TierBoard.web.tsx`
+> imports dnd-kit, which imports react-dom; left under `app/components/`, it put both into
+> the iOS bundle (confirmed via `expo export -p ios --source-maps`). And it cannot simply be
+> renamed, because platform resolution requires the pair to share a directory and basename.
+>
+> Hence the top-level **`components/`** directory: the 5-15-50 board lives there so the
+> `.web` half is outside the router's sweep. The iOS bundle now contains only the native
+> board. If you add another platform-split component with a platform-only dependency, put it
+> in `components/`, not `app/components/`, and remember `tailwind.config.js` scans **both**
+> trees.
+
 | Concern | Native | Web |
 |---------|--------|-----|
 | DB adapter (`db/adapter.ts` / `.web.ts`) | `SQLiteAdapter` | `LokiJSAdapter` → IndexedDB |
 | Alerts (`app/utils/alert.ts` / `.web.ts`) | `Alert.alert` | `window.alert` / `window.confirm` |
+| 5-15-50 drag (`components/network/TierBoard.tsx` / `.web.tsx`) | gesture-handler pan + measured drop zones | dnd-kit (`DndContext`, `DragOverlay`) |
+
+- **Missing migrations behave differently per adapter.** `LokiJSAdapter` throws; `SQLiteAdapter`
+  resets. See the migration policy in §7 — the web adapter is the strict one, so develop
+  against it.
 
 - **`db/makeDatabase.ts` is platform-agnostic** — it calls `makeAdapter(dbName)` and owns
   only `setGenerator` + `modelClasses`. `db/dbProvider.tsx` is unchanged.
@@ -393,6 +458,7 @@ a prop needs a colour *string* (SVG `fill`, `placeholderTextColor`, `ActivityInd
 | Token | Use |
 |-------|-----|
 | `brand` / `brand-light` / `brand-dark` | primary actions, selection, links |
+| `tier-inner` / `tier-trusted` / `tier-strategic` (+ `-light`) | the three 5-15-50 circles (§14) |
 | `ink` / `ink-muted` / `ink-subtle` | primary / secondary / tertiary text |
 | `surface` / `surface-muted` / `surface-sunken` | cards / page background / input fills |
 | `line` / `line-strong` | hairline borders |
@@ -441,3 +507,87 @@ React Native is border-box, so the grid's 1px left border eats into the space th
 columns get — `weekdays.ts` owns that arithmetic (`GRID_BORDER_WIDTH`, `gridWidthFor`).
 Get it wrong and the seventh column wraps onto its own row. `mondayFirstOffset` lives
 there too: `getDay() - 1` returns `-1` for a month starting on a Sunday.
+
+---
+
+## 14. The 5-15-50 model & the outreach cadence
+
+Every contact sits in one **circle**, or none:
+
+| Tier | Label | Cadence | Colour token |
+|------|-------|---------|--------------|
+| `5` | Inner circle | every 14 days | `tier-inner` |
+| `15` | Trusted network | monthly | `tier-trusted` |
+| `50` | Strategic network | quarterly | `tier-strategic` |
+| `null` | Unassigned | none | neutral |
+
+`app/utils/outreach.ts` is the single config: labels, cadence intervals, the Tailwind class
+triples (`TIER_STYLES`), `nextOutreachDate()`, `outreachTitle()`. Change a cadence there and
+nothing else needs touching. Months are used for 15/50 rather than a day count so "monthly"
+lands on the same day of the month; `addMonths` clamps so Jan 31 + 1 month is Feb 28.
+
+### How the reminders table gets filled
+
+The cadence is a *function* of `(tier, lastOutreachAt)`, but reminders are *state* — the
+user must be able to retitle, re-date, delete and add. The resolution is a **rolling horizon
+of one**: a tiered contact has exactly one *open* generated reminder at a time.
+
+That is the whole trick. Generated rows are **ordinary `reminders` rows** — same table,
+same DTO, same repo — so the calendar, the day panel, `ReminderRow` and the outbox all work
+on them with no special cases, and a tier change rewrites one row instead of regenerating a
+year of them. `origin` is the only thing that distinguishes them.
+
+`db/repo/outreach.ts` owns the lifecycle:
+
+| Event | What happens | Entry point |
+|-------|--------------|-------------|
+| Assigned a tier | one reminder, a cadence after `lastOutreachAt ?? today` | `setContactTier` (board), `updateContact` (edit form), `createContact` |
+| Completed | `lastOutreachAt = now`, next reminder a cadence after **now** | `recordOutreach`, from `updateReminder` |
+| Deleted | read as "skip this touch": next scheduled a cadence from today | `scheduleNextOutreach`, from `deleteReminder` |
+| Un-tiered | the open reminder is destroyed | `setContactTier(db, id, null)` |
+| Renamed | generated titles refreshed in place | `refreshOutreachTitles` |
+| App launch | gaps filled, orphans removed; **never moves a correct row** | `repairOutreachReminders` via `useOutreachRepair` |
+
+Rules that are easy to break:
+
+- **Completion resets the clock.** Reaching out early moves the whole schedule up; that is
+  the deliberate design, not a rounding artifact.
+- **A generated reminder cannot be permanently deleted while the contact is tiered** — a
+  cadence with no next touch is not a cadence. Delete means *skip*. Dropping the contact out
+  of the 5-15-50 on the board is how you stop the nudges.
+- **Only a tier *change* re-derives the schedule.** `updateContact` compares against the
+  previous tier so saving the edit form never moves a date the user nudged by hand.
+- **`scheduleNextOutreach`, `recordOutreach` and `refreshOutreachTitles` must run inside a
+  `db.write(...)`** — like `enqueueOutbox`, so the reminder lands in the same transaction as
+  the change that caused it. `setContactTier` and `repairOutreachReminders` are the public
+  wrappers that open the write. Do not nest one inside the other.
+- **`completed` is filtered in JS, not SQL.** It is an optional boolean, and the SQLite and
+  LokiJS adapters disagree on how a null compares to `false` (§12). The row counts are
+  single digits.
+
+### The board
+
+`app/(tabs)/network.tsx` → `useTierBoard()` (own subscription, local state — the contacts
+screen owns `contactStore` and keeps it search-filtered, so the board must not share that
+slice) → `TierBoard`.
+
+Three columns plus an **Unassigned** pool, side by side even on a phone (~110px each), and
+the header shows `count/target` so an over- or under-filled circle is obvious. The columns
+are deliberately **not `Card`s and not scrollable**: `Card` clips, and a dragged chip has to
+travel out of the column it started in. The page scrolls as one.
+
+Native drag notes, since none of it has run on a device:
+- `Gesture.Pan().activateAfterLongPress(200).runOnJS(true)` — long-press activation is what
+  lets the board sit inside a vertical `ScrollView` without guessing whether a drag meant
+  *move* or *scroll*. `runOnJS` keeps it off the UI thread, so no reanimated worklets are
+  involved and the movement is a plain `Animated.ValueXY`.
+- Drop zones are **measured** (`DropZone` → `measureInWindow`) and the gesture reports the
+  finger in the same window coordinates, so one `hitTest` works at any width or orientation.
+  `onLayout` re-fires on resize, which keeps the rects honest.
+- React Native `zIndex` only orders siblings *within a parent*, so the board also lifts the
+  whole `DropZone` the dragged chip came from (`elevated`). Without it a chip dragged
+  rightward slides under the next column.
+- `GestureHandlerRootView` in `app/_layout.tsx` is required for any of this.
+
+`null` is a real drop target (the unassigned pool), so the hit-test returns `undefined` for
+"no zone" — check for `undefined`, never falsiness.

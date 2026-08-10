@@ -1,13 +1,13 @@
-import AgendaIcon from '../icons/AgendaIcon';
 import CalendarIcon from '../icons/CalendarIcon';
 import ContactsIcon from '../icons/ContactsIcon';
 import NavBar from '../components/nav/NavBar';
-import ProfileIcon from '../icons/ProfileIcon';
+import NetworkIcon from '../icons/NetworkIcon';
 import { StatusBar } from 'expo-status-bar';
 import { Tabs } from 'expo-router';
 import type { IconProps } from '../icons/types';
 import { colors } from '../theme';
 import { useIsWideLayout } from '../hooks/useIsWideLayout';
+import { useOutreachRepair } from '../hooks/useOutreachRepair';
 
 /** react-navigation hands `tabBarIcon` a tint and size; our icons take exactly those. */
 const tabIcon = (Icon: (props: IconProps) => React.ReactElement) => {
@@ -20,6 +20,9 @@ const tabIcon = (Icon: (props: IconProps) => React.ReactElement) => {
 
 const Layout = () => {
   const isWide = useIsWideLayout();
+  // The tab layout mounts once for the life of the app, so this is where the 5-15-50
+  // schedule gets its one launch-time repair pass.
+  useOutreachRepair();
 
   return (
     <>
@@ -43,12 +46,8 @@ const Layout = () => {
           options={{ title: 'Calendar', tabBarIcon: tabIcon(CalendarIcon) }}
         />
         <Tabs.Screen
-          name='agenda'
-          options={{ title: 'Agenda', tabBarIcon: tabIcon(AgendaIcon) }}
-        />
-        <Tabs.Screen
-          name='profile'
-          options={{ title: 'Profile', tabBarIcon: tabIcon(ProfileIcon) }}
+          name='network'
+          options={{ title: '5-15-50', tabBarIcon: tabIcon(NetworkIcon) }}
         />
       </Tabs>
     </>

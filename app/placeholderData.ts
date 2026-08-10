@@ -1,6 +1,6 @@
-// Dev-only fixtures. `contactsData` seeds a fresh dev DB (see db/devTools.ts) and
-// `myContactData` still backs the "My Profile" tab, which has no owner-profile storage
-// yet. Reminders are no longer mocked here — they come from the DB.
+// Dev-only fixtures: `contactsData` seeds a fresh dev DB (see db/devTools.ts). Nothing
+// else reads this file — reminders come from the DB, and the 5-15-50 reminders for these
+// contacts are generated from their `tier` at seed time.
 import { Contact } from './types/contacts';
 
 export const contactsData: Contact[] = [
@@ -37,8 +37,7 @@ export const contactsData: Contact[] = [
     company: 'Acme Corp',
     jobTitle: 'Software Engineer',
     alumni: 'Harvard University',
-    relationshipStrength: 3,
-    outreachGoal: 10,
+    tier: 15,
     source: 'LinkedIn',
     firstMeeting: {
       id: '1',
@@ -80,8 +79,7 @@ export const contactsData: Contact[] = [
     company: 'Food Blog Media',
     jobTitle: 'Content Creator',
     alumni: 'UC Berkeley',
-    relationshipStrength: 5,
-    outreachGoal: 7,
+    tier: 5,
     source: 'Referral',
     firstMeeting: {
       id: '2',
@@ -123,8 +121,7 @@ export const contactsData: Contact[] = [
     company: 'Global Ventures',
     jobTitle: 'Investor',
     alumni: 'IESE Business School',
-    relationshipStrength: 1,
-    outreachGoal: 9,
+    tier: null,
     source: 'LinkedIn',
     firstMeeting: {
       id: '3',
@@ -167,8 +164,7 @@ export const contactsData: Contact[] = [
     company: 'Tech Mentorship Network',
     jobTitle: 'Senior Advisor',
     alumni: 'Oxford',
-    relationshipStrength: 3,
-    outreachGoal: 8,
+    tier: 15,
     source: 'Conference panel',
     firstMeeting: {
       id: '4',
@@ -207,8 +203,7 @@ export const contactsData: Contact[] = [
     company: 'Startup Hub Africa',
     jobTitle: 'Founder',
     alumni: 'University of Lagos',
-    relationshipStrength: 2,
-    outreachGoal: 3,
+    tier: 50,
     source: 'Twitter',
     firstMeeting: {
       id: '5',
@@ -254,8 +249,7 @@ export const contactsData: Contact[] = [
     company: 'TechCorp',
     jobTitle: 'Product Manager',
     alumni: 'Stanford University',
-    relationshipStrength: 4,
-    outreachGoal: 6,
+    tier: 15,
     source: 'Industry event',
     firstMeeting: {
       id: '6',
@@ -297,8 +291,7 @@ export const contactsData: Contact[] = [
     company: 'Venture Capital Partners',
     jobTitle: 'Partner',
     alumni: 'Wharton School',
-    relationshipStrength: 2,
-    outreachGoal: 5,
+    tier: 50,
     source: 'LinkedIn',
     firstMeeting: {
       id: '7',
@@ -345,8 +338,7 @@ export const contactsData: Contact[] = [
     company: 'Design Studio',
     jobTitle: 'Creative Director',
     alumni: 'Art Center College of Design',
-    relationshipStrength: 5,
-    outreachGoal: 4,
+    tier: 5,
     source: 'Referral',
     firstMeeting: {
       id: '8',
@@ -386,8 +378,7 @@ export const contactsData: Contact[] = [
     company: 'Startup.io',
     jobTitle: 'CTO',
     alumni: 'KAIST',
-    relationshipStrength: 3,
-    outreachGoal: 7,
+    tier: 15,
     source: 'Tech meetup',
     firstMeeting: {
       id: '9',
@@ -429,8 +420,7 @@ export const contactsData: Contact[] = [
     company: 'Strategic Consulting Group',
     jobTitle: 'Senior Consultant',
     alumni: 'Northwestern University',
-    relationshipStrength: 4,
-    outreachGoal: 8,
+    tier: 15,
     source: 'Industry conference',
     firstMeeting: {
       id: '10',
@@ -472,8 +462,7 @@ export const contactsData: Contact[] = [
     company: 'Digital Marketing Agency',
     jobTitle: 'Marketing Director',
     alumni: 'UT Austin',
-    relationshipStrength: 3,
-    outreachGoal: 6,
+    tier: 15,
     source: 'LinkedIn',
     firstMeeting: {
       id: '11',
@@ -513,8 +502,7 @@ export const contactsData: Contact[] = [
     company: 'Innovation Labs Japan',
     jobTitle: 'Research Lead',
     alumni: 'University of Tokyo',
-    relationshipStrength: 2,
-    outreachGoal: 5,
+    tier: 50,
     source: 'Research conference',
     firstMeeting: {
       id: '12',
@@ -524,45 +512,3 @@ export const contactsData: Contact[] = [
     notes: 'Working on cutting-edge AI research. Potential collaboration on ML projects.',
   },
 ];
-
-export const myContactData: Contact = {
-  id: '0',
-  firstName: 'Sathine',
-  lastName: 'Jacquemin',
-  emails: [
-    {
-      id: '0',
-      label: 'Work',
-      email: 'sathine.jacquemin@brollc.com',
-    },
-  ],
-  phones: [
-    {
-      id: '0',
-      label: 'Mobile',
-      areaCode: '1',
-      phoneNumber: '555-0000',
-    },
-  ],
-  addresses: [
-    {
-      id: '0',
-      label: 'Office',
-      street: '100 Company Blvd',
-      city: 'San Francisco',
-      state: 'CA',
-      zip: '94105',
-      country: 'USA',
-    },
-  ],
-  company: 'Bro LLC',
-  jobTitle: 'Chief Executive Officer',
-  alumni: 'Stanford University',
-  relationshipStrength: 10,
-  outreachGoal: 0,
-  source: 'Self',
-  firstMeeting: {
-    id: '0',
-  },
-  notes: 'My own contact information.',
-};

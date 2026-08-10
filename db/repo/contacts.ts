@@ -6,7 +6,9 @@ import type {
   Contact as ContactType,
   Email as EmailType,
   Phone as PhoneType,
+  Tier,
 } from '../../app/types/contacts';
+import { toTier } from '../../app/utils/outreach';
 import Address from '../models/Address';
 import Contact from '../models/Contact';
 import Email from '../models/Email';
@@ -14,15 +16,36 @@ import PhoneNumber from '../models/PhoneNumber';
 import Reminder from '../models/Reminder';
 import { markDeletedMeta, upsertMeta } from './metadata';
 import { enqueueOutbox } from './outbox';
+import {
+  outreachAnchor,
+  refreshOutreachTitles,
+  scheduleNextOutreach,
+} from './outreach';
 
-/** What the contacts list needs to draw a row — never the full aggregate. */
+/**
+ * What the contacts list and the 5-15-50 board need to draw a row — never the full
+ * aggregate. `tier`/`lastOutreachAt` are here so the board can bucket and label contacts
+ * from this one subscription instead of reading each contact.
+ */
 export type ContactSummary = {
   id: string;
   firstName: string;
   lastName: string;
   jobTitle: string;
   company: string;
+  tier: Tier | null;
+  lastOutreachAt?: Date;
 };
+
+/** The columns a summary is built from — what the observable has to watch to stay fresh. */
+const SUMMARY_COLUMNS = [
+  'firstName',
+  'lastName',
+  'jobTitle',
+  'company',
+  'tier',
+  'lastOutreachAt',
+];
 
 export function observeContactSummaries(db: Database, search?: string) {
   const q = (search ?? '').trim();
@@ -41,7 +64,9 @@ export function observeContactSummaries(db: Database, search?: string) {
         .get<Contact>('contacts')
         .query(Q.sortBy('lastName', Q.asc), Q.sortBy('firstName', Q.asc));
 
-  return query.observe().pipe(
+  // `observeWithColumns`, not `observe`: plain `observe` only re-emits when the *set* of
+  // matching rows changes, so a rename or a tier move would not reach the list or board.
+  return query.observeWithColumns(SUMMARY_COLUMNS).pipe(
     map(rows =>
       rows.map(c => ({
         id: c.id,
@@ -49,6 +74,8 @@ export function observeContactSummaries(db: Database, search?: string) {
         lastName: c.lastName ?? '',
         jobTitle: c.jobTitle ?? '',
         company: c.company ?? '',
+        tier: toTier(c.tier),
+        lastOutreachAt: c.lastOutreachAt ? new Date(c.lastOutreachAt) : undefined,
       }))
     )
   );
@@ -74,8 +101,10 @@ export async function readContact(db: Database, id: string): Promise<ContactType
     company: contact.company ?? '',
     jobTitle: contact.jobTitle ?? '',
     alumni: contact.alumni ?? '',
-    relationshipStrength: contact.relationshipStrength ?? 0,
-    outreachGoal: contact.outreachGoal ?? 0,
+    tier: toTier(contact.tier),
+    lastOutreachAt: contact.lastOutreachAt
+      ? new Date(contact.lastOutreachAt)
+      : undefined,
     source: contact.source ?? '',
     notes: contact.notes ?? '',
 
@@ -181,8 +210,8 @@ export async function createContact(db: Database, input: ContactType) {
       c.company = input.company;
       c.jobTitle = input.jobTitle;
       c.alumni = input.alumni;
-      c.relationshipStrength = input.relationshipStrength;
-      c.outreachGoal = input.outreachGoal;
+      c.tier = input.tier ?? undefined;
+      c.lastOutreachAt = input.lastOutreachAt?.getTime();
       c.source = input.source;
       c.notes = input.notes;
       c.firstMetDate = input.firstMeeting?.date?.getTime();
@@ -206,6 +235,13 @@ export async function createContact(db: Database, input: ContactType) {
     ];
 
     await Promise.all(ops);
+
+    // A contact created straight into a circle gets their first touch scheduled here, so
+    // the cadence starts the moment they exist rather than on the next board interaction.
+    if (input.tier) {
+      await scheduleNextOutreach(db, newContact.id, outreachAnchor(newContact));
+    }
+
     await upsertMeta(db, 'contact', newContact.id);
     await enqueueOutbox(db, 'contact', 'create', { ...input, id: newContact.id });
   });
@@ -225,6 +261,10 @@ export async function updateContact(
 ) {
   await db.write(async () => {
     const contact = await db.get<Contact>('contacts').find(id);
+    // Read before the update, so the tier comparison and the cadence anchor below see the
+    // pre-edit state.
+    const previousTier = toTier(contact.tier);
+    const anchor = outreachAnchor(contact);
 
     await contact.update((c: Contact) => {
       if (changes.firstName !== undefined) c.firstName = changes.firstName;
@@ -232,9 +272,9 @@ export async function updateContact(
       if (changes.company !== undefined) c.company = changes.company;
       if (changes.jobTitle !== undefined) c.jobTitle = changes.jobTitle;
       if (changes.alumni !== undefined) c.alumni = changes.alumni;
-      if (changes.relationshipStrength !== undefined)
-        c.relationshipStrength = changes.relationshipStrength;
-      if (changes.outreachGoal !== undefined) c.outreachGoal = changes.outreachGoal;
+      if (changes.tier !== undefined) c.tier = changes.tier ?? undefined;
+      if (changes.lastOutreachAt !== undefined)
+        c.lastOutreachAt = changes.lastOutreachAt?.getTime();
       if (changes.source !== undefined) c.source = changes.source;
       if (changes.notes !== undefined) c.notes = changes.notes;
       if (changes.firstMeeting !== undefined) {
@@ -263,6 +303,14 @@ export async function updateContact(
         changes.addresses,
         applyAddress
       );
+    }
+
+    // Only a tier *change* re-derives the schedule — saving the edit form without
+    // touching the circle must not move a date the user nudged by hand.
+    if (changes.tier !== undefined && changes.tier !== previousTier) {
+      await scheduleNextOutreach(db, id, anchor);
+    } else if (changes.firstName !== undefined || changes.lastName !== undefined) {
+      await refreshOutreachTitles(db, id);
     }
 
     await upsertMeta(db, 'contact', id);
