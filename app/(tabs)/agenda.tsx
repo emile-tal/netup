@@ -1,15 +1,14 @@
-import { FlatList, Text, View } from 'react-native';
-
 import AddIcon from '../icons/AddIcon';
 import AddReminderModal from '../components/calendar/AddReminderModal';
-import AgendaItem from '../components/agenda/AgendaItem';
+import AgendaSection from '../components/agenda/AgendaSection';
+import { FlatList } from 'react-native';
 import Header from '../components/Header';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import ScreenLayout from '../components/ScreenLayout';
 import ScreenState from '../components/ScreenState';
-import { formatRelativeDate } from '../utils/date';
+import { groupRemindersByDay } from '../utils/reminders';
 import useCalendarStore from '../stores/calendarStore';
+import { useMemo, useState } from 'react';
 import { useReminders } from '../hooks/useReminders';
-import { useState } from 'react';
 
 const AgendaPage = () => {
   useReminders();
@@ -19,51 +18,40 @@ const AgendaPage = () => {
   const error = useCalendarStore(state => state.remindersError);
   const [addVisible, setAddVisible] = useState(false);
 
-  return (
-    <SafeAreaView className='flex-1 bg-white'>
-      <View className='flex-1 bg-white'>
-        <Header
-          title='Agenda'
-          actionIcon={<AddIcon />}
-          onActionPress={() => setAddVisible(true)}
-        />
-        {reminders.length === 0 ? (
-          <ScreenState loading={loading} error={error} emptyMessage='No reminders yet' />
-        ) : (
-          <FlatList
-            data={reminders}
-            renderItem={({ item, index }) => {
-              // A date header starts each new day; undated reminders sit above them all.
-              const prevItem = index > 0 ? reminders[index - 1] : null;
-              const showDateHeader =
-                item.date &&
-                (!prevItem ||
-                  !prevItem.date ||
-                  item.date.toDateString() !== prevItem.date.toDateString());
+  const sections = useMemo(() => groupRemindersByDay(reminders), [reminders]);
+  const open = reminders.filter(reminder => !reminder.completed).length;
 
-              return (
-                <View className='w-full'>
-                  {showDateHeader && item.date && (
-                    <View className='px-4 pt-4 pb-2 bg-white'>
-                      <Text className='text-sm font-semibold text-gray-600 uppercase tracking-wide'>
-                        {formatRelativeDate(item.date)}
-                      </Text>
-                    </View>
-                  )}
-                  <AgendaItem item={item} />
-                </View>
-              );
-            }}
-            keyExtractor={item => item.id}
-            contentContainerStyle={{ paddingBottom: 20 }}
-          />
-        )}
-      </View>
+  return (
+    <ScreenLayout>
+      <Header
+        title='Agenda'
+        subtitle={reminders.length > 0 ? `${open} open` : undefined}
+        actionIcon={<AddIcon size={22} color='white' />}
+        actionEmphasis='brand'
+        actionLabel='Add reminder'
+        onActionPress={() => setAddVisible(true)}
+      />
+      {sections.length === 0 ? (
+        <ScreenState
+          loading={loading}
+          error={error}
+          emptyMessage='Nothing scheduled'
+          emptyHint='Add a reminder with the + button.'
+        />
+      ) : (
+        <FlatList
+          data={sections}
+          renderItem={({ item }) => <AgendaSection section={item} />}
+          keyExtractor={section => section.key}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 24 }}
+        />
+      )}
       <AddReminderModal
         visible={addVisible}
         onRequestClose={() => setAddVisible(false)}
       />
-    </SafeAreaView>
+    </ScreenLayout>
   );
 };
 

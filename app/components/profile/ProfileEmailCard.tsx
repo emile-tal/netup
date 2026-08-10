@@ -2,6 +2,8 @@ import { Text, TextInput } from 'react-native';
 
 import CardRow from './CardRow';
 import { Email } from '../../types/contacts';
+import { colors } from '../../theme';
+import { noFocusRing } from '../../utils/inputStyle';
 import { useContactEditStore } from '../../stores/contactEditStore';
 
 interface ProfileEmailCardProps {
@@ -16,7 +18,7 @@ const ProfileEmailCard = ({ email, editable }: ProfileEmailCardProps) => {
   if (!editable) {
     return (
       <CardRow label={email.label}>
-        <Text className='text-base'>{email.email}</Text>
+        <Text className='text-[15px] text-ink'>{email.email}</Text>
       </CardRow>
     );
   }
@@ -31,9 +33,11 @@ const ProfileEmailCard = ({ email, editable }: ProfileEmailCardProps) => {
         value={email.email}
         onChangeText={value => updateItem('emails', email.id, { email: value })}
         placeholder='name@example.com'
+        placeholderTextColor={colors.inkSubtle}
         keyboardType='email-address'
         autoCapitalize='none'
-        className='text-base'
+        className='rounded-lg bg-surface-muted px-2 py-1.5 text-[15px] text-ink'
+        style={noFocusRing}
       />
     </CardRow>
   );

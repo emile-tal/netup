@@ -2,6 +2,7 @@ import { Address, Contact, Email, FirstMeeting, Phone } from '../../types/contac
 import { hiddenFields, sortOrder } from './utils';
 
 import AddItemButton from './AddItemButton';
+import Card from '../Card';
 import { Fragment } from 'react';
 import ProfileAddressCard from './ProfileAddressCard';
 import ProfileDataCard from './ProfileTextDataCard';
@@ -10,9 +11,9 @@ import ProfileFirstMeetingCard from './ProfileFirstMeetingCard';
 import ProfileKeyDataCard from './ProfileKeyDataCard';
 import ProfileNumberDataCard from './ProfileNumberDataCard';
 import ProfilePhoneCard from './ProfilePhoneCard';
-import { ScrollView } from 'react-native';
+import { ScrollView, View } from 'react-native';
+import { humanizeKey } from '../../utils/string';
 import { useContactEditStore } from '../../stores/contactEditStore';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface ProfileCardProps {
   contact: Contact;
@@ -21,8 +22,10 @@ interface ProfileCardProps {
   footer?: React.ReactNode;
 }
 
+/** Keys that belong in the "reach them" section; everything else is context. */
+const reachKeys = ['emails', 'phones', 'addresses'];
+
 const ProfileCard = ({ contact, editable, footer }: ProfileCardProps) => {
-  const insets = useSafeAreaInsets();
   const working = useContactEditStore(s => s.workingContact);
   const addItem = useContactEditStore(s => s.addItem);
 
@@ -30,10 +33,119 @@ const ProfileCard = ({ contact, editable, footer }: ProfileCardProps) => {
   // render immediately; the scalar cards bind to the store themselves.
   const source = editable ? (working ?? contact) : contact;
 
+  // One entry per field, ordered by the shared config rather than object key order.
+  const renderEntry = ([key, value]: [string, unknown]): React.ReactNode => {
+    if (key === 'emails') {
+      const emails = value as Email[];
+      if (!editable && emails.length === 0) return null;
+      return (
+        <Fragment key={key}>
+          {emails.map(email => (
+            <ProfileEmailCard key={email.id} email={email} editable={editable} />
+          ))}
+          {editable && (
+            <AddItemButton label='Add email' onPress={() => addItem('emails')} />
+          )}
+        </Fragment>
+      );
+    }
+
+    if (key === 'phones') {
+      const phones = value as Phone[];
+      if (!editable && phones.length === 0) return null;
+      return (
+        <Fragment key={key}>
+          {phones.map(phone => (
+            <ProfilePhoneCard key={phone.id} phone={phone} editable={editable} />
+          ))}
+          {editable && (
+            <AddItemButton label='Add phone' onPress={() => addItem('phones')} />
+          )}
+        </Fragment>
+      );
+    }
+
+    if (key === 'addresses') {
+      const addresses = value as Address[];
+      if (!editable && addresses.length === 0) return null;
+      return (
+        <Fragment key={key}>
+          {addresses.map(address => (
+            <ProfileAddressCard key={address.id} address={address} editable={editable} />
+          ))}
+          {editable && (
+            <AddItemButton label='Add address' onPress={() => addItem('addresses')} />
+          )}
+        </Fragment>
+      );
+    }
+
+    if (key === 'firstMeeting') {
+      const firstMeeting = value as FirstMeeting;
+      if (!editable && !firstMeeting.date && !firstMeeting.location) return null;
+      return (
+        <ProfileFirstMeetingCard
+          key={key}
+          firstMeeting={firstMeeting}
+          editable={editable}
+        />
+      );
+    }
+
+    if (key === 'relationshipStrength') {
+      return (
+        <ProfileNumberDataCard
+          key={key}
+          label='Relationship'
+          value={value as number}
+          unit='/5'
+          scale={5}
+          fieldKey='relationshipStrength'
+          editable={editable}
+        />
+      );
+    }
+
+    if (key === 'outreachGoal') {
+      return (
+        <ProfileNumberDataCard
+          key={key}
+          label='Outreach goal'
+          value={value as number}
+          unit='/year'
+          fieldKey='outreachGoal'
+          editable={editable}
+        />
+      );
+    }
+
+    // Plain text fields. Empty ones are noise on a read-only profile, but must stay
+    // visible in edit mode so they can be filled in.
+    const text = (value as string) ?? '';
+    if (!editable && !text) return null;
+    return (
+      <ProfileDataCard
+        key={key}
+        label={humanizeKey(key)}
+        value={text}
+        fieldKey={key as keyof Contact}
+        editable={editable}
+      />
+    );
+  };
+
+  const entries = Object.entries(source)
+    .filter(([key]) => !hiddenFields.includes(key))
+    .sort((a, b) => sortOrder.indexOf(a[0]) - sortOrder.indexOf(b[0]));
+
+  const reachRows = entries.filter(([key]) => reachKeys.includes(key)).map(renderEntry);
+  const detailRows = entries.filter(([key]) => !reachKeys.includes(key)).map(renderEntry);
+  const hasRows = (rows: React.ReactNode[]) => rows.some(Boolean);
+
   return (
     <ScrollView
-      contentContainerStyle={{ paddingBottom: insets.bottom }}
       className='h-full w-full'
+      contentContainerStyle={{ paddingBottom: 32 }}
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps='handled'
     >
@@ -44,99 +156,17 @@ const ProfileCard = ({ contact, editable, footer }: ProfileCardProps) => {
         company={source.company}
         editable={editable}
       />
-      {Object.entries(source)
-        .sort((a, b) => sortOrder.indexOf(a[0]) - sortOrder.indexOf(b[0]))
-        .map(([key, value]) => {
-          if (key === 'emails') {
-            const emails = value as Email[];
-            if (!editable && emails.length === 0) return null;
-            return (
-              <Fragment key={key}>
-                {emails.map(email => (
-                  <ProfileEmailCard key={email.id} email={email} editable={editable} />
-                ))}
-                {editable && (
-                  <AddItemButton label='Add email' onPress={() => addItem('emails')} />
-                )}
-              </Fragment>
-            );
-          } else if (key === 'phones') {
-            const phones = value as Phone[];
-            if (!editable && phones.length === 0) return null;
-            return (
-              <Fragment key={key}>
-                {phones.map(phone => (
-                  <ProfilePhoneCard key={phone.id} phone={phone} editable={editable} />
-                ))}
-                {editable && (
-                  <AddItemButton label='Add phone' onPress={() => addItem('phones')} />
-                )}
-              </Fragment>
-            );
-          } else if (key === 'addresses') {
-            const addresses = value as Address[];
-            if (!editable && addresses.length === 0) return null;
-            return (
-              <Fragment key={key}>
-                {addresses.map(address => (
-                  <ProfileAddressCard
-                    key={address.id}
-                    address={address}
-                    editable={editable}
-                  />
-                ))}
-                {editable && (
-                  <AddItemButton
-                    label='Add address'
-                    onPress={() => addItem('addresses')}
-                  />
-                )}
-              </Fragment>
-            );
-          } else if (key === 'firstMeeting') {
-            return (
-              <ProfileFirstMeetingCard
-                key={key}
-                firstMeeting={value as FirstMeeting}
-                editable={editable}
-              />
-            );
-          } else if (key === 'relationshipStrength') {
-            return (
-              <ProfileNumberDataCard
-                key={key}
-                label='Relationship Strength'
-                value={value as number}
-                unit='/5'
-                fieldKey='relationshipStrength'
-                editable={editable}
-              />
-            );
-          } else if (key === 'outreachGoal') {
-            return (
-              <ProfileNumberDataCard
-                key={key}
-                label='Outreach Goal'
-                value={value as number}
-                unit='/year'
-                fieldKey='outreachGoal'
-                editable={editable}
-              />
-            );
-          } else if (!hiddenFields.includes(key)) {
-            return (
-              <ProfileDataCard
-                key={key}
-                label={key}
-                value={value as string}
-                fieldKey={key as keyof Contact}
-                editable={editable}
-              />
-            );
-          }
-          return null;
-        })}
-      {footer}
+      {hasRows(reachRows) && (
+        <Card flush className='mt-4 py-2'>
+          {reachRows}
+        </Card>
+      )}
+      {hasRows(detailRows) && (
+        <Card flush className='mt-4 py-2'>
+          {detailRows}
+        </Card>
+      )}
+      {footer && <View className='mt-4'>{footer}</View>}
     </ScrollView>
   );
 };

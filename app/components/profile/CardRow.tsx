@@ -1,7 +1,9 @@
-import { Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Pressable, Text, TextInput, View } from 'react-native';
 
 import XIcon from '../../icons/XIcon';
 import { capitalize } from '../../utils/string';
+import { colors } from '../../theme';
+import { noFocusRing } from '../../utils/inputStyle';
 
 interface CardRowProps {
   label: string;
@@ -12,31 +14,37 @@ interface CardRowProps {
   onRemove?: () => void;
 }
 
-/** Shared container for every profile card: label column + value column. */
+/**
+ * One label/value line inside a profile section. The rows sit in a shared `Card`, so this
+ * draws no surface of its own — only the two-column rhythm every field follows.
+ */
 const CardRow = ({ label, children, onLabelChange, onRemove }: CardRowProps) => {
   return (
-    <View className='w-full p-4 bg-white rounded-lg my-2 flex-row gap-2'>
-      <View className='w-28'>
+    <View className='w-full flex-row items-start gap-3 px-4 py-2.5'>
+      <View className='w-24 pt-0.5'>
         {onLabelChange ? (
           <TextInput
             value={label}
             onChangeText={onLabelChange}
             placeholder='Label'
-            className='text-base text-gray-500'
+            placeholderTextColor={colors.inkSubtle}
+            className='text-[13px] text-ink-subtle'
+            style={noFocusRing}
           />
         ) : (
-          <Text className='text-base text-gray-500'>{capitalize(label)}</Text>
+          <Text className='text-[13px] text-ink-subtle'>{capitalize(label)}</Text>
         )}
       </View>
-      <View className='flex-1'>{children}</View>
+      <View className='min-w-0 flex-1'>{children}</View>
       {onRemove && (
-        <TouchableOpacity
+        <Pressable
           onPress={onRemove}
-          className='w-6 h-6 items-center justify-center'
+          accessibilityRole='button'
           accessibilityLabel={`Remove ${label}`}
+          className='h-6 w-6 items-center justify-center rounded-full hover:bg-danger-light'
         >
-          <XIcon />
-        </TouchableOpacity>
+          <XIcon size={14} color={colors.inkSubtle} />
+        </Pressable>
       )}
     </View>
   );

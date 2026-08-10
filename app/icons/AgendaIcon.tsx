@@ -1,16 +1,12 @@
+import { DEFAULT_ICON_COLOR, DEFAULT_ICON_SIZE, IconProps } from './types';
 import { Path, Svg } from 'react-native-svg';
 
-const AgendaIcon = ({ cssClass }: { cssClass?: string }) => {
+const AgendaIcon = ({ color = DEFAULT_ICON_COLOR, size = DEFAULT_ICON_SIZE }: IconProps) => {
   return (
-    <Svg
-      className={cssClass}
-      height='24px'
-      viewBox='0 -960 960 960'
-      width='24px'
-      fill='black'
-    >
+    <Svg height={size} width={size} viewBox='0 -960 960 960' fill={color}>
       <Path d='M640-120q-33 0-56.5-23.5T560-200v-160q0-33 23.5-56.5T640-440h160q33 0 56.5 23.5T880-360v160q0 33-23.5 56.5T800-120H640Zm0-80h160v-160H640v160Zm-520-40q-17 0-28.5-11.5T80-280q0-17 11.5-28.5T120-320h280q17 0 28.5 11.5T440-280q0 17-11.5 28.5T400-240H120Zm520-280q-33 0-56.5-23.5T560-600v-160q0-33 23.5-56.5T640-840h160q33 0 56.5 23.5T880-760v160q0 33-23.5 56.5T800-520H640Zm0-80h160v-160H640v160Zm-520-40q-17 0-28.5-11.5T80-680q0-17 11.5-28.5T120-720h280q17 0 28.5 11.5T440-680q0 17-11.5 28.5T400-640H120Zm600 360Zm0-400Z' />
     </Svg>
   );
 };
+
 export default AgendaIcon;

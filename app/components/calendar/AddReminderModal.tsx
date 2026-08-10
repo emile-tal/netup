@@ -1,14 +1,9 @@
-import {
-  Modal,
-  Pressable,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Modal, Pressable, Text, TextInput, View } from 'react-native';
 import { parseDateInputValue, toDateInputValue } from '@/app/utils/date';
 import { useEffect, useRef, useState } from 'react';
 
+import Button from '../Button';
+import TextField from '../TextField';
 import { createReminder } from '@/db/repo/reminders';
 import { notify } from '@/app/utils/alert';
 import useCalendarStore from '@/app/stores/calendarStore';
@@ -89,43 +84,38 @@ const AddReminderModal = ({
       transparent
       presentationStyle='overFullScreen'
     >
-      <View className='flex-1 justify-center items-center bg-black/50'>
-        <Pressable onPress={handleClose} className='absolute inset-0' />
-        <View className='bg-white rounded-2xl p-8 w-4/5 shadow-lg'>
-          <Text className='text-xl font-semibold mb-8 text-center'>New Reminder</Text>
-          <View className='items-center mb-4'>
-            <TextInput
-              placeholder='Reminder Title'
+      <View className='flex-1 items-center justify-center bg-black/40 p-5'>
+        <Pressable
+          accessibilityLabel='Dismiss'
+          onPress={handleClose}
+          className='absolute inset-0'
+        />
+        <View className='w-full max-w-[420px] rounded-2xl border border-line bg-surface p-6'>
+          <Text className='mb-5 text-[18px] font-bold text-ink'>New reminder</Text>
+          <View className='gap-4'>
+            <TextField
+              ref={inputRef}
+              label='Title'
+              placeholder='Coffee with Sarah'
               value={reminderTitle}
               onChangeText={setReminderTitle}
-              className='w-full border text-[14px] border-gray-300 rounded-lg p-2 placeholder:text-gray-400'
-              ref={inputRef}
             />
-          </View>
-          <View className='items-center mb-8'>
-            <TextInput
+            <TextField
+              label='Date'
               placeholder='YYYY-MM-DD (optional)'
               value={dateText}
               onChangeText={setDateText}
-              className={`w-full border text-[14px] rounded-lg p-2 placeholder:text-gray-400 ${
-                invalidDate ? 'border-red-400' : 'border-gray-300'
-              }`}
+              invalid={invalidDate}
+              error='Use the format YYYY-MM-DD.'
             />
           </View>
-          <View className='flex-row justify-end gap-4'>
-            <TouchableOpacity onPress={reset} className='px-4 py-2'>
-              <Text className='text-gray-600 text-base'>Cancel</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
+          <View className='mt-6 flex-row justify-end gap-2'>
+            <Button label='Cancel' variant='ghost' onPress={reset} />
+            <Button
+              label={saving ? 'Adding…' : 'Add reminder'}
               onPress={handleAdd}
               disabled={saving}
-              className={`px-4 py-2 rounded-lg ${saving ? 'bg-blue-300' : 'bg-blue-500'}`}
-            >
-              <Text className='text-white text-base font-medium'>
-                {saving ? 'Adding…' : 'Add'}
-              </Text>
-            </TouchableOpacity>
+            />
           </View>
         </View>
       </View>

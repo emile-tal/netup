@@ -1,15 +1,16 @@
-import { Text, TouchableOpacity } from 'react-native';
 import { confirmDestructive, notify } from '../../utils/alert';
 import { deleteContact, updateContact } from '@/db/repo/contacts';
 import { useEffect, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
+import Button from '../../components/Button';
 import CheckIcon from '@/app/icons/CheckIcon';
 import Header from '../../components/Header';
 import ProfileCard from '../../components/profile/ProfileCard';
 import ScreenLayout from '../../components/ScreenLayout';
 import ScreenState from '../../components/ScreenState';
 import XIcon from '@/app/icons/XIcon';
+import { colors } from '@/app/theme';
 import { useContact } from '../../hooks/useContact';
 import { useContactEditStore } from '../../stores/contactEditStore';
 import { useDB } from '@/db/dbProvider';
@@ -62,11 +63,14 @@ const EditContactPage = () => {
   return (
     <ScreenLayout>
       <Header
+        title='Edit contact'
         backButton
-        actionIcon={<CheckIcon />}
-        onActionPress={handleSave}
-        backIconProp={<XIcon />}
+        backIconProp={<XIcon size={20} color={colors.ink} />}
         onBackPress={() => router.navigate(`/contacts/${id}`)}
+        actionIcon={<CheckIcon size={20} color='white' />}
+        actionEmphasis='brand'
+        actionLabel='Save changes'
+        onActionPress={handleSave}
       />
       {loading || error || !contact ? (
         <ScreenState
@@ -80,9 +84,7 @@ const EditContactPage = () => {
           contact={contact}
           editable
           footer={
-            <TouchableOpacity onPress={handleDelete} className='py-3 self-start'>
-              <Text className='text-base text-red-500'>Delete contact</Text>
-            </TouchableOpacity>
+            <Button label='Delete contact' variant='danger' onPress={handleDelete} />
           }
         />
       )}

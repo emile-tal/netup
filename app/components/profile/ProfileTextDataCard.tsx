@@ -2,6 +2,8 @@ import { Text, TextInput } from 'react-native';
 
 import CardRow from './CardRow';
 import { Contact } from '../../types/contacts';
+import { colors } from '../../theme';
+import { noFocusRing } from '../../utils/inputStyle';
 import { useContactEditStore } from '../../stores/contactEditStore';
 
 interface ProfileDataCardProps {
@@ -24,11 +26,13 @@ const ProfileDataCard = ({ label, value, fieldKey, editable }: ProfileDataCardPr
           value={(working?.[fieldKey] as string) ?? ''}
           onChangeText={text => updateField(fieldKey, text)}
           placeholder={label}
+          placeholderTextColor={colors.inkSubtle}
           multiline
-          className='text-base'
+          className='rounded-lg bg-surface-muted px-2 py-1.5 text-[15px] leading-6 text-ink'
+          style={noFocusRing}
         />
       ) : (
-        <Text className='text-base'>{value}</Text>
+        <Text className='text-[15px] leading-6 text-ink'>{value}</Text>
       )}
     </CardRow>
   );

@@ -1,4 +1,4 @@
-import { Text, TouchableOpacity } from 'react-native';
+import { Pressable, Text } from 'react-native';
 
 interface AddItemButtonProps {
   label: string;
@@ -8,9 +8,13 @@ interface AddItemButtonProps {
 /** "+ Add email" style control shown under each editable collection. */
 const AddItemButton = ({ label, onPress }: AddItemButtonProps) => {
   return (
-    <TouchableOpacity onPress={onPress} className='py-2 px-1 self-start'>
-      <Text className='text-base text-blue-500'>+ {label}</Text>
-    </TouchableOpacity>
+    <Pressable
+      accessibilityRole='button'
+      onPress={onPress}
+      className='self-start rounded-lg px-4 py-2 hover:bg-surface-sunken'
+    >
+      <Text className='text-[14px] font-medium text-brand'>+ {label}</Text>
+    </Pressable>
   );
 };
 

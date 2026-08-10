@@ -73,8 +73,9 @@ static `dist/` ready for one.
 ```
 app/
   _layout.tsx              # Root: SafeAreaProvider + DBRootProvider + Stack
+  theme.ts                 # Colour + layout constants (mirrored in tailwind.config.js)
   (tabs)/
-    _layout.tsx            # Bottom tabs: Contacts / Calendar / Agenda / Profile
+    _layout.tsx            # Tabs + tabBarPosition, driven by the md breakpoint (§13)
     index.tsx              # Contacts list — owns the ONE contacts subscription ✅
     calendar.tsx           # Header + InfiniteListCalendar + AddReminderModal ✅
     agenda.tsx             # Reminder list grouped by date (from the DB) ✅
@@ -84,19 +85,28 @@ app/
     add.tsx                # New-contact form (ProfileCard editable → createContact) ✅
     edit/[id].tsx          # Edit + delete (→ updateContact / deleteContact) ✅
   components/
-    Header.tsx             # Reusable 3-column header (back / title / action)
-    ScreenLayout.tsx       # Safe area + standard screen padding
+    ScreenLayout.tsx       # Page bg + safe area + the centred max-width column
+    Header.tsx             # Back control / left-aligned title+subtitle / one action
+    Card.tsx               # THE surface panel (white, hairline border, rounded-2xl)
+    Button.tsx             # Pill button: primary / secondary / ghost / danger
+    IconButton.tsx         # Circular tap target for a bare icon
+    Avatar.tsx             # Initials circle, colour derived from the name
+    TextField.tsx          # Bordered labelled input (modals/forms)
+    SearchBar.tsx          # Pill search input with a clear control
     ScreenState.tsx        # Shared loading / error+retry / empty rendering
-    SearchBar.tsx          # Generic search input
+    nav/                   # NavBar (picks) → SideNav | BottomNav → NavItem
     contacts/              # ContactLink, ContactSearchBar, ContactReminders
     profile/               # ProfileCard + per-field sub-cards + CardRow + utils.ts
-    calendar/              # InfiniteListCalendar, MonthView, DayCell, AddReminderModal
-    agenda/                # AgendaItem
-  hooks/                   # useContact, useReminders, useDebouncedCallback
-  utils/                   # date.ts, string.ts, id.ts
+    calendar/              # InfiniteListCalendar, MonthView, DayCell,
+                           #   WeekdayHeader, weekdays.ts, AddReminderModal
+    agenda/                # AgendaSection, AgendaItem
+  hooks/                   # useContact, useReminders, useDebouncedCallback,
+                           #   useIsWideLayout, useNavDestinations
+  utils/                   # date.ts, string.ts, id.ts, avatar.ts, reminders.ts,
+                           #   inputStyle.ts(+.web)
   stores/                  # zustand: contactStore, calendarStore, contactEditStore
   types/                   # Frontend DTOs: contacts.ts, reminders.ts, sync.ts
-  icons/                   # SVG icon components (all take an optional `cssClass`)
+  icons/                   # SVG icons — all take `{ color?, size? }` (see types.ts)
   placeholderData.ts       # ⚠️ Dev fixtures only: DB seed + the profile tab
 
 db/
@@ -176,10 +186,11 @@ changes; `useReminders()` does the same for the calendar store. Don't add a seco
 subscription that writes the same store slice.
 
 **Config-driven rendering** — `app/components/profile/ProfileCard.tsx` iterates contact
-entries and delegates to typed sub-cards, using `profile/utils.ts` (`hiddenFields`,
-`sortOrder`) to control visibility/order. Extend the config, not the JSX. All cards share
-`CardRow` (label column + value column + optional remove control), and `editable` flows
-from the screen down to every card.
+entries through one `renderEntry` function and delegates to typed sub-cards, using
+`profile/utils.ts` (`hiddenFields`, `sortOrder`) to control visibility/order and a local
+`reachKeys` list to split them into two `Card` sections (contact details vs context).
+Extend the config, not the JSX. All rows share `CardRow` (label column + value column +
+optional remove control), and `editable` flows from the screen down to every card.
 
 **Screen shell** — wrap screens in `ScreenLayout`, and render loading/error/empty through
 `ScreenState` (with `onRetry`) instead of bespoke per-screen states.
@@ -240,8 +251,9 @@ addresses/reminders.
 ## 8. Conventions
 
 - **Routing:** expo-router file routes under `app/`. Use `useRouter()` / `useLocalSearchParams()`.
-- **Styling:** NativeWind `className`. Colors are currently hardcoded Tailwind classes —
-  prefer extracting a theme/constants module when touching styling broadly.
+- **Styling:** NativeWind `className` using the semantic tokens from §13 (`bg-surface`,
+  `text-ink-muted`, `border-line`). Never write a raw hex or a stock Tailwind palette
+  class (`text-gray-500`, `bg-blue-500`) — add a token instead.
 - **Path alias:** `@/` → repo root (e.g. `@/db/repo/contacts`, `@/app/icons/...`).
 - **One component per file**; co-locate small sub-cards under their feature folder
   (`components/profile/`, `components/calendar/`, etc.).
@@ -254,7 +266,8 @@ addresses/reminders.
 Items 1–8 of the previous list are **done**: schema normalization (v2/v3), the full
 contacts repo, both write flows (add + edit + delete, including child collections), the
 reminders data layer, outbox/metadata on every write, the DRY extractions, loading/error
-states, and the icon-prop cleanup. What remains:
+states, and the icon-prop cleanup. The **design system + responsive shell pass** (§13) is
+also done. What remains:
 
 1. **Owner profile** — `app/(tabs)/profile.tsx` is the last placeholder-backed screen.
    It needs a storage decision before it can be wired: a singleton `profile` table, an
@@ -270,7 +283,10 @@ states, and the icon-prop cleanup. What remains:
    reminders.
 5. **Date entry** — `firstMeeting` and the reminder modal use `YYYY-MM-DD` text inputs
    with validation, not a picker (no date-picker dependency is installed).
-6. **Theme constants** — colors are still hardcoded Tailwind classes across components.
+6. **Contact routes sit outside `(tabs)`** — `app/contacts/*` are Stack screens, so on
+   desktop the side rail disappears while viewing/editing a contact. Moving them under
+   `app/(tabs)/contacts/` (with `href: null`) would keep the rail, at the cost of the
+   push transition on mobile. Left undecided: it is a routing/URL change, not styling.
 
 ---
 
@@ -352,8 +368,8 @@ ever typechecks the non-suffixed file.
   initialized ones; without loose mode the TypeScript transform rejects that on the web/node
   targets ("Definitely assigned fields cannot be initialized here"). Native never hit this.
 - **Prefer `useWindowDimensions()` over `Dimensions.get('window')`** — the latter is captured
-  once and never re-measures on browser resize. `MonthView` also clamps against
-  `MAX_GRID_WIDTH`/`MAX_GRID_HEIGHT` so the calendar doesn't stretch on a desktop viewport.
+  once and never re-measures on browser resize. `useIsWideLayout()` is built on it. The
+  calendar goes further and *measures* its container with `onLayout` (see §13).
 - **`maintainVisibleContentPosition` is iOS-only.** `InfiniteListCalendar` prepends months
   when you scroll near the top; on web and Android the viewport stays pinned at offset 0
   after a prepend, which used to re-trigger it forever (the calendar opened decades in the
@@ -363,3 +379,65 @@ ever typechecks the non-suffixed file.
   `expo-blur`, `expo-dev-client`) have no import sites, so Metro never bundles them for web.
 - The `__DEV__`-gated seed button does not appear in a production export; add data through
   the UI when testing `dist/`.
+
+---
+
+## 13. Design system & responsive shell
+
+### Colour tokens
+`app/theme.ts` holds the raw values and **`tailwind.config.js` mirrors them** as semantic
+utilities. Use `className` tokens by default; import `colors` from `app/theme` only where
+a prop needs a colour *string* (SVG `fill`, `placeholderTextColor`, `ActivityIndicator`,
+`sceneStyle`). Adding a colour means editing **both** files.
+
+| Token | Use |
+|-------|-----|
+| `brand` / `brand-light` / `brand-dark` | primary actions, selection, links |
+| `ink` / `ink-muted` / `ink-subtle` | primary / secondary / tertiary text |
+| `surface` / `surface-muted` / `surface-sunken` | cards / page background / input fills |
+| `line` / `line-strong` | hairline borders |
+| `success`, `danger` (+ `-light`, `-dark`) | completion, destructive |
+
+`avatarPalette` is separate — `app/utils/avatar.ts` hashes a name into it so a contact
+keeps the same avatar colour everywhere, with no colour stored on the record.
+
+### Layout
+- **`ScreenLayout` is the only place page chrome is set**: background, safe-area edges,
+  and a `self-center` (auto-margin) column capped at `max-w-content` (720px) or
+  `max-w-wide` (1040px, calendar only), padded `px-4 md:px-8`. Screens render `Header`
+  and their list *inside* it — never their own `SafeAreaView`.
+- Safe-area edges follow the nav: the bottom bar owns the bottom inset on mobile, the
+  left rail owns the left inset on desktop, so `ScreenLayout` swaps `edges` accordingly.
+  Don't re-add `insets.bottom` padding in a screen's `contentContainerStyle`.
+
+### Navigation (tabs ⇄ side rail)
+`useIsWideLayout()` (Tailwind's `md`, 768px, from `layout.navBreakpoint`) is the single
+breakpoint. Two things read it and **must stay in sync**:
+1. `app/(tabs)/_layout.tsx` sets `tabBarPosition: isWide ? 'left' : 'bottom'`, which is
+   what makes react-navigation lay the bar out on the correct axis.
+2. `components/nav/NavBar.tsx` renders `SideNav` or `BottomNav`.
+
+Both bars are built from `useNavDestinations(props)`, which flattens react-navigation's
+`state`/`descriptors`/`navigation` into a plain list (label, focused, `renderIcon`,
+`onPress`) — so a new destination is added once, in `_layout.tsx`, and both bars pick it
+up. `NavItem` renders one destination in either orientation.
+
+### Icons
+Every icon takes `{ color?, size? }` (`app/icons/types.ts`) — **not** `className`.
+NativeWind's `className` does not reach react-native-svg's `fill` on native, which is why
+the old `cssClass` prop was removed.
+
+### Inputs
+Style every `TextInput` with `noFocusRing` from `app/utils/inputStyle` (a `.web.ts` pair,
+§12) — it strips the browser's focus ring, which fights the borders we draw, and is a
+no-op on native. Always pass an explicit `placeholderTextColor={colors.inkSubtle}`;
+NativeWind does not style placeholders on native.
+
+### Calendar grid sizing
+The grid is **measured, not derived from the window**: `app/(tabs)/calendar.tsx` gets its
+container width from `onLayout` and passes one `columnWidth` down to both `WeekdayHeader`
+and `InfiniteListCalendar` → `MonthView`, so headers and columns can't drift apart.
+React Native is border-box, so the grid's 1px left border eats into the space the seven
+columns get — `weekdays.ts` owns that arithmetic (`GRID_BORDER_WIDTH`, `gridWidthFor`).
+Get it wrong and the seventh column wraps onto its own row. `mondayFirstOffset` lives
+there too: `getDay() - 1` returns `-1` for a month starting on a Sunday.

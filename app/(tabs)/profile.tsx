@@ -10,7 +10,7 @@ const Profile = () => {
   const contact = myContactData;
   return (
     <ScreenLayout>
-      <Header title='My Profile' />
+      <Header title='My profile' />
       <ProfileCard contact={contact} />
     </ScreenLayout>
   );

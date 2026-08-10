@@ -3,6 +3,8 @@ import { formatShortDate, parseDateInputValue, toDateInputValue } from '../../ut
 
 import CardRow from './CardRow';
 import { FirstMeeting } from '@/app/types/contacts';
+import { colors } from '../../theme';
+import { noFocusRing } from '../../utils/inputStyle';
 import { useContactEditStore } from '../../stores/contactEditStore';
 import { useState } from 'react';
 
@@ -24,22 +26,26 @@ const ProfileFirstMeetingCard = ({
 
   if (!editable) {
     return (
-      <CardRow label='First Meeting'>
-        <View className='flex-col gap-0'>
+      <CardRow label='First met'>
+        <View>
           {firstMeeting.date && (
-            <Text className='text-base'>{formatShortDate(firstMeeting.date)}</Text>
+            <Text className='text-[15px] leading-6 text-ink'>
+              {formatShortDate(firstMeeting.date)}
+            </Text>
           )}
-          {firstMeeting.location && (
-            <Text className='text-base'>{firstMeeting.location}</Text>
-          )}
+          {firstMeeting.location ? (
+            <Text className='text-[15px] leading-6 text-ink-muted'>
+              {firstMeeting.location}
+            </Text>
+          ) : null}
         </View>
       </CardRow>
     );
   }
 
   return (
-    <CardRow label='First Meeting'>
-      <View className='flex-col gap-0'>
+    <CardRow label='First met'>
+      <View className='gap-1'>
         <TextInput
           value={dateText}
           onChangeText={text => {
@@ -47,13 +53,19 @@ const ProfileFirstMeetingCard = ({
             updateFirstMeeting({ date: parseDateInputValue(text) });
           }}
           placeholder='YYYY-MM-DD'
-          className={`text-base ${invalidDate ? 'text-red-500' : ''}`}
+          placeholderTextColor={colors.inkSubtle}
+          className={`rounded-lg bg-surface-muted px-2 py-1.5 text-[15px] ${
+            invalidDate ? 'text-danger' : 'text-ink'
+          }`}
+          style={noFocusRing}
         />
         <TextInput
           value={firstMeeting.location ?? ''}
           onChangeText={location => updateFirstMeeting({ location })}
           placeholder='Location'
-          className='text-base'
+          placeholderTextColor={colors.inkSubtle}
+          className='rounded-lg bg-surface-muted px-2 py-1.5 text-[15px] text-ink'
+          style={noFocusRing}
         />
       </View>
     </CardRow>

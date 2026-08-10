@@ -6,6 +6,7 @@ import Header from '../components/Header';
 import ProfileCard from '../components/profile/ProfileCard';
 import ScreenLayout from '../components/ScreenLayout';
 import ScreenState from '../components/ScreenState';
+import { colors } from '../theme';
 import { useContact } from '../hooks/useContact';
 
 const ContactsPage = () => {
@@ -17,7 +18,8 @@ const ContactsPage = () => {
     <ScreenLayout>
       <Header
         backButton
-        actionIcon={contact ? <EditIcon /> : undefined}
+        actionIcon={contact ? <EditIcon size={20} color={colors.ink} /> : undefined}
+        actionLabel='Edit contact'
         onActionPress={() => router.navigate(`/contacts/edit/${id}`)}
       />
       {contact ? (
@@ -30,6 +32,7 @@ const ContactsPage = () => {
           loading={loading}
           error={error}
           emptyMessage='Contact not found'
+          emptyHint='It may have been deleted.'
           onRetry={reload}
         />
       )}

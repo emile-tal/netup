@@ -28,7 +28,12 @@ function buildRange(
   return rows;
 }
 
-const InfiniteListCalendar = () => {
+interface InfiniteListCalendarProps {
+  /** Grid column width, measured by the screen so the weekday header can match it. */
+  columnWidth: number;
+}
+
+const InfiniteListCalendar = ({ columnWidth }: InfiniteListCalendarProps) => {
   const today = useMemo(() => {
     const d = new Date();
     return { year: d.getFullYear(), month: d.getMonth() };
@@ -144,7 +149,10 @@ const InfiniteListCalendar = () => {
       ref={listRef}
       data={data}
       keyExtractor={r => r.key}
-      renderItem={({ item }) => <MonthView year={item.year} month={item.month} />}
+      renderItem={({ item }) => (
+        <MonthView year={item.year} month={item.month} columnWidth={columnWidth} />
+      )}
+      showsVerticalScrollIndicator={false}
       // Forward growth
       onEndReachedThreshold={0.5}
       onEndReached={onEndReached}

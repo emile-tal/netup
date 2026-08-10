@@ -1,52 +1,71 @@
-import { Text, TouchableHighlight, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import BackIcon from '../icons/BackIcon';
+import IconButton from './IconButton';
+import { colors } from '../theme';
 import { router } from 'expo-router';
 
 interface HeaderProps {
   title?: string;
+  /** Secondary line under the title (e.g. "12 contacts"). */
+  subtitle?: string;
   backIconProp?: React.ReactNode;
   backButton?: boolean;
   onBackPress?: () => void;
   actionIcon?: React.ReactNode;
   onActionPress?: () => void;
+  actionLabel?: string;
+  /** `brand` fills the action button — for the primary "add" on a list screen. */
+  actionEmphasis?: 'plain' | 'brand';
 }
 
+/**
+ * Screen header: optional back control, a left-aligned title, and one action. The title
+ * is left-aligned rather than centred so it lines up with the content column beneath it.
+ */
 const Header = ({
   title,
+  subtitle,
   backIconProp,
   backButton,
   onBackPress,
   actionIcon,
   onActionPress,
+  actionLabel = 'Action',
+  actionEmphasis = 'plain',
 }: HeaderProps) => {
   return (
-    <View className='flex-row justify-between items-center pt-2 pb-4 px-4'>
-      <View className='w-[33%]'>
-        {backButton && (
-          <TouchableHighlight
+    <View className='flex-row items-center gap-2 pb-4 pt-3'>
+      {backButton && (
+        <View className='-ml-2'>
+          <IconButton
+            accessibilityLabel='Go back'
             onPress={onBackPress || (() => router.back())}
-            underlayColor='#e5e5e5'
-            className='w-8 h-8 rounded-full items-center justify-center p-1 pr-0 pl-2'
+            icon={backIconProp ?? <BackIcon size={18} color={colors.ink} />}
+          />
+        </View>
+      )}
+      <View className='flex-1'>
+        {title && (
+          <Text
+            numberOfLines={1}
+            className='text-[26px] font-bold tracking-tight text-ink'
           >
-            {backIconProp ? backIconProp : <BackIcon />}
-          </TouchableHighlight>
+            {title}
+          </Text>
         )}
+        {subtitle && <Text className='mt-0.5 text-[13px] text-ink-subtle'>{subtitle}</Text>}
       </View>
-      <View className='flex justify-center items-center min-w-[34%]'>
-        {title && <Text className='text-2xl font-bold text-center'>{title}</Text>}
-      </View>
-      <View className='w-[33%] flex-row justify-end items-center'>
-        {actionIcon && (
-          <TouchableHighlight
+      {actionIcon && onActionPress && (
+        <View className='-mr-2'>
+          <IconButton
+            accessibilityLabel={actionLabel}
             onPress={onActionPress}
-            underlayColor='#e5e5e5'
-            className='w-8 h-8 rounded-full items-center justify-end p-1'
-          >
-            {actionIcon}
-          </TouchableHighlight>
-        )}
-      </View>
+            icon={actionIcon}
+            emphasis={actionEmphasis}
+          />
+        </View>
+      )}
     </View>
   );
 };

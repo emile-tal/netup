@@ -1,5 +1,10 @@
 import { Text, TextInput, View } from 'react-native';
 
+import Avatar from '../Avatar';
+import Card from '../Card';
+import { colors } from '../../theme';
+import { fullName } from '../../utils/string';
+import { noFocusRing } from '../../utils/inputStyle';
 import { useContactEditStore } from '../../stores/contactEditStore';
 
 interface ProfileKeyDataCardProps {
@@ -10,6 +15,7 @@ interface ProfileKeyDataCardProps {
   editable?: boolean;
 }
 
+/** The identity block at the top of a profile: avatar, name, role, company. */
 const ProfileKeyDataCard = ({
   firstName,
   lastName,
@@ -21,49 +27,63 @@ const ProfileKeyDataCard = ({
   const updateField = useContactEditStore(s => s.updateField);
 
   return (
-    <View className='w-full p-4 bg-white rounded-lg mb-4'>
-      <View className='flex-row items-center gap-4'>
-        <View className='rounded-xl bg-gray-200 w-24 h-24'></View>
-        <View className='flex-col'>
-          {editable ? (
-            <>
-              <TextInput
-                value={working?.firstName ?? ''}
-                onChangeText={text => updateField('firstName', text)}
-                placeholder='First name'
-                className='text-xl font-bold'
-              />
-              <TextInput
-                value={working?.lastName ?? ''}
-                onChangeText={text => updateField('lastName', text)}
-                placeholder='Last name'
-                className='text-xl font-bold'
-              />
-              <TextInput
-                value={working?.jobTitle ?? ''}
-                onChangeText={text => updateField('jobTitle', text)}
-                placeholder='Job title'
-                className='text-base text-gray-500 italic'
-              />
-              <TextInput
-                value={working?.company ?? ''}
-                onChangeText={text => updateField('company', text)}
-                placeholder='Company'
-                className='text-base text-gray-500'
-              />
-            </>
-          ) : (
-            <>
-              <Text className='text-xl font-bold'>
-                {firstName} {lastName}
-              </Text>
-              <Text className='text-base text-gray-500 italic'>{jobTitle}</Text>
-              <Text className='text-base text-gray-500'>{company}</Text>
-            </>
-          )}
+    <Card className='items-center p-6'>
+      <Avatar
+        firstName={editable ? working?.firstName : firstName}
+        lastName={editable ? working?.lastName : lastName}
+        size={72}
+      />
+      {editable ? (
+        <View className='mt-4 w-full max-w-[320px] gap-1'>
+          <View className='flex-row gap-2'>
+            <TextInput
+              value={working?.firstName ?? ''}
+              onChangeText={text => updateField('firstName', text)}
+              placeholder='First name'
+              placeholderTextColor={colors.inkSubtle}
+              className='flex-1 rounded-lg bg-surface-muted px-3 py-2 text-[17px] font-bold text-ink'
+              style={noFocusRing}
+            />
+            <TextInput
+              value={working?.lastName ?? ''}
+              onChangeText={text => updateField('lastName', text)}
+              placeholder='Last name'
+              placeholderTextColor={colors.inkSubtle}
+              className='flex-1 rounded-lg bg-surface-muted px-3 py-2 text-[17px] font-bold text-ink'
+              style={noFocusRing}
+            />
+          </View>
+          <TextInput
+            value={working?.jobTitle ?? ''}
+            onChangeText={text => updateField('jobTitle', text)}
+            placeholder='Job title'
+            placeholderTextColor={colors.inkSubtle}
+            className='rounded-lg bg-surface-muted px-3 py-2 text-[14px] text-ink-muted'
+            style={noFocusRing}
+          />
+          <TextInput
+            value={working?.company ?? ''}
+            onChangeText={text => updateField('company', text)}
+            placeholder='Company'
+            placeholderTextColor={colors.inkSubtle}
+            className='rounded-lg bg-surface-muted px-3 py-2 text-[14px] text-brand'
+            style={noFocusRing}
+          />
         </View>
-      </View>
-    </View>
+      ) : (
+        <View className='mt-4 items-center'>
+          <Text className='text-[20px] font-bold text-ink'>
+            {fullName(firstName, lastName) || 'Unnamed contact'}
+          </Text>
+          {jobTitle ? (
+            <Text className='mt-0.5 text-[14px] text-ink-muted'>{jobTitle}</Text>
+          ) : null}
+          {company ? (
+            <Text className='mt-0.5 text-[14px] text-brand'>{company}</Text>
+          ) : null}
+        </View>
+      )}
+    </Card>
   );
 };
 

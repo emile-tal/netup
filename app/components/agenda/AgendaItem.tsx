@@ -1,10 +1,14 @@
-import { Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Pressable, Text, TextInput, View } from 'react-native';
 import { confirmDestructive, notify } from '../../utils/alert';
 import { deleteReminder, updateReminder } from '@/db/repo/reminders';
 import { useEffect, useState } from 'react';
 
+import CheckIcon from '../../icons/CheckIcon';
 import { ReminderSummary } from '../../types/reminders';
 import XIcon from '../../icons/XIcon';
+import { colors } from '../../theme';
+import { fullName } from '../../utils/string';
+import { noFocusRing } from '../../utils/inputStyle';
 import { useDB } from '@/db/dbProvider';
 import { useDebouncedCallback } from '../../hooks/useDebouncedCallback';
 
@@ -58,46 +62,48 @@ const AgendaItem = ({ item }: AgendaItemProps) => {
     });
   };
 
+  const contactName = fullName(item.contactFirstName, item.contactLastName);
+
   return (
-    <View className='flex-row items-center w-full bg-white border-b border-gray-200'>
-      <TouchableOpacity
+    <View className='w-full flex-row items-center gap-3 px-4 py-3 hover:bg-surface-muted'>
+      <Pressable
         onPress={toggleCompleted}
-        className='w-6 h-6 mr-3 ml-4 justify-center items-center'
+        accessibilityRole='checkbox'
+        accessibilityState={{ checked: !!item.completed }}
         accessibilityLabel={item.completed ? 'Mark as not done' : 'Mark as done'}
+        className={`h-6 w-6 items-center justify-center rounded-full border-2 ${
+          item.completed ? 'border-success bg-success' : 'border-line-strong hover:border-brand'
+        }`}
       >
-        <View
-          className={`w-5 h-5 rounded-full border-2 ${
-            item.completed ? 'bg-black border-black' : 'border-gray-400'
-          } justify-center items-center`}
-        >
-          {item.completed && <View className='w-2 h-2 rounded-full bg-white' />}
-        </View>
-      </TouchableOpacity>
-      <View className='flex-1 py-3 pr-4'>
+        {item.completed && <CheckIcon size={14} color='white' />}
+      </Pressable>
+
+      <View className='min-w-0 flex-1'>
         <TextInput
-          className='text-base text-black'
+          className={`text-[15px] ${item.completed ? 'text-ink-subtle' : 'text-ink'}`}
           value={title}
           onChangeText={updateTitle}
-          placeholderTextColor='#9CA3AF'
+          placeholder='Untitled reminder'
+          placeholderTextColor={colors.inkSubtle}
           multiline
-          style={{
-            textDecorationLine: item.completed ? 'line-through' : 'none',
-            opacity: item.completed ? 0.5 : 1,
-          }}
+          style={[
+            noFocusRing,
+            { textDecorationLine: item.completed ? 'line-through' : 'none' },
+          ]}
         />
-        {item.contactLastName && (
-          <Text className='text-sm text-gray-500'>
-            {[item.contactFirstName, item.contactLastName].filter(Boolean).join(' ')}
-          </Text>
+        {contactName.length > 0 && (
+          <Text className='mt-0.5 text-[12px] text-ink-subtle'>{contactName}</Text>
         )}
       </View>
-      <TouchableOpacity
+
+      <Pressable
         onPress={confirmDelete}
-        className='px-4 py-3'
+        accessibilityRole='button'
         accessibilityLabel='Delete reminder'
+        className='h-8 w-8 items-center justify-center rounded-full hover:bg-danger-light'
       >
-        <XIcon cssClass='text-gray-400' />
-      </TouchableOpacity>
+        <XIcon size={16} color={colors.inkSubtle} />
+      </Pressable>
     </View>
   );
 };

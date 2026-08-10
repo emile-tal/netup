@@ -1,6 +1,7 @@
-import { FlatList, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, Pressable, Text, View } from 'react-native';
 
 import AddIcon from '../icons/AddIcon';
+import Card from '../components/Card';
 import ContactLink from '../components/contacts/ContactLink';
 import ContactSearchBar from '../components/contacts/ContactSearchBar';
 import Header from '../components/Header';
@@ -12,7 +13,6 @@ import { router } from 'expo-router';
 import useContactStore from '../stores/contactStore';
 import { useDB } from '@/db/dbProvider';
 import { useEffect } from 'react';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const Contacts = () => {
   const db = useDB();
@@ -25,7 +25,6 @@ const Contacts = () => {
   const setSearchError = useContactStore(state => state.setSearchError);
   const setNoResults = useContactStore(state => state.setNoResults);
   const setContactSummaries = useContactStore(state => state.setContactSummaries);
-  const insets = useSafeAreaInsets();
 
   // The one contacts subscription in the app: re-created when the debounced search
   // query changes, so results and the unfiltered list never overwrite each other.
@@ -66,50 +65,61 @@ const Contacts = () => {
     }
   };
 
-  const emptyMessage = noResults
-    ? searchQuery
-      ? 'No contacts match that search'
-      : 'No contacts yet — add one with +'
-    : undefined;
+  const count = contactSummaries.length;
 
   return (
     <ScreenLayout>
       <Header
         title='Contacts'
-        actionIcon={<AddIcon />}
+        subtitle={count > 0 ? `${count} ${count === 1 ? 'person' : 'people'}` : undefined}
+        actionIcon={<AddIcon size={22} color='white' />}
+        actionEmphasis='brand'
+        actionLabel='Add contact'
         onActionPress={() => router.navigate('/contacts/add')}
       />
-      <View className='pb-4'>
-        {__DEV__ && (
-          <TouchableOpacity onPress={handleResetAndSeed} disabled={searchLoading}>
-            <Text className='text-blue-500'>
-              {searchLoading ? 'Loading...' : 'Reset and Seed Database'}
-            </Text>
-          </TouchableOpacity>
-        )}
+      <View className='pb-3'>
         <ContactSearchBar />
       </View>
-      {contactSummaries.length === 0 ? (
+      {count === 0 ? (
         <ScreenState
           loading={searchLoading}
           error={searchError}
-          emptyMessage={emptyMessage}
+          emptyMessage={
+            noResults && searchQuery ? 'No matches' : noResults ? 'No contacts yet' : undefined
+          }
+          emptyHint={
+            noResults && searchQuery
+              ? 'Try a different name.'
+              : noResults
+                ? 'Add your first one with the + button.'
+                : undefined
+          }
         />
       ) : (
-        <FlatList
-          data={contactSummaries}
-          ItemSeparatorComponent={() => <View className='h-[1px] bg-gray-200' />}
-          renderItem={({ item }) => (
-            <ContactLink
-              firstName={item.firstName || ''}
-              lastName={item.lastName}
-              id={item.id}
-            />
-          )}
-          keyExtractor={item => item.id}
-          className='min-h-full'
-          contentContainerStyle={{ paddingBottom: insets.bottom }}
-        />
+        <Card flush className='flex-1'>
+          <FlatList
+            data={contactSummaries}
+            ItemSeparatorComponent={() => <View className='ml-16 h-[1px] bg-line' />}
+            renderItem={({ item }) => (
+              <ContactLink
+                firstName={item.firstName}
+                lastName={item.lastName}
+                jobTitle={item.jobTitle}
+                company={item.company}
+                id={item.id}
+              />
+            )}
+            keyExtractor={item => item.id}
+            showsVerticalScrollIndicator={false}
+          />
+        </Card>
+      )}
+      {__DEV__ && (
+        <Pressable onPress={handleResetAndSeed} disabled={searchLoading} className='py-3'>
+          <Text className='text-[12px] text-ink-subtle'>
+            {searchLoading ? 'Working…' : 'Reset and seed database'}
+          </Text>
+        </Pressable>
       )}
     </ScreenLayout>
   );

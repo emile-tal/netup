@@ -15,7 +15,14 @@ import Reminder from '../models/Reminder';
 import { markDeletedMeta, upsertMeta } from './metadata';
 import { enqueueOutbox } from './outbox';
 
-export type ContactSummary = { id: string; firstName: string; lastName: string };
+/** What the contacts list needs to draw a row — never the full aggregate. */
+export type ContactSummary = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  jobTitle: string;
+  company: string;
+};
 
 export function observeContactSummaries(db: Database, search?: string) {
   const q = (search ?? '').trim();
@@ -40,6 +47,8 @@ export function observeContactSummaries(db: Database, search?: string) {
         id: c.id,
         firstName: c.firstName ?? '',
         lastName: c.lastName ?? '',
+        jobTitle: c.jobTitle ?? '',
+        company: c.company ?? '',
       }))
     )
   );
