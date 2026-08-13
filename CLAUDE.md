@@ -432,6 +432,17 @@ ever typechecks the non-suffixed file.
   Legacy decorators rewrite WatermelonDB's `@text('x') x!: string` model fields into
   initialized ones; without loose mode the TypeScript transform rejects that on the web/node
   targets ("Definitely assigned fields cannot be initialized here"). Native never hit this.
+- **`position: fixed` is not viewport-relative inside a react-native-web `ScrollView`.** RN-web
+  gives its scroll container a `transform`, which makes it the containing block for any fixed
+  descendant — so a fixed element's coordinates are re-anchored to the container's top-left
+  instead of the viewport's. dnd-kit's `DragOverlay` is fixed-positioned, and rendered inline
+  it landed one column-offset (~430px at 1600px wide, more on a wider window) right of the
+  cursor. `TierBoard.web.tsx` portals it to `document.body`. Anything else fixed that lives
+  under a `ScrollView` needs the same treatment.
+- **`DragOverlay` needs `dropAnimation={null}` here.** The drop is asynchronous — `onMove`
+  writes through WatermelonDB and the chip only reappears in its new column when the
+  observable re-emits. The default animation flies the overlay back to the source chip in the
+  meantime, which looks exactly like the contact snapping back to the circle it came from.
 - **Prefer `useWindowDimensions()` over `Dimensions.get('window')`** — the latter is captured
   once and never re-measures on browser resize. `useIsWideLayout()` is built on it. The
   calendar goes further and *measures* its container with `onLayout` (see §13).

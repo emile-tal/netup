@@ -8,16 +8,17 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from '@dnd-kit/core';
-import { Text, View } from 'react-native';
 import { useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { Text, View } from 'react-native';
 
-import ContactChip from './ContactChip';
-import DndKitChip from './DndKitChip.web';
-import DndKitColumn from './DndKitColumn.web';
+import { TIERS } from '@/app/utils/outreach';
 import type { ContactSummary } from '@/db/repo/contacts';
 import type { TierBoardProps } from './board';
 import { dropZoneTarget } from './board';
-import { TIERS } from '@/app/utils/outreach';
+import ContactChip from './ContactChip';
+import DndKitChip from './DndKitChip.web';
+import DndKitColumn from './DndKitColumn.web';
 
 /**
  * The web 5-15-50 board, on dnd-kit.
@@ -49,7 +50,8 @@ const TierBoard = ({ buckets, onMove }: TierBoardProps) => {
     return new Map(all.map(contact => [contact.id, contact]));
   }, [buckets]);
 
-  const handleDragStart = (event: DragStartEvent) => setDraggingId(String(event.active.id));
+  const handleDragStart = (event: DragStartEvent) =>
+    setDraggingId(String(event.active.id));
 
   const handleDragEnd = (event: DragEndEvent) => {
     setDraggingId(null);
@@ -104,9 +106,12 @@ const TierBoard = ({ buckets, onMove }: TierBoardProps) => {
           </View>
         </DndKitColumn>
       </View>
-      <DragOverlay>
-        {dragging ? <ContactChip contact={dragging} dragging /> : null}
-      </DragOverlay>
+      {createPortal(
+        <DragOverlay dropAnimation={null}>
+          {dragging ? <ContactChip contact={dragging} dragging /> : null}
+        </DragOverlay>,
+        document.body
+      )}
     </DndContext>
   );
 };

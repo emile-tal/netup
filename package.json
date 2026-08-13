@@ -54,6 +54,7 @@
     "@babel/plugin-proposal-decorators": "^7.28.0",
     "@morrowdigital/watermelondb-expo-plugin": "^2.3.3",
     "@types/react": "~19.0.10",
+    "@types/react-dom": "~19.0.4",
     "@types/uuid": "^11.0.0",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~9.2.0",
