@@ -28,6 +28,9 @@ function buildRange(
   return rows;
 }
 
+/** Months rendered either side of today on first mount; also today’s initial index. */
+const INITIAL_SPAN = 12;
+
 interface InfiniteListCalendarProps {
   /** Grid column width, measured by the screen so the weekday header can match it. */
   columnWidth: number;
@@ -39,15 +42,9 @@ const InfiniteListCalendar = ({ columnWidth }: InfiniteListCalendarProps) => {
     return { year: d.getFullYear(), month: d.getMonth() };
   }, []);
 
-  // Start with +/- 12 months around today; we’ll grow by 2 at a time.
-  const [data, setData] = useState(() => buildRange(today, 12, 12));
+  // Start with +/- INITIAL_SPAN months around today; we’ll grow by 2 at a time.
+  const [data, setData] = useState(() => buildRange(today, INITIAL_SPAN, INITIAL_SPAN));
   const listRef = useRef<FlatList<MonthRow>>(null);
-
-  // Where “today” lives in the current data
-  const centerIndex = useMemo(
-    () => data.findIndex(r => r.year === today.year && r.month === today.month),
-    [data, today]
-  );
 
   // Key of the row to keep under the viewport after a prepend, and a latch so only one
   // prepend is in flight at a time.
@@ -56,14 +53,15 @@ const InfiniteListCalendar = ({ columnWidth }: InfiniteListCalendarProps) => {
   // Prepending before the initial scroll lands would walk the list backwards forever.
   const readyRef = useRef(false);
 
-  // Scroll to the center on mount (post-render to avoid “out of range”)
+  // Scroll to the current month on mount (post-render to avoid “out of range”). The
+  // initial range is centred on today, so that row is always at INITIAL_SPAN — no
+  // reactive value is involved, which is what keeps this a genuine run-once effect.
   useEffect(() => {
     requestAnimationFrame(() => {
-      if (centerIndex >= 0)
-        listRef.current?.scrollToIndex({ index: centerIndex, animated: false });
+      listRef.current?.scrollToIndex({ index: INITIAL_SPAN, animated: false });
       readyRef.current = true;
     });
-  }, []); // run once
+  }, []);
 
   // maintainVisibleContentPosition is iOS-only, so everywhere else a prepend leaves the
   // viewport pinned at offset 0 — which re-triggers the prepend. Restore the anchor row
