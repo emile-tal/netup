@@ -41,7 +41,7 @@ const ProfileKeyDataCard = ({
               onChangeText={text => updateField('firstName', text)}
               placeholder='First name'
               placeholderTextColor={colors.inkSubtle}
-              className='flex-1 rounded-lg bg-surface-muted px-3 py-2 text-[17px] font-bold text-ink'
+              className='min-w-0 flex-1 rounded-lg bg-surface-muted px-3 py-2 text-[17px] font-bold text-ink'
               style={noFocusRing}
             />
             <TextInput
@@ -49,7 +49,7 @@ const ProfileKeyDataCard = ({
               onChangeText={text => updateField('lastName', text)}
               placeholder='Last name'
               placeholderTextColor={colors.inkSubtle}
-              className='flex-1 rounded-lg bg-surface-muted px-3 py-2 text-[17px] font-bold text-ink'
+              className='min-w-0 flex-1 rounded-lg bg-surface-muted px-3 py-2 text-[17px] font-bold text-ink'
               style={noFocusRing}
             />
           </View>
@@ -66,7 +66,7 @@ const ProfileKeyDataCard = ({
             onChangeText={text => updateField('company', text)}
             placeholder='Company'
             placeholderTextColor={colors.inkSubtle}
-            className='rounded-lg bg-surface-muted px-3 py-2 text-[14px] text-brand'
+            className='rounded-lg bg-surface-muted px-3 py-2 text-[14px] text-ink-muted'
             style={noFocusRing}
           />
         </View>
@@ -79,7 +79,7 @@ const ProfileKeyDataCard = ({
             <Text className='mt-0.5 text-[14px] text-ink-muted'>{jobTitle}</Text>
           ) : null}
           {company ? (
-            <Text className='mt-0.5 text-[14px] text-brand'>{company}</Text>
+            <Text className='mt-0.5 text-[14px] text-ink-muted'>{company}</Text>
           ) : null}
         </View>
       )}

@@ -11,9 +11,9 @@ module.exports = {
     extend: {
       colors: {
         brand: {
-          DEFAULT: '#1A73E8',
-          light: '#E8F0FD',
-          dark: '#1557B0',
+          DEFAULT: '#4F46E5',
+          light: '#EEF0FF',
+          dark: '#3730A3',
         },
         ink: {
           DEFAULT: '#1A1A1A',
@@ -30,28 +30,28 @@ module.exports = {
           strong: 'rgba(0,0,0,0.16)',
         },
         success: {
-          DEFAULT: '#34A853',
-          light: '#E6F4EA',
-          dark: '#137333',
+          DEFAULT: '#12855B',
+          light: '#E7F5EF',
+          dark: '#0C6244',
         },
         danger: {
-          DEFAULT: '#D93025',
-          light: '#FCE8E6',
+          DEFAULT: '#DC2626',
+          light: '#FDECEC',
         },
         // One colour per 5-15-50 circle. `TIER_STYLES` in app/utils/outreach.ts holds the
         // literal class strings, since NativeWind scans source text.
         tier: {
           inner: {
-            DEFAULT: '#1A73E8',
-            light: '#E8F0FD',
+            DEFAULT: '#4F46E5',
+            light: '#EEF0FF',
           },
           trusted: {
-            DEFAULT: '#0F9D96',
-            light: '#E3F4F3',
+            DEFAULT: '#0A6E6E',
+            light: '#E4F3F3',
           },
           strategic: {
-            DEFAULT: '#B26A00',
-            light: '#FEF3D9',
+            DEFAULT: '#9E5410',
+            light: '#FAF0E3',
           },
         },
       },

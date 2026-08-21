@@ -63,6 +63,8 @@ const DayCell = ({ day, month, year, columnWidth, rowHeight }: DayCellProps) => 
         <Text
           key={reminder.id}
           numberOfLines={1}
+          // Tinted, not filled: a month grid can hold dozens of these, so the wash is a
+          // `-light` and the ink does the work. Done ones cross out and go green.
           className={`mb-0.5 rounded px-1 py-0.5 text-[11px] ${
             reminder.completed
               ? 'bg-success-light text-success-dark line-through'

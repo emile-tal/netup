@@ -28,6 +28,14 @@ const EditContactPage = () => {
     return () => setWorkingContact(null);
   }, [contact, setWorkingContact]);
 
+  /**
+   * Leaving edit must *pop* back to the profile, not navigate to it. `navigate` pushed a
+   * second copy of `/contacts/[id]` on top of the edit screen, so the profile's back
+   * button landed on edit, whose own back button returned to the profile — a loop with no
+   * way out. `dismissTo` unwinds the stack to the profile already sitting under us.
+   */
+  const closeToContact = () => router.dismissTo(`/contacts/${id}`);
+
   const handleSave = async () => {
     const working = useContactEditStore.getState().workingContact;
     if (!working || saving) return;
@@ -35,7 +43,7 @@ const EditContactPage = () => {
     setSaving(true);
     try {
       await updateContact(db, id, working);
-      router.navigate(`/contacts/${id}`);
+      closeToContact();
     } catch (err) {
       console.error('Error saving contact:', err);
       notify('Could not save', 'Your changes were not saved. Please try again.');
@@ -51,7 +59,8 @@ const EditContactPage = () => {
       onConfirm: async () => {
         try {
           await deleteContact(db, id);
-          router.navigate('/');
+          // Both the edit screen and the now-dead profile beneath it have to go.
+          router.dismissTo('/');
         } catch (err) {
           console.error('Error deleting contact:', err);
           notify('Could not delete', 'The contact was not deleted.');
@@ -66,7 +75,7 @@ const EditContactPage = () => {
         title='Edit contact'
         backButton
         backIconProp={<XIcon size={20} color={colors.ink} />}
-        onBackPress={() => router.navigate(`/contacts/${id}`)}
+        onBackPress={closeToContact}
         actionIcon={<CheckIcon size={20} color='white' />}
         actionEmphasis='brand'
         actionLabel='Save changes'

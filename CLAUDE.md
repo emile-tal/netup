@@ -337,6 +337,16 @@ All previously listed bugs are fixed:
   only pushes the query into `contactStore`, and the list screen owns the single
   subscription (previously two subscriptions raced over `contactSummaries`).
 
+- ~~Back out of a contact traps you in a loop~~ ✅ leaving the edit screen used
+  `router.navigate('/contacts/[id]')`, which **pushed a second copy of the profile on top
+  of edit** instead of popping. The profile's back button then landed on edit, whose back
+  button returned to the profile, forever. Both exits (save and cancel) now call
+  `router.dismissTo(...)`, delete calls `dismissTo('/')` so the dead profile goes too, and
+  the profile opens edit with `push` so there is always something to unwind to. The
+  profile's own back falls back to `/` when `canGoBack()` is false (deep links).
+  **Rule: to *return* to a screen that is already below you in the stack, `dismissTo` —
+  never `navigate`.**
+
 Fixed during the web-enablement pass:
 
 - ~~`InfiniteListCalendar` prepends forever~~ ✅ the calendar used to open decades in the
@@ -466,6 +476,26 @@ utilities. Use `className` tokens by default; import `colors` from `app/theme` o
 a prop needs a colour *string* (SVG `fill`, `placeholderTextColor`, `ActivityIndicator`,
 `sceneStyle`). Adding a colour means editing **both** files.
 
+**One anchor hue, and the set is closed.** `brand` is a saturated indigo (`#4F46E5`); the
+other two circles are a deep teal and a deep ochre either side of it. The colours are
+*meant* to be vivid — that is what gives the app life. What keeps it from going rainbow is
+not desaturation but discipline:
+
+1. **Nothing outside the token set.** No new hue gets invented for one component. If
+   something needs colour, it uses `brand`, a `tier-*`, `success` or `danger`.
+2. **Colour only where it means something** — the one primary action per screen, a
+   contact's circle, completion, danger. A company name is `text-ink-muted`, not
+   `text-brand`: it is neither an action nor a link. Everything else is ink on paper.
+3. **Tint the field, saturate the ink.** Large areas (board column heads, calendar
+   reminder chips, tier pills) take the `-light` wash with the full tone as text. Solid
+   fills are reserved for small elements: the primary icon button, a selected pill, the
+   completed checkbox.
+
+Every tone is checked against the surface it sits on at ≥4.5:1 — the tier teal and ochre
+are deliberately deeper than the "natural" versions of those hues because a `-light` wash
+of the same family is the background they most often land on. Re-check with a contrast
+calculation before nudging any of them lighter.
+
 | Token | Use |
 |-------|-----|
 | `brand` / `brand-light` / `brand-dark` | primary actions, selection, links |
@@ -476,7 +506,11 @@ a prop needs a colour *string* (SVG `fill`, `placeholderTextColor`, `ActivityInd
 | `success`, `danger` (+ `-light`, `-dark`) | completion, destructive |
 
 `avatarPalette` is separate — `app/utils/avatar.ts` hashes a name into it so a contact
-keeps the same avatar colour everywhere, with no colour stored on the record.
+keeps the same avatar colour everywhere, with no colour stored on the record. Each entry
+is a **`{ bg, fg }` pair**: tinted paper with dark initials, not a saturated fill with
+white ones. A contacts list is a wall of avatars, so solid discs were the single loudest
+thing in the app. The six tints are the same hue family the rest of the palette uses,
+dropped to a wash — enough to tell people apart, not enough to shout.
 
 ### Layout
 - **`ScreenLayout` is the only place page chrome is set**: background, safe-area edges,
@@ -525,15 +559,18 @@ there too: `getDay() - 1` returns `-1` for a month starting on a Sunday.
 
 Every contact sits in one **circle**, or none:
 
-| Tier | Label | Cadence | Colour token |
-|------|-------|---------|--------------|
-| `5` | Inner circle | every 14 days | `tier-inner` |
-| `15` | Trusted network | monthly | `tier-trusted` |
-| `50` | Strategic network | quarterly | `tier-strategic` |
-| `null` | Unassigned | none | neutral |
+| Tier | Label | What it means | Cadence | Colour token |
+|------|-------|---------------|---------|--------------|
+| `5` | Inner circle | Your closest allies: Mentors, sponsors, champions. | every 14 days | `tier-inner` |
+| `15` | Trusted network | Strategic contacts who would advocate for you. | monthly | `tier-trusted` |
+| `50` | Strategic network | Valuable weak ties that open new doors. | quarterly | `tier-strategic` |
+| `null` | Unassigned | — | none | neutral |
 
-`app/utils/outreach.ts` is the single config: labels, cadence intervals, the Tailwind class
-triples (`TIER_STYLES`), `nextOutreachDate()`, `outreachTitle()`. Change a cadence there and
+The "what it means" column is `TIER_DESCRIPTIONS`, and it is the **user's copy** — shown on
+the board columns and under the circle picker on a profile. Do not paraphrase it.
+
+`app/utils/outreach.ts` is the single config: labels, descriptions, cadence intervals, the
+Tailwind class triples (`TIER_STYLES`), `nextOutreachDate()`, `outreachTitle()`. Change a cadence there and
 nothing else needs touching. Months are used for 15/50 rather than a day count so "monthly"
 lands on the same day of the month; `addMonths` clamps so Jan 31 + 1 month is Feb 28.
 
@@ -583,7 +620,13 @@ screen owns `contactStore` and keeps it search-filtered, so the board must not s
 slice) → `TierBoard`.
 
 Three columns plus an **Unassigned** pool, side by side even on a phone (~110px each), and
-the header shows `count/target` so an over- or under-filled circle is obvious. The columns
+the header shows `count/target` so an over- or under-filled circle is obvious, over the
+circle's `TIER_DESCRIPTIONS` line and its cadence. The head carries the circle's `-light`
+wash with the label in the full tone; **the wash stops at the head** — twelve chips on a
+tinted field turn the column into a highlighter block. That head carries a
+`min-h-[112px] md:min-h-0`, because at phone width
+the label and description wrap to different line counts per column and the first chip in
+each would otherwise start at a different y. The columns
 are deliberately **not `Card`s and not scrollable**: `Card` clips, and a dragged chip has to
 travel out of the column it started in. The page scrolls as one.
 

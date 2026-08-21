@@ -4,7 +4,7 @@ import CardRow from './CardRow';
 import type { Tier } from '../../types/contacts';
 import TierPill from '../TierPill';
 import { formatShortDate } from '../../utils/date';
-import { TIERS, TIER_CADENCE_LABELS } from '../../utils/outreach';
+import { TIERS, TIER_CADENCE_LABELS, TIER_DESCRIPTIONS } from '../../utils/outreach';
 import { useContactEditStore } from '../../stores/contactEditStore';
 
 interface ProfileTierCardProps {
@@ -28,23 +28,36 @@ const ProfileTierCard = ({ tier, lastOutreachAt, editable }: ProfileTierCardProp
     <>
       <CardRow label='Circle'>
         {editable ? (
-          <View className='flex-row flex-wrap gap-2'>
-            {[...TIERS, null].map(option => (
-              <TierPill
-                key={option ?? 'none'}
-                tier={option}
-                selected={current === option}
-                onPress={() => updateField('tier', option)}
-              />
-            ))}
+          <View className='gap-1.5'>
+            <View className='flex-row flex-wrap gap-2'>
+              {[...TIERS, null].map(option => (
+                <TierPill
+                  key={option ?? 'none'}
+                  tier={option}
+                  selected={current === option}
+                  onPress={() => updateField('tier', option)}
+                />
+              ))}
+            </View>
+            {/* What the picked circle means, so the choice isn't three bare numbers. */}
+            {current && (
+              <Text className='text-[13px] leading-[18px] text-ink-subtle'>
+                {TIER_DESCRIPTIONS[current]}
+              </Text>
+            )}
           </View>
         ) : (
           <View className='gap-1'>
             <TierPill tier={current} />
             {current && (
-              <Text className='text-[13px] text-ink-subtle'>
-                {TIER_CADENCE_LABELS[current]}
-              </Text>
+              <>
+                <Text className='text-[13px] leading-[18px] text-ink-muted'>
+                  {TIER_DESCRIPTIONS[current]}
+                </Text>
+                <Text className='text-[13px] text-ink-subtle'>
+                  {TIER_CADENCE_LABELS[current]}
+                </Text>
+              </>
             )}
           </View>
         )}

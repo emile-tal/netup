@@ -7,28 +7,31 @@
  * `placeholderTextColor`, `underlayColor`, `ActivityIndicator`, etc.
  */
 
+// One anchor hue — indigo — plus two jewel tones that sit either side of it for the other
+// two circles. Saturated on purpose: colour is what gives the app life. What keeps it from
+// going rainbow is that the *set is closed* (nothing outside these) and colour only lands
+// where it means something: the one primary action per screen, the 5-15-50 circles,
+// completion and danger. Everything else is ink on paper.
 export const colors = {
-  brand: '#1A73E8',
-  brandLight: '#E8F0FD',
-  brandDark: '#1557B0',
+  brand: '#4F46E5',
+  brandLight: '#EEF0FF',
+  brandDark: '#3730A3',
 
-  success: '#34A853',
-  successLight: '#E6F4EA',
-  successDark: '#137333',
+  success: '#12855B',
+  successLight: '#E7F5EF',
+  successDark: '#0C6244',
 
-  danger: '#D93025',
-  dangerLight: '#FCE8E6',
-
-  amber: '#F9AB00',
+  danger: '#DC2626',
+  dangerLight: '#FDECEC',
 
   // One colour per 5-15-50 circle, so a contact's circle reads the same on the board, the
   // profile and the calendar. Mapped to Tailwind classes in `app/utils/outreach.ts`.
-  tierInner: '#1A73E8',
-  tierInnerLight: '#E8F0FD',
-  tierTrusted: '#0F9D96',
-  tierTrustedLight: '#E3F4F3',
-  tierStrategic: '#B26A00',
-  tierStrategicLight: '#FEF3D9',
+  tierInner: '#4F46E5',
+  tierInnerLight: '#EEF0FF',
+  tierTrusted: '#0A6E6E',
+  tierTrustedLight: '#E4F3F3',
+  tierStrategic: '#9E5410',
+  tierStrategicLight: '#FAF0E3',
 
   ink: '#1A1A1A',
   inkMuted: '#5F6368',
@@ -45,14 +48,21 @@ export const colors = {
   pressed: '#EDEFF1',
 } as const;
 
-/** Deterministic avatar backgrounds — index picked from the contact's initials. */
+/**
+ * Deterministic avatar tints — index picked from the contact's initials.
+ *
+ * Tinted paper with dark initials rather than a saturated fill with white initials: a
+ * contacts list is a wall of avatars, so solid discs are the single loudest thing in the
+ * app. These are the same six hues the rest of the palette uses, dropped to a tint, so
+ * they still tell people apart at a glance without shouting.
+ */
 export const avatarPalette = [
-  '#1A73E8',
-  '#E8430A',
-  '#34A853',
-  '#C0392B',
-  '#F9AB00',
-  '#6D4C41',
+  { bg: '#E6E6FB', fg: '#3B348F' },
+  { bg: '#DEEFF0', fg: '#14636B' },
+  { bg: '#F3E8DC', fg: '#7A4A16' },
+  { bg: '#E4EAF7', fg: '#2A4780' },
+  { bg: '#EDE4F5', fg: '#5C3579' },
+  { bg: '#E2EFE8', fg: '#1F5F44' },
 ] as const;
 
 export const layout = {

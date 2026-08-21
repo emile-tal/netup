@@ -15,6 +15,13 @@ export const TIER_LABELS: Record<Tier, string> = {
   50: 'Strategic network',
 };
 
+/** What each circle is *for* — the one place this copy lives. */
+export const TIER_DESCRIPTIONS: Record<Tier, string> = {
+  5: 'Your closest allies: Mentors, sponsors, champions.',
+  15: 'Strategic contacts who would advocate for you.',
+  50: 'Valuable weak ties that open new doors.',
+};
+
 export const TIER_CADENCE_LABELS: Record<Tier, string> = {
   5: 'Every 2 weeks',
   15: 'Monthly',

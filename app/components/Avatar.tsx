@@ -10,9 +10,10 @@ interface AvatarProps {
   size?: number;
 }
 
-/** Initials circle in a colour derived from the name. Used wherever a contact is shown. */
+/** Initials circle in a tint derived from the name. Used wherever a contact is shown. */
 const Avatar = ({ firstName, lastName, size = 40 }: AvatarProps) => {
   const name = fullName(firstName, lastName);
+  const tint = avatarColor(name);
 
   return (
     <View
@@ -21,12 +22,12 @@ const Avatar = ({ firstName, lastName, size = 40 }: AvatarProps) => {
         width: size,
         height: size,
         borderRadius: size / 2,
-        backgroundColor: avatarColor(name),
+        backgroundColor: tint.bg,
       }}
     >
       <Text
-        className='font-semibold text-white'
-        style={{ fontSize: Math.round(size * 0.36) }}
+        className='font-semibold'
+        style={{ fontSize: Math.round(size * 0.36), color: tint.fg }}
       >
         {initials(firstName, lastName)}
       </Text>
