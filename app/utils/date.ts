@@ -45,6 +45,27 @@ export function formatRelativeDate(date: Date): string {
   });
 }
 
+/**
+ * `just now` / `4 minutes ago` / `2 hours ago` / `3 days ago` — for timestamps in the
+ * recent past, where the exact clock time matters less than the distance from now.
+ */
+export function formatTimeAgo(date: Date, now: Date = new Date()): string {
+  const seconds = Math.max(0, Math.round((now.getTime() - date.getTime()) / 1000));
+
+  if (seconds < 45) return 'just now';
+
+  const plural = (value: number, unit: string) =>
+    `${value} ${unit}${value === 1 ? '' : 's'} ago`;
+
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60) return plural(minutes, 'minute');
+
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return plural(hours, 'hour');
+
+  return plural(Math.round(hours / 24), 'day');
+}
+
 /** `YYYY-MM-DD` for text inputs (same shape as `toDayKey`, named for intent). */
 export function toDateInputValue(date?: Date): string {
   return date ? toDayKey(date) : '';

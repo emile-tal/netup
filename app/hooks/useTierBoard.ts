@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import type { ContactSummary } from '@/db/repo/contacts';
+import type { ContactSummary } from '@/app/types/contacts';
 import type { DropTarget } from '@/components/network/board';
 import { bucketByTier } from '@/components/network/board';
 import { notify } from '../utils/alert';

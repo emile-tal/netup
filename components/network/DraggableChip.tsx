@@ -3,7 +3,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useMemo, useRef, useState } from 'react';
 
 import ContactChip from './ContactChip';
-import type { ContactSummary } from '@/db/repo/contacts';
+import type { ContactSummary } from '@/app/types/contacts';
 
 interface DraggableChipProps {
   contact: ContactSummary;

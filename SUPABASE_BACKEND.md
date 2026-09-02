@@ -3,7 +3,9 @@
 Implementation guide for putting netup on a real database with real auth, **without**
 giving up the offline-first structure that already exists.
 
-Status: **not started.** This document is the plan, not a record.
+Status: **implemented.** Schema, RLS, auth and the sync engine are all in place; see
+CLAUDE.md §15 for the rules that matter when changing them. What remains is listed in
+§12 at the bottom.
 
 ---
 
@@ -693,3 +695,21 @@ package.json
 Supabase Realtime, social / OAuth providers, password reset, multi-device conflict UI,
 server-side search, and the `app/contacts/*` → `app/(tabs)/contacts/*` routing move
 (CLAUDE.md §9 item 5).
+
+---
+
+## 12. What is still open
+
+- **End-to-end sync has not been exercised against a real session.** The mapping layer is
+  unit-checked (round-trip, null handling, unknown tier/origin) and everything typechecks,
+  lints and bundles on both platforms, but no push or pull has run against live data.
+  Verification steps 3–10 in §9 are all outstanding.
+- **Cross-account RLS is unverified.** Anonymous access is confirmed blocked (empty
+  selects, rejected insert, `push_contact` execute denied), which is not the same as
+  proving user A cannot read user B. Run `supabase/RLS_TEST.sql` with two real user ids.
+- **No test runner.** The mapping checks were run as a one-off script. `db/sync/mapping.ts`
+  and the outbox collapse in `push.ts` deserve real tests.
+- **Native is entirely untested** — no part of this has run on a device, including the
+  deep-link code exchange in `lib/auth/useAuthDeepLink.ts`.
+- **PKCE ties a reset link to the device that requested it.** Request on a phone, open on
+  a laptop, and the exchange fails.

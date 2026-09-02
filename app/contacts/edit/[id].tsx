@@ -1,6 +1,6 @@
 import { notify } from '../../utils/alert';
 import { deleteContact, updateContact } from '@/db/repo/contacts';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import Button from '../../components/Button';
@@ -26,10 +26,19 @@ const EditContactPage = () => {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  // Seed the editable copy from the first emission for this contact, and only that one.
+  // `useContact` is reactive, so re-seeding on every emission would let a background
+  // write — a sync pull, say — overwrite whatever the user has typed but not yet saved.
+  const seededId = useRef<string | null>(null);
   useEffect(() => {
-    if (contact) setWorkingContact(contact);
-    return () => setWorkingContact(null);
+    if (contact && seededId.current !== contact.id) {
+      seededId.current = contact.id;
+      setWorkingContact(contact);
+    }
   }, [contact, setWorkingContact]);
+
+  // Clearing belongs to unmount alone, not to every re-run of the effect above.
+  useEffect(() => () => setWorkingContact(null), [setWorkingContact]);
 
   /**
    * Leaving edit must *pop* back to the profile, not navigate to it. `navigate` pushed a

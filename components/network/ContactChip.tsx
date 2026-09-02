@@ -1,7 +1,7 @@
 import { Text, View } from 'react-native';
 
 import Avatar from '@/app/components/Avatar';
-import type { ContactSummary } from '@/db/repo/contacts';
+import type { ContactSummary } from '@/app/types/contacts';
 import { fullName } from '@/app/utils/string';
 
 interface ContactChipProps {

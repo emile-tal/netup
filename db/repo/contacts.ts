@@ -1,12 +1,14 @@
 import type { Database, Model } from '@nozbe/watermelondb';
+import type { Observable } from 'rxjs';
 import { Q } from '@nozbe/watermelondb';
+import { combineLatest } from 'rxjs';
 import { map } from 'rxjs/operators';
 import type {
   Address as AddressType,
   Contact as ContactType,
+  ContactSummary,
   Email as EmailType,
   Phone as PhoneType,
-  Tier,
 } from '../../app/types/contacts';
 import { toTier } from '../../app/utils/outreach';
 import Address from '../models/Address';
@@ -22,21 +24,6 @@ import {
   scheduleNextOutreach,
 } from './outreach';
 
-/**
- * What the contacts list and the 5-15-50 board need to draw a row — never the full
- * aggregate. `tier`/`lastOutreachAt` are here so the board can bucket and label contacts
- * from this one subscription instead of reading each contact.
- */
-export type ContactSummary = {
-  id: string;
-  firstName: string;
-  lastName: string;
-  jobTitle: string;
-  company: string;
-  tier: Tier | null;
-  lastOutreachAt?: Date;
-};
-
 /** The columns a summary is built from — what the observable has to watch to stay fresh. */
 const SUMMARY_COLUMNS = [
   'firstName',
@@ -47,7 +34,10 @@ const SUMMARY_COLUMNS = [
   'lastOutreachAt',
 ];
 
-export function observeContactSummaries(db: Database, search?: string) {
+export function observeContactSummaries(
+  db: Database,
+  search?: string
+): Observable<ContactSummary[]> {
   const q = (search ?? '').trim();
   // Escapes % and _ so a literal search for them doesn't act as a wildcard.
   const like = `%${Q.sanitizeLikeString(q)}%`;
@@ -81,19 +71,31 @@ export function observeContactSummaries(db: Database, search?: string) {
   );
 }
 
-export async function readContact(db: Database, id: string): Promise<ContactType | null> {
-  // Queried rather than `.find(id)` so a missing row returns null without a catch-all
-  // that would also swallow real DB errors.
-  const contacts = await db.get<Contact>('contacts').query(Q.where('id', id)).fetch();
-  const contact = contacts[0];
-  if (!contact) return null;
+/** Every column `toContactDTO` reads — what an observable has to watch to stay fresh. */
+const CONTACT_COLUMNS = [
+  'firstName',
+  'lastName',
+  'company',
+  'jobTitle',
+  'alumni',
+  'tier',
+  'lastOutreachAt',
+  'source',
+  'notes',
+  'firstMetDate',
+  'firstMetLocation',
+];
 
-  const [emailRows, phoneRows, addrRows] = await Promise.all([
-    db.get<Email>('emails').query(Q.where('contact_id', id)).fetch(),
-    db.get<PhoneNumber>('phoneNumbers').query(Q.where('contact_id', id)).fetch(),
-    db.get<Address>('addresses').query(Q.where('contact_id', id)).fetch(),
-  ]);
-
+/**
+ * Model rows → the `Contact` DTO. The one place the mapping lives, so the one-shot read
+ * and the reactive observable below cannot drift apart.
+ */
+function toContactDTO(
+  contact: Contact,
+  emailRows: Email[],
+  phoneRows: PhoneNumber[],
+  addrRows: Address[]
+): ContactType {
   return {
     id: contact.id,
     firstName: contact.firstName ?? '',
@@ -139,20 +141,69 @@ export async function readContact(db: Database, id: string): Promise<ContactType
   };
 }
 
-function applyEmail(row: Email, input: EmailType, contactId: string) {
+export async function readContact(db: Database, id: string): Promise<ContactType | null> {
+  // Queried rather than `.find(id)` so a missing row returns null without a catch-all
+  // that would also swallow real DB errors.
+  const contacts = await db.get<Contact>('contacts').query(Q.where('id', id)).fetch();
+  const contact = contacts[0];
+  if (!contact) return null;
+
+  const [emailRows, phoneRows, addrRows] = await Promise.all([
+    db.get<Email>('emails').query(Q.where('contact_id', id)).fetch(),
+    db.get<PhoneNumber>('phoneNumbers').query(Q.where('contact_id', id)).fetch(),
+    db.get<Address>('addresses').query(Q.where('contact_id', id)).fetch(),
+  ]);
+
+  return toContactDTO(contact, emailRows, phoneRows, addrRows);
+}
+
+/**
+ * One contact and its children, reactive. The detail and edit screens use this so a
+ * change arriving from anywhere — another screen, or a sync pull — reaches them without
+ * a manual reload. Emits `null` when the contact does not exist (or was deleted).
+ */
+export function observeContact(
+  db: Database,
+  id: string
+): Observable<ContactType | null> {
+  return combineLatest([
+    db
+      .get<Contact>('contacts')
+      .query(Q.where('id', id))
+      .observeWithColumns(CONTACT_COLUMNS),
+    db
+      .get<Email>('emails')
+      .query(Q.where('contact_id', id))
+      .observeWithColumns(['label', 'email']),
+    db
+      .get<PhoneNumber>('phoneNumbers')
+      .query(Q.where('contact_id', id))
+      .observeWithColumns(['label', 'areaCode', 'phoneNumber']),
+    db
+      .get<Address>('addresses')
+      .query(Q.where('contact_id', id))
+      .observeWithColumns(['label', 'street', 'city', 'state', 'zip', 'country']),
+  ]).pipe(
+    map(([contacts, emailRows, phoneRows, addrRows]) =>
+      contacts[0] ? toContactDTO(contacts[0], emailRows, phoneRows, addrRows) : null
+    )
+  );
+}
+
+export function applyEmail(row: Email, input: EmailType, contactId: string) {
   row.contactId = contactId;
   row.label = input.label;
   row.email = input.email;
 }
 
-function applyPhone(row: PhoneNumber, input: PhoneType, contactId: string) {
+export function applyPhone(row: PhoneNumber, input: PhoneType, contactId: string) {
   row.contactId = contactId;
   row.label = input.label;
   row.areaCode = input.areaCode;
   row.phoneNumber = input.phoneNumber;
 }
 
-function applyAddress(row: Address, input: AddressType, contactId: string) {
+export function applyAddress(row: Address, input: AddressType, contactId: string) {
   row.contactId = contactId;
   row.label = input.label;
   row.street = input.street;
@@ -167,13 +218,22 @@ function applyAddress(row: Address, input: AddressType, contactId: string) {
  * gone from `inputs` are destroyed, matching ids are updated, and inputs carrying an
  * unknown id (a row the edit store created locally) are inserted with a fresh DB id.
  * Must run inside a `db.write(...)`.
+ *
+ * Exported because the sync layer reconciles the same collections when applying a pulled
+ * contact — see `db/sync/applyRemote.ts`. Do not write a second copy.
+ *
+ * `preserveIds` is what the sync layer needs and local edits must not use. Locally, an
+ * unknown id means "the edit store invented this one", so letting WatermelonDB assign a
+ * real id is right. For a pulled row the id *is* the server's primary key, and inventing
+ * a new one would fork the record into two on the next push.
  */
-async function syncChildren<TModel extends Model, TInput extends { id: string }>(
+export async function syncChildren<TModel extends Model, TInput extends { id: string }>(
   db: Database,
   table: string,
   contactId: string,
   inputs: TInput[],
-  apply: (row: TModel, input: TInput, contactId: string) => void
+  apply: (row: TModel, input: TInput, contactId: string) => void,
+  options?: { preserveIds?: boolean }
 ) {
   const existing = await db
     .get<TModel>(table)
@@ -193,14 +253,24 @@ async function syncChildren<TModel extends Model, TInput extends { id: string }>
     if (row) {
       ops.push(row.update((r: TModel) => apply(r, input, contactId)));
     } else {
-      ops.push(db.get<TModel>(table).create((r: TModel) => apply(r, input, contactId)));
+      ops.push(
+        db.get<TModel>(table).create((r: TModel) => {
+          if (options?.preserveIds) r._raw.id = input.id;
+          apply(r, input, contactId);
+        })
+      );
     }
   }
 
   await Promise.all(ops);
 }
 
-export async function createContact(db: Database, input: ContactType) {
+/** Returns the new contact's id. Deliberately not the model — DTOs and ids cross this
+ * boundary, WatermelonDB instances do not. */
+export async function createContact(
+  db: Database,
+  input: ContactType
+): Promise<string> {
   let newContact!: Contact;
 
   await db.write(async () => {
@@ -246,7 +316,7 @@ export async function createContact(db: Database, input: ContactType) {
     await enqueueOutbox(db, 'contact', 'create', { ...input, id: newContact.id });
   });
 
-  return newContact;
+  return newContact.id;
 }
 
 /**

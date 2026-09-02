@@ -2,8 +2,7 @@
 // `TierBoard.web.tsx` (dnd-kit) diverge only in how a drag is captured — the buckets, the
 // drop-target vocabulary and the hit-testing live here so they can't drift.
 
-import type { ContactSummary } from '@/db/repo/contacts';
-import type { Tier } from '@/app/types/contacts';
+import type { ContactSummary, Tier } from '@/app/types/contacts';
 import { TIERS, isTier } from '@/app/utils/outreach';
 
 /** Where a contact can be dropped: into one of the three circles, or out of them. */

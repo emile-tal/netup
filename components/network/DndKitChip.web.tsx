@@ -1,7 +1,7 @@
 import { useDraggable } from '@dnd-kit/core';
 
 import ContactChip from './ContactChip';
-import type { ContactSummary } from '@/db/repo/contacts';
+import type { ContactSummary } from '@/app/types/contacts';
 
 interface DndKitChipProps {
   contact: ContactSummary;

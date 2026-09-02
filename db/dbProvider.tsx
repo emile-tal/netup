@@ -28,3 +28,12 @@ export function useDB(): Database {
   if (!db) throw new Error('useDB used outside DBRootProvider, or while signed out');
   return db;
 }
+
+/**
+ * The database, or `null` while signed out. For the handful of things that mount above
+ * the auth guards and must not throw there — the sync loop, chiefly. Screens should use
+ * `useDB`, which fails loudly instead of quietly doing nothing.
+ */
+export function useOptionalDB(): Database | null {
+  return useContext(DBContext);
+}

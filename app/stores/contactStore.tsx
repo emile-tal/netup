@@ -1,4 +1,4 @@
-import { ContactSummary } from '@/db/repo/contacts';
+import { ContactSummary } from '@/app/types/contacts';
 import { create } from 'zustand';
 
 interface ContactStore {

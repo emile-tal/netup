@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { Contact } from '../types/contacts';
-import { readContact } from '@/db/repo/contacts';
+import { observeContact } from '@/db/repo/contacts';
 import { useDB } from '@/db/dbProvider';
 
 interface UseContactResult {
@@ -14,7 +14,10 @@ interface UseContactResult {
 
 /**
  * Loads one contact through the repo layer. Shared by the view and edit screens so the
- * fetch effect (and its loading/error handling) lives in exactly one place.
+ * subscription (and its loading/error handling) lives in exactly one place.
+ *
+ * Reactive, not a one-shot read: a change arriving from anywhere — another screen, or a
+ * sync pull writing a remote edit — reaches these screens without a manual reload.
  */
 export function useContact(id: string | undefined): UseContactResult {
   const db = useDB();
@@ -23,11 +26,10 @@ export function useContact(id: string | undefined): UseContactResult {
   const [error, setError] = useState<Error | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
 
+  // Resubscribes — the observable is the source of truth, so "retry" means start it over.
   const reload = useCallback(() => setReloadToken(token => token + 1), []);
 
   useEffect(() => {
-    let cancelled = false;
-
     if (!id) {
       setContact(null);
       setLoading(false);
@@ -37,22 +39,18 @@ export function useContact(id: string | undefined): UseContactResult {
     setLoading(true);
     setError(null);
 
-    readContact(db, id)
-      .then(result => {
-        if (cancelled) return;
+    const subscription = observeContact(db, id).subscribe({
+      next: result => {
         setContact(result);
-      })
-      .catch((err: unknown) => {
-        if (cancelled) return;
+        setLoading(false);
+      },
+      error: (err: unknown) => {
         setError(err instanceof Error ? err : new Error(String(err)));
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+        setLoading(false);
+      },
+    });
 
-    return () => {
-      cancelled = true;
-    };
+    return () => subscription.unsubscribe();
   }, [db, id, reloadToken]);
 
   return { contact, loading, error, reload };

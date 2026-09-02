@@ -13,7 +13,7 @@ import { createPortal } from 'react-dom';
 import { Text, View } from 'react-native';
 
 import { TIERS } from '@/app/utils/outreach';
-import type { ContactSummary } from '@/db/repo/contacts';
+import type { ContactSummary } from '@/app/types/contacts';
 import type { TierBoardProps } from './board';
 import { dropZoneTarget } from './board';
 import ContactChip from './ContactChip';

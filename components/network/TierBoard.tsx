@@ -4,7 +4,7 @@ import { useCallback, useRef, useState } from 'react';
 import DraggableChip from './DraggableChip';
 import DropZone from './DropZone';
 import TierColumn from './TierColumn';
-import type { ContactSummary } from '@/db/repo/contacts';
+import type { ContactSummary } from '@/app/types/contacts';
 import type { DropTarget, Rect, TierBoardProps } from './board';
 import { dropZoneKey, hitTest } from './board';
 import { TIERS } from '@/app/utils/outreach';

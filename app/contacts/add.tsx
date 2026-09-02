@@ -39,8 +39,8 @@ const AddContactPage = () => {
 
     setSaving(true);
     try {
-      const created = await createContact(db, working);
-      router.replace(`/contacts/${created.id}`);
+      const createdId = await createContact(db, working);
+      router.replace(`/contacts/${createdId}`);
     } catch (err) {
       console.error('Error creating contact:', err);
       notify('Could not save', 'The contact was not created. Please try again.');

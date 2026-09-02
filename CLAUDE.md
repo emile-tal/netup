@@ -106,10 +106,11 @@ app/
     TierPill.tsx           # A contact's 5-15-50 circle as a pill (board + profile)
   hooks/                   # useContact, useReminders, useDebouncedCallback,
                            #   useIsWideLayout, useNavDestinations, useTierBoard,
-                           #   useOutreachRepair
+                           #   useOutreachRepair, useSync
   utils/                   # date.ts, string.ts, id.ts, avatar.ts, outreach.ts,
                            #   inputStyle.ts(+.web)
-  stores/                  # zustand: contactStore, calendarStore, contactEditStore
+  stores/                  # zustand: contactStore, calendarStore, contactEditStore,
+                           #   syncStore
   types/                   # Frontend DTOs: contacts.ts, reminders.ts, sync.ts
   icons/                   # SVG icons — all take `{ color?, size? }` (see types.ts)
 
@@ -126,6 +127,16 @@ db/
   models/                  # WatermelonDB model classes (one per table)
   repo/                    # ✅ THE MIDDLE LAYER: contacts.ts, reminders.ts,
                            #    outreach.ts (the 5-15-50 cadence), metadata.ts, outbox.ts
+  sync/                    # engine.ts (push→pull), push.ts, pull.ts, applyRemote.ts,
+                           #    mapping.ts (DTO ⇄ Postgres), cursor.ts
+
+lib/                       # ⚠️ NOT under app/ — same reason as components/ (§12)
+  supabase.ts(+.web)       # the Supabase client; URL derived from the project id
+  auth/                    # AuthProvider, useAuthDeepLink(+.web)
+
+supabase/
+  migrations/              # the Postgres schema, RLS policies, triggers, push_contact
+  RLS_TEST.sql             # cross-account RLS verification (run in the SQL editor)
 ```
 
 ---
@@ -296,9 +307,8 @@ reminders data layer, outbox/metadata on every write, the DRY extractions, loadi
 states, and the icon-prop cleanup. The **design system + responsive shell pass** (§13) is
 also done. What remains:
 
-1. **Sync push loop** — the change log is complete (`metadata` + `outbox` on every write,
-   `readOutboxQueue`/`clearOutboxEntries` in `db/repo/outbox.ts`), but nothing drains it.
-   Add the transport when a backend exists.
+1. ~~Sync push loop~~ ✅ **done.** `db/sync/` drains the outbox to Supabase and pulls
+   changes back; `app/hooks/useSync.ts` runs it. See §15.
 2. **Tests** — there is no test setup at all. The highest-value targets are the repo
    layer's pure logic: `nextOutreachDate`/`addMonths` in `app/utils/outreach.ts` (month-end
    clamping, the past-date clamp), child diffing in `syncChildren`, and date parsing in
@@ -639,3 +649,70 @@ Native drag notes, since none of it has run on a device:
 
 `null` is a real drop target (the unassigned pool), so the hit-test returns `undefined` for
 "no zone" — check for `undefined`, never falsiness.
+
+---
+
+## 15. Backend, auth & sync
+
+The app is cloud-backed by **Supabase**: Postgres for data, Supabase Auth for identity.
+WatermelonDB remains the UI's source of truth — screens never talk to Supabase. A sync
+engine moves changes both ways. Full design notes and the setup checklist live in
+`SUPABASE_BACKEND.md`.
+
+### Auth
+
+- `lib/supabase.ts` / `.web.ts` — the client. The API URL is **derived from
+  `EXPO_PUBLIC_SUPABASE_PROJECT_ID`**, so there is no separate URL variable. Native uses
+  AsyncStorage + `detectSessionInUrl: false`; web uses localStorage + `true`. PKCE on both.
+- `lib/auth/AuthProvider.tsx` — `session`, `user`, `loading`, and the five actions.
+  `signUp` returns `{ needsConfirmation }` from whether a session came back, so the
+  project's "Confirm email" toggle can be flipped without a code change.
+- **Route guards, not a redirect effect.** `app/_layout.tsx` uses `Stack.Protected`. An
+  unguarded screen renders for a frame before an effect can redirect it, and that frame
+  would call `useDB()` with no session and throw.
+- **`app/reset-password.tsx` sits outside both guards on purpose.** Following a reset link
+  creates a real session, so a screen gated on "signed out" would be unreachable exactly
+  when it is needed.
+- **One database per account** — `makeDatabase(\`app-${userId}.db\`)`. RLS protects the
+  server; nothing would protect the device without this.
+
+### The security model
+
+The publishable key is **public** — it ships in the web bundle. **RLS is the entire
+security model.** Every table has it, with `using` *and* `with check`; `user_id` is also
+stamped by a `before insert` trigger; and `push_contact` is `security invoker`, because a
+`security definer` function would bypass every policy. Never add the `service_role` key to
+this repo. Run `supabase/RLS_TEST.sql` after any policy change.
+
+### Sync
+
+`db/sync/`, mounted by `app/hooks/useSync.ts` in **`app/_layout.tsx`** — not the tab
+layout, because `app/contacts/*` are Stack routes outside `(tabs)` (§9) and the loop must
+keep running while a contact is being edited.
+
+One pass is **push, then pull**. Triggers: sign-in, `AppState` → active, NetInfo
+reconnect, a debounced reaction to the outbox row count, and a 5-minute backstop.
+
+Rules that are easy to break:
+
+- **The outbox is a dirty-id log, not a replay log.** `push.ts` collapses the queue to
+  distinct `(entity, id)` pairs and pushes each record's *current* state. `enqueueOutbox`
+  stores partial `changes` objects, so replaying them operation-by-operation is
+  order-sensitive and non-idempotent; pushing current state is retry-safe.
+- **Pulled rows must never go through the repo write functions.** `applyRemote.ts` writes
+  fields directly for two reasons that both fail silently: those functions enqueue outbox
+  rows (so every pulled change re-queues itself, forever), and `updateContact` /
+  `updateReminder` funnel through `scheduleNextOutreach` / `recordOutreach`, which would
+  re-derive the 5-15-50 cadence and move dates the user never touched.
+- **`syncChildren`'s `preserveIds` is sync-only.** Locally an unknown child id means the
+  edit store invented it, so WatermelonDB should assign a real one. For a pulled row the
+  id *is* the server's key, and minting a new one forks the record in two.
+- **One cursor per table** (`cursor.ts`), not one shared. Contacts and reminders paginate
+  independently, so a shared cursor advanced by a full page of contacts would skip
+  reminders that were never fetched.
+- **Local pending edits win.** `pull.ts` skips any row whose id has a queued outbox entry,
+  or the server's older copy would overwrite an unsent local change.
+- **Children have no `updated_at`.** A trigger bumps the parent contact instead, so a
+  contact in a pulled page is the signal to refetch its whole child set and reconcile.
+- Contacts pull before reminders, so a reminder never arrives pointing at a contact this
+  device has not created yet.

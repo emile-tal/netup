@@ -53,3 +53,18 @@ export interface Contact {
   addresses: Address[];
   firstMeeting: FirstMeeting;
 }
+
+/**
+ * What the contacts list and the 5-15-50 board need to draw a row — never the full
+ * aggregate. `tier`/`lastOutreachAt` are here so the board can bucket and label contacts
+ * from one subscription instead of reading each contact.
+ */
+export interface ContactSummary {
+  id: string;
+  firstName: string;
+  lastName: string;
+  jobTitle: string;
+  company: string;
+  tier: Tier | null;
+  lastOutreachAt?: Date;
+}
