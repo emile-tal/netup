@@ -2,6 +2,7 @@ import CalendarIcon from '../icons/CalendarIcon';
 import ContactsIcon from '../icons/ContactsIcon';
 import NavBar from '../components/nav/NavBar';
 import NetworkIcon from '../icons/NetworkIcon';
+import SettingsIcon from '../icons/SettingsIcon';
 import { StatusBar } from 'expo-status-bar';
 import { Tabs } from 'expo-router';
 import type { IconProps } from '../icons/types';
@@ -48,6 +49,10 @@ const Layout = () => {
         <Tabs.Screen
           name='network'
           options={{ title: '5-15-50', tabBarIcon: tabIcon(NetworkIcon) }}
+        />
+        <Tabs.Screen
+          name='settings'
+          options={{ title: 'Settings', tabBarIcon: tabIcon(SettingsIcon) }}
         />
       </Tabs>
     </>

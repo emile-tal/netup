@@ -1,3 +1,4 @@
+import type { KeyboardTypeOptions, TextInputProps } from 'react-native';
 import { Text, TextInput, View } from 'react-native';
 
 import { colors } from '../theme';
@@ -13,11 +14,40 @@ interface TextFieldProps {
   invalid?: boolean;
   error?: string;
   autoFocus?: boolean;
+  /** Masks input — passwords. */
+  secureTextEntry?: boolean;
+  keyboardType?: KeyboardTypeOptions;
+  autoCapitalize?: TextInputProps['autoCapitalize'];
+  /** Lets the OS keychain and browser autofill offer the right value. */
+  autoComplete?: TextInputProps['autoComplete'];
+  textContentType?: TextInputProps['textContentType'];
+  returnKeyType?: TextInputProps['returnKeyType'];
+  onSubmitEditing?: () => void;
+  editable?: boolean;
 }
 
 /** A bordered, labelled input — for modals and forms, not the inline profile cards. */
 const TextField = forwardRef<TextInput, TextFieldProps>(
-  ({ label, value, onChangeText, placeholder, invalid, error, autoFocus }, ref) => {
+  (
+    {
+      label,
+      value,
+      onChangeText,
+      placeholder,
+      invalid,
+      error,
+      autoFocus,
+      secureTextEntry,
+      keyboardType,
+      autoCapitalize,
+      autoComplete,
+      textContentType,
+      returnKeyType,
+      onSubmitEditing,
+      editable,
+    },
+    ref
+  ) => {
     return (
       <View className='w-full gap-1.5'>
         {label && <Text className='text-[12px] text-ink-subtle'>{label}</Text>}
@@ -28,9 +58,17 @@ const TextField = forwardRef<TextInput, TextFieldProps>(
           placeholder={placeholder}
           placeholderTextColor={colors.inkSubtle}
           autoFocus={autoFocus}
+          secureTextEntry={secureTextEntry}
+          keyboardType={keyboardType}
+          autoCapitalize={autoCapitalize}
+          autoComplete={autoComplete}
+          textContentType={textContentType}
+          returnKeyType={returnKeyType}
+          onSubmitEditing={onSubmitEditing}
+          editable={editable}
           className={`w-full rounded-xl border bg-surface-muted px-3 py-2.5 text-[15px] text-ink ${
             invalid ? 'border-danger' : 'border-line'
-          }`}
+          } ${editable === false ? 'opacity-60' : ''}`}
           style={noFocusRing}
         />
         {invalid && error && <Text className='text-[12px] text-danger'>{error}</Text>}
