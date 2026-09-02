@@ -1,7 +1,10 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import * as Linking from 'expo-linking';
+
 import type { Session, User } from '@supabase/supabase-js';
 
 import { supabase } from '@/lib/supabase';
+import { useAuthDeepLink } from './useAuthDeepLink';
 
 export interface SignUpResult {
   /**
@@ -20,6 +23,10 @@ interface AuthValue {
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<SignUpResult>;
   signOut: () => Promise<void>;
+  /** Emails a reset link that opens the app on `/reset-password`. */
+  sendPasswordReset: (email: string) => Promise<void>;
+  /** Sets a new password for the session established by that link. */
+  updatePassword: (password: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthValue | null>(null);
@@ -27,6 +34,9 @@ const AuthContext = createContext<AuthValue | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Native: turn an incoming `netup://…?code=…` into a session. No-op on web.
+  useAuthDeepLink();
 
   useEffect(() => {
     let active = true;
@@ -84,6 +94,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       signOut: async () => {
         const { error } = await supabase.auth.signOut();
+        if (error) throw error;
+      },
+
+      sendPasswordReset: async email => {
+        // `createURL` resolves to the site origin on web and to the `netup://` scheme on
+        // native, so one call covers both without a platform branch.
+        const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+          redirectTo: Linking.createURL('/reset-password'),
+        });
+        if (error) throw error;
+      },
+
+      updatePassword: async password => {
+        const { error } = await supabase.auth.updateUser({ password });
         if (error) throw error;
       },
     }),

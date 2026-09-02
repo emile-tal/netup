@@ -112,7 +112,6 @@ app/
   stores/                  # zustand: contactStore, calendarStore, contactEditStore
   types/                   # Frontend DTOs: contacts.ts, reminders.ts, sync.ts
   icons/                   # SVG icons — all take `{ color?, size? }` (see types.ts)
-  placeholderData.ts       # ⚠️ Dev fixtures only: the DB seed
 
 components/                # ⚠️ NOT under app/ — see §12. The 5-15-50 board only.
   network/                 # TierBoard.tsx (native) | TierBoard.web.tsx (dnd-kit),
@@ -127,8 +126,6 @@ db/
   models/                  # WatermelonDB model classes (one per table)
   repo/                    # ✅ THE MIDDLE LAYER: contacts.ts, reminders.ts,
                            #    outreach.ts (the 5-15-50 cadence), metadata.ts, outbox.ts
-  devTools.ts              # resetAndSeed(db): tiered contacts (which generate their own
-                           #   outreach reminders) + a few manual, relative-dated ones
 ```
 
 ---
@@ -369,12 +366,12 @@ visually but not to a screen reader. Correct on native.
 
 ## 11. Gotchas
 
-- `app/placeholderData.ts` is **dev fixtures only**: `contactsData` seeds the dev DB. The
-  fixtures carry a `tier`, so seeding generates real outreach reminders through
-  `createContact`; `db/devTools.ts` adds a few *manual* ones dated relative to today, so a
-  fresh dev DB exercises both origins and always has visible calendar entries.
+- **There are no dev fixtures.** `app/placeholderData.ts` and `db/devTools.ts` (the
+  `resetAndSeed` helper and its contacts-list button) were removed once accounts landed:
+  the seed wrote through `createContact`, which enqueues outbox rows, so it would have
+  pushed fixture data to the real backend. Add test data through the UI.
 - **`db.unsafeResetDatabase()` must be called inside a `db.write(...)`.** Outside one it
-  throws, and `resetAndSeed` then *appends* to the existing rows instead of replacing them.
+  throws, and the reset silently becomes a no-op that leaves every existing row in place.
 - **Never hand zustand a selector that builds a new object/array per call** (e.g.
   `s => s.map[key] ?? []`) — select the stable container and derive outside the selector,
   as `DayCell` does. Otherwise `useSyncExternalStore` re-renders in a loop.
@@ -382,7 +379,6 @@ visually but not to a screen reader. Correct on native.
   op and the change it describes land in one transaction.
 - Child rows created in the edit store carry a **client-side uuid**; `syncChildren` treats
   an id it doesn't find in the DB as an insert and lets WatermelonDB assign the real id.
-- The "Reset and Seed Database" control on the contacts list is `__DEV__`-gated.
 - WatermelonDB requires a native build; **Expo Go won't work**.
 - The root `README.md` is still the default Expo boilerplate; **this `CLAUDE.md` is the
   source of truth** for project context.
@@ -463,8 +459,6 @@ ever typechecks the non-suffixed file.
   after each prepend, gated by `readyRef`/`prependingRef`. Keep those guards.
 - Unused native-only deps (`react-native-webview`, `expo-symbols`, `expo-haptics`,
   `expo-blur`, `expo-dev-client`) have no import sites, so Metro never bundles them for web.
-- The `__DEV__`-gated seed button does not appear in a production export; add data through
-  the UI when testing `dist/`.
 
 ---
 

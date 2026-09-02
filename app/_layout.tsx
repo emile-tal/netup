@@ -45,6 +45,11 @@ const RootNavigator = () => {
           <Stack.Screen name='(auth)' />
         </Stack.Protected>
 
+        {/* Unguarded on purpose: following a reset link creates a real session, so a
+            screen gated on "signed out" would be unreachable exactly when it is needed.
+            See app/reset-password.tsx. */}
+        <Stack.Screen name='reset-password' />
+
         <Stack.Protected guard={!!session}>
           <Stack.Screen name='(tabs)' />
           <Stack.Screen name='contacts/[id]' />

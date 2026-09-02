@@ -1,4 +1,4 @@
-import { FlatList, Pressable, Text, View } from 'react-native';
+import { FlatList, View } from 'react-native';
 
 import AddIcon from '../icons/AddIcon';
 import Card from '../components/Card';
@@ -8,7 +8,6 @@ import Header from '../components/Header';
 import ScreenLayout from '../components/ScreenLayout';
 import ScreenState from '../components/ScreenState';
 import { observeContactSummaries } from '@/db/repo/contacts';
-import { resetAndSeed } from '@/db/devTools';
 import { router } from 'expo-router';
 import useContactStore from '../stores/contactStore';
 import { useDB } from '@/db/dbProvider';
@@ -52,18 +51,6 @@ const Contacts = () => {
     setSearchError,
     setSearchLoading,
   ]);
-
-  const handleResetAndSeed = async () => {
-    try {
-      setSearchLoading(true);
-      await resetAndSeed(db);
-    } catch (error) {
-      console.error('Error resetting database:', error);
-      setSearchError(error instanceof Error ? error : new Error(String(error)));
-    } finally {
-      setSearchLoading(false);
-    }
-  };
 
   const count = contactSummaries.length;
 
@@ -113,13 +100,6 @@ const Contacts = () => {
             showsVerticalScrollIndicator={false}
           />
         </Card>
-      )}
-      {__DEV__ && (
-        <Pressable onPress={handleResetAndSeed} disabled={searchLoading} className='py-3'>
-          <Text className='text-[12px] text-ink-subtle'>
-            {searchLoading ? 'Working…' : 'Reset and seed database'}
-          </Text>
-        </Pressable>
       )}
     </ScreenLayout>
   );

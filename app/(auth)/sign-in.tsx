@@ -28,6 +28,17 @@ const SignInScreen = () => {
             session lands, so there is nothing to navigate to here. */}
         <AuthForm submitLabel='Sign in' onSubmit={signIn} />
 
+        <View className='items-center'>
+          <Pressable
+            accessibilityRole='link'
+            onPress={() => router.replace('/forgot-password')}
+          >
+            <Text className='text-[14px] font-semibold text-brand'>
+              Forgot your password?
+            </Text>
+          </Pressable>
+        </View>
+
         <View className='flex-row items-center justify-center gap-1.5'>
           <Text className='text-[14px] text-ink-muted'>New here?</Text>
           <Pressable

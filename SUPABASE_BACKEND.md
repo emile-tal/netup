@@ -607,10 +607,10 @@ cut, and realtime layers onto the same `applyRemote` later.
 
 ## 8. Things that break if you don't touch them
 
-- **`resetAndSeed` in `db/devTools.ts`** goes through `createContact`, so seeding floods
-  the outbox and pushes fixture data to the real backend. It is already `__DEV__`-gated;
-  either clear the outbox after seeding or point dev builds at a second Supabase project.
-  `app/placeholderData.ts` is the seed source and carries the same concern.
+- ~~`resetAndSeed`~~ **removed.** It wrote through `createContact`, so every seeded row
+  would have queued an outbox entry and pushed fixture data to the real backend.
+  `db/devTools.ts` and `app/placeholderData.ts` are both gone; add test data through the
+  UI.
 - **`useContact` is not reactive** (§1) — pulled changes will not appear on the contact
   detail or edit screens until it is converted.
 
@@ -679,7 +679,6 @@ db/repo/contacts.ts      export syncChildren; createContact returns an id;
 app/types/contacts.ts    gains ContactSummary
 app/contacts/add.tsx     one line (created.id)
 db/repo/outbox.ts        a readOutboxQueue variant returning plain data
-db/devTools.ts           don't push fixture data
 package.json
 ```
 

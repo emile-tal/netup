@@ -1,9 +1,10 @@
-import { confirmDestructive, notify } from '../../utils/alert';
+import { notify } from '../../utils/alert';
 import { deleteContact, updateContact } from '@/db/repo/contacts';
 import { useEffect, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import Button from '../../components/Button';
+import ConfirmDialog from '../../components/ConfirmDialog';
 import CheckIcon from '@/app/icons/CheckIcon';
 import Header from '../../components/Header';
 import ProfileCard from '../../components/profile/ProfileCard';
@@ -22,6 +23,8 @@ const EditContactPage = () => {
   const { contact, loading, error, reload } = useContact(id);
   const setWorkingContact = useContactEditStore(s => s.setWorkingContact);
   const [saving, setSaving] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (contact) setWorkingContact(contact);
@@ -52,21 +55,20 @@ const EditContactPage = () => {
     }
   };
 
-  const handleDelete = () => {
-    confirmDestructive({
-      title: 'Delete contact',
-      message: 'This removes the contact and everything attached to it.',
-      onConfirm: async () => {
-        try {
-          await deleteContact(db, id);
-          // Both the edit screen and the now-dead profile beneath it have to go.
-          router.dismissTo('/');
-        } catch (err) {
-          console.error('Error deleting contact:', err);
-          notify('Could not delete', 'The contact was not deleted.');
-        }
-      },
-    });
+  const handleDelete = async () => {
+    if (deleting) return;
+    setDeleting(true);
+    try {
+      await deleteContact(db, id);
+      // Both the edit screen and the now-dead profile beneath it have to go.
+      router.dismissTo('/');
+    } catch (err) {
+      console.error('Error deleting contact:', err);
+      setConfirmingDelete(false);
+      notify('Could not delete', 'The contact was not deleted.');
+    } finally {
+      setDeleting(false);
+    }
   };
 
   return (
@@ -93,10 +95,26 @@ const EditContactPage = () => {
           contact={contact}
           editable
           footer={
-            <Button label='Delete contact' variant='danger' onPress={handleDelete} />
+            <Button
+              label='Delete contact'
+              variant='danger'
+              onPress={() => setConfirmingDelete(true)}
+            />
           }
         />
       )}
+
+      <ConfirmDialog
+        visible={confirmingDelete}
+        title='Delete contact'
+        message='This removes the contact and everything attached to it.'
+        confirmLabel='Delete'
+        busyLabel='Deleting…'
+        destructive
+        busy={deleting}
+        onConfirm={() => void handleDelete()}
+        onCancel={() => setConfirmingDelete(false)}
+      />
     </ScreenLayout>
   );
 };

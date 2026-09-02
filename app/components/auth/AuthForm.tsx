@@ -4,6 +4,11 @@ import { useRef, useState } from 'react';
 import Button from '../Button';
 import Card from '../Card';
 import TextField from '../TextField';
+import {
+  confirmPasswordProblem,
+  emailProblem,
+  passwordProblem,
+} from '../../utils/authValidation';
 
 interface AuthFormProps {
   submitLabel: string;
@@ -16,10 +21,13 @@ interface AuthFormProps {
    */
   minPasswordLength?: number;
   passwordHint?: string;
+  /**
+   * Adds a second password field that has to match. Also switches the autofill hints to
+   * the new-password variants, so the OS offers to generate and save one rather than
+   * suggesting an existing credential.
+   */
+  requireConfirmPassword?: boolean;
 }
-
-/** Rough shape check only — the server is the authority on whether an address exists. */
-const looksLikeEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 
 /**
  * The shared email + password form behind both auth screens. Owns its own field state,
@@ -30,26 +38,29 @@ const AuthForm = ({
   onSubmit,
   minPasswordLength = 0,
   passwordHint,
+  requireConfirmPassword,
 }: AuthFormProps) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [touched, setTouched] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const passwordRef = useRef<TextInput>(null);
+  const confirmRef = useRef<TextInput>(null);
 
-  const emailError = !looksLikeEmail(email) ? 'Enter a valid email address' : null;
-  const passwordError =
-    password.length < Math.max(minPasswordLength, 1)
-      ? minPasswordLength > 1
-        ? `Use at least ${minPasswordLength} characters`
-        : 'Enter your password'
-      : null;
+  const emailError = emailProblem(email);
+
+  const passwordError = passwordProblem(password, minPasswordLength);
+
+  const confirmError = requireConfirmPassword
+    ? confirmPasswordProblem(password, confirmPassword)
+    : null;
 
   const handleSubmit = async () => {
     setTouched(true);
     setError(null);
-    if (emailError || passwordError || busy) return;
+    if (emailError || passwordError || confirmError || busy) return;
 
     setBusy(true);
     try {
@@ -89,14 +100,35 @@ const AuthForm = ({
         error={passwordError ?? undefined}
         secureTextEntry
         autoCapitalize='none'
-        autoComplete='password'
-        textContentType='password'
-        returnKeyType='go'
-        onSubmitEditing={() => void handleSubmit()}
+        autoComplete={requireConfirmPassword ? 'new-password' : 'password'}
+        textContentType={requireConfirmPassword ? 'newPassword' : 'password'}
+        returnKeyType={requireConfirmPassword ? 'next' : 'go'}
+        onSubmitEditing={() =>
+          requireConfirmPassword ? confirmRef.current?.focus() : void handleSubmit()
+        }
         editable={!busy}
       />
 
-      {passwordHint && !(touched && passwordError) && (
+      {requireConfirmPassword && (
+        <TextField
+          ref={confirmRef}
+          label='Confirm password'
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+          placeholder='••••••••••'
+          invalid={touched && !!confirmError}
+          error={confirmError ?? undefined}
+          secureTextEntry
+          autoCapitalize='none'
+          autoComplete='new-password'
+          textContentType='newPassword'
+          returnKeyType='go'
+          onSubmitEditing={() => void handleSubmit()}
+          editable={!busy}
+        />
+      )}
+
+      {passwordHint && !(touched && (passwordError || confirmError)) && (
         <Text className='-mt-2 text-[12px] text-ink-subtle'>{passwordHint}</Text>
       )}
 

@@ -1,9 +1,10 @@
 import { Pressable, Text, TextInput, View } from 'react-native';
-import { confirmDestructive, notify } from '../../utils/alert';
+import { notify } from '../../utils/alert';
 import { deleteReminder, updateReminder } from '@/db/repo/reminders';
 import { useEffect, useState } from 'react';
 
 import CheckIcon from '../../icons/CheckIcon';
+import ConfirmDialog from '../ConfirmDialog';
 import { ReminderSummary } from '../../types/reminders';
 import XIcon from '../../icons/XIcon';
 import { colors } from '../../theme';
@@ -26,6 +27,8 @@ const ReminderRow = ({ item }: ReminderRowProps) => {
   // Local echo of the title so typing stays responsive; the DB write is debounced and
   // the observable pushes the canonical value back in.
   const [title, setTitle] = useState(item.title);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     setTitle(item.title);
@@ -52,19 +55,19 @@ const ReminderRow = ({ item }: ReminderRowProps) => {
     }
   };
 
-  const confirmDelete = () => {
-    confirmDestructive({
-      title: 'Delete reminder',
-      message: `Remove "${item.title}"?`,
-      onConfirm: async () => {
-        try {
-          await deleteReminder(db, item.id);
-        } catch (error) {
-          console.error('Error deleting reminder:', error);
-          notify('Could not delete', 'The reminder was not deleted.');
-        }
-      },
-    });
+  const handleDelete = async () => {
+    if (deleting) return;
+    setDeleting(true);
+    try {
+      await deleteReminder(db, item.id);
+      // No dismiss on success: the row unmounts when the observable re-emits without it.
+    } catch (error) {
+      console.error('Error deleting reminder:', error);
+      setConfirmingDelete(false);
+      notify('Could not delete', 'The reminder was not deleted.');
+    } finally {
+      setDeleting(false);
+    }
   };
 
   // Marks the row as one the cadence maintains, so a rewritten date or title reads as a
@@ -109,13 +112,29 @@ const ReminderRow = ({ item }: ReminderRowProps) => {
       </View>
 
       <Pressable
-        onPress={confirmDelete}
+        onPress={() => setConfirmingDelete(true)}
         accessibilityRole='button'
         accessibilityLabel='Delete reminder'
         className='h-8 w-8 items-center justify-center rounded-full hover:bg-danger-light'
       >
         <XIcon size={16} color={colors.inkSubtle} />
       </Pressable>
+
+      <ConfirmDialog
+        visible={confirmingDelete}
+        title='Delete reminder'
+        message={
+          item.origin === 'auto'
+            ? `Remove "${item.title}"? This counts as skipping the touch, so the next one is rescheduled.`
+            : `Remove "${item.title}"?`
+        }
+        confirmLabel='Delete'
+        busyLabel='Deleting…'
+        destructive
+        busy={deleting}
+        onConfirm={() => void handleDelete()}
+        onCancel={() => setConfirmingDelete(false)}
+      />
     </View>
   );
 };

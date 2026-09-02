@@ -6,10 +6,8 @@ import Logo from '../icons/Logo';
 import ScreenLayout from '../components/ScreenLayout';
 import { router } from 'expo-router';
 import { useAuth } from '@/lib/auth/AuthProvider';
+import { MIN_PASSWORD_LENGTH } from '../utils/authValidation';
 import { useState } from 'react';
-
-/** Keep in step with the project's password policy (Auth → Policies → Passwords). */
-const MIN_PASSWORD_LENGTH = 10;
 
 const SignUpScreen = () => {
   const { signUp } = useAuth();
@@ -66,6 +64,7 @@ const SignUpScreen = () => {
         <AuthForm
           submitLabel='Create account'
           minPasswordLength={MIN_PASSWORD_LENGTH}
+          requireConfirmPassword
           passwordHint={`At least ${MIN_PASSWORD_LENGTH} characters.`}
           onSubmit={async (email, password) => {
             // When the project requires email confirmation there is no session yet, so
