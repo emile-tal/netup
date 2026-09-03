@@ -15,7 +15,14 @@ const blankItem: { [K in CollectionKey]: () => CollectionItem<K> } = {
   addresses: (): Address => ({ id: newLocalId(), label: 'Home' }),
 };
 
-/** An empty contact, used to seed the add-contact form. */
+/**
+ * An empty contact, used to seed the add-contact form.
+ *
+ * One blank row of each collection is included so the new-contact form opens with an
+ * email, phone and address ready to type into — filling those in is the common case, and
+ * having to press "add" first is a step for nothing. Rows left blank are dropped on save
+ * by `withoutBlankChildren`.
+ */
 export function emptyContact(): Contact {
   return {
     id: '',
@@ -27,10 +34,33 @@ export function emptyContact(): Contact {
     tier: null,
     source: '',
     notes: '',
-    emails: [],
-    phones: [],
-    addresses: [],
+    emails: [blankItem.emails()],
+    phones: [blankItem.phones()],
+    addresses: [blankItem.addresses()],
     firstMeeting: { id: '', date: undefined, location: '' },
+  };
+}
+
+const isBlankEmail = (email: Email) => !email.email.trim();
+const isBlankPhone = (phone: Phone) => !phone.phoneNumber.trim();
+const isBlankAddress = (address: Address) =>
+  ![address.street, address.city, address.state, address.zip, address.country].some(part =>
+    part?.trim()
+  );
+
+/**
+ * Drops child rows the user never filled in, so an untouched blank row is not persisted.
+ *
+ * Applied on save by both the add and edit screens. A row whose content is cleared is
+ * blank by the same test, and `syncChildren` reads its absence as a deletion — which is
+ * what clearing a field should mean.
+ */
+export function withoutBlankChildren(contact: Contact): Contact {
+  return {
+    ...contact,
+    emails: contact.emails.filter(email => !isBlankEmail(email)),
+    phones: contact.phones.filter(phone => !isBlankPhone(phone)),
+    addresses: contact.addresses.filter(address => !isBlankAddress(address)),
   };
 }
 

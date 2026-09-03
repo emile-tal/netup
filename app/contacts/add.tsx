@@ -1,4 +1,8 @@
-import { emptyContact, useContactEditStore } from '../stores/contactEditStore';
+import {
+  emptyContact,
+  useContactEditStore,
+  withoutBlankChildren,
+} from '../stores/contactEditStore';
 import { useEffect, useState } from 'react';
 
 import CheckIcon from '../icons/CheckIcon';
@@ -39,7 +43,7 @@ const AddContactPage = () => {
 
     setSaving(true);
     try {
-      const createdId = await createContact(db, working);
+      const createdId = await createContact(db, withoutBlankChildren(working));
       router.replace(`/contacts/${createdId}`);
     } catch (err) {
       console.error('Error creating contact:', err);

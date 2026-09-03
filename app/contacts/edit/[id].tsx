@@ -13,7 +13,10 @@ import ScreenState from '../../components/ScreenState';
 import XIcon from '@/app/icons/XIcon';
 import { colors } from '@/app/theme';
 import { useContact } from '../../hooks/useContact';
-import { useContactEditStore } from '../../stores/contactEditStore';
+import {
+  useContactEditStore,
+  withoutBlankChildren,
+} from '../../stores/contactEditStore';
 import { useDB } from '@/db/dbProvider';
 
 const EditContactPage = () => {
@@ -54,7 +57,7 @@ const EditContactPage = () => {
 
     setSaving(true);
     try {
-      await updateContact(db, id, working);
+      await updateContact(db, id, withoutBlankChildren(working));
       closeToContact();
     } catch (err) {
       console.error('Error saving contact:', err);
