@@ -98,7 +98,8 @@ app/
     SearchBar.tsx          # Pill search input with a clear control
     ScreenState.tsx        # Shared loading / error+retry / empty rendering
     nav/                   # NavBar (picks) → SideNav | BottomNav → NavItem
-    contacts/              # ContactLink, ContactSearchBar, ContactReminders
+    contacts/              # ContactLink, ContactSearchBar, ContactReminders,
+                           #   ImportContactsModal (CSV import, §16)
     profile/               # ProfileCard + per-field sub-cards + CardRow + utils.ts
     calendar/              # InfiniteListCalendar, MonthView, DayCell, WeekdayHeader,
                            #   weekdays.ts, AddReminderModal, SelectedDayPanel,
@@ -108,7 +109,8 @@ app/
                            #   useIsWideLayout, useNavDestinations, useTierBoard,
                            #   useOutreachRepair, useSync
   utils/                   # date.ts, string.ts, id.ts, avatar.ts, outreach.ts,
-                           #   inputStyle.ts(+.web)
+                           #   inputStyle.ts(+.web), csv.ts, contactCsv.ts,
+                           #   csvFile.ts(+.web)
   stores/                  # zustand: contactStore, calendarStore, contactEditStore,
                            #   syncStore
   types/                   # Frontend DTOs: contacts.ts, reminders.ts, sync.ts
@@ -313,11 +315,13 @@ also done. What remains:
    layer's pure logic: `nextOutreachDate`/`addMonths` in `app/utils/outreach.ts` (month-end
    clamping, the past-date clamp), child diffing in `syncChildren`, and date parsing in
    `app/utils/date.ts`.
-3. **Contact picker for reminders** — a reminder can be linked to a contact only from
+3. **Native CSV import** — `app/utils/csvFile.ts` is a stub (§16). Filling it in needs
+   `expo-document-picker` + `expo-file-system` + `expo-sharing` and a dev-client rebuild.
+4. **Contact picker for reminders** — a reminder can be linked to a contact only from
    that contact's screen (`ContactReminders`). The calendar "+" creates unlinked reminders.
-4. **Date entry** — `firstMeeting` and the reminder modal use `YYYY-MM-DD` text inputs
+5. **Date entry** — `firstMeeting` and the reminder modal use `YYYY-MM-DD` text inputs
    with validation, not a picker (no date-picker dependency is installed).
-5. **Contact routes sit outside `(tabs)`** — `app/contacts/*` are Stack screens, so on
+6. **Contact routes sit outside `(tabs)`** — `app/contacts/*` are Stack screens, so on
    desktop the side rail disappears while viewing/editing a contact. Moving them under
    `app/(tabs)/contacts/` (with `href: null`) would keep the rail, at the cost of the
    push transition on mobile. Left undecided: it is a routing/URL change, not styling.
@@ -427,6 +431,7 @@ ever typechecks the non-suffixed file.
 | DB adapter (`db/adapter.ts` / `.web.ts`) | `SQLiteAdapter` | `LokiJSAdapter` → IndexedDB |
 | Alerts (`app/utils/alert.ts` / `.web.ts`) | `Alert.alert` | `window.alert` / `window.confirm` |
 | 5-15-50 drag (`components/network/TierBoard.tsx` / `.web.tsx`) | gesture-handler pan + measured drop zones | dnd-kit (`DndContext`, `DragOverlay`) |
+| CSV file I/O (`app/utils/csvFile.ts` / `.web.ts`) | stub — `notify()` says web-only | `<input type=file>` + `FileReader`, `Blob` + `<a download>` |
 
 - **Missing migrations behave differently per adapter.** `LokiJSAdapter` throws; `SQLiteAdapter`
   resets. See the migration policy in §7 — the web adapter is the strict one, so develop
@@ -729,3 +734,33 @@ Rules that are easy to break:
   declared first and unguarded `reset-password` last, or signing in lands on the reset
   screen. Sign-out additionally does an explicit `router.replace('/sign-in')` — the guard
   picks the right screen but not the right URL, and a reload would follow the URL.
+
+---
+
+## 16. CSV contact import
+
+The contacts header carries two actions: the brand-filled "+" and, to its left, a plain
+**import** button that opens `app/components/contacts/ImportContactsModal.tsx`. The modal
+downloads a CSV template and accepts a CSV upload. **Web only** for now — the native half
+of the file seam just says so (§12).
+
+- **`app/utils/csv.ts`** is format-only (`parseCsv` / `toCsv`): quoted fields, `""`
+  escapes, embedded commas/newlines, CRLF *and* LF, a stripped BOM. No domain knowledge.
+- **`app/utils/contactCsv.ts`** is the single source of truth for the column set.
+  `CONTACT_CSV_COLUMNS` drives **both** `contactCsvTemplate()` and `parseContactsCsv()`,
+  so the template and the parser cannot drift. **Addresses are deliberately not in the
+  CSV.** Columns: `firstName, lastName, company, jobTitle, email, phone, tier, alumni,
+  source, notes, firstMetDate, firstMetLocation` — one header row, one row per contact,
+  one email + one phone each. Header matching is case-insensitive and extra columns are
+  ignored, so a foreign export still imports.
+- **A whole-file problem throws `ContactCsvError`; a bad row does not.** Missing header,
+  no data rows, or more than `MAX_IMPORT_ROWS` (500) rejects the file with a message. A
+  row with no name or an unparseable `firstMetDate` is collected into `errors` and the
+  rest still import.
+- **`importContacts` in `db/repo/contacts.ts` loops `createContact`** rather than writing
+  rows itself — that is what keeps `upsertMeta`, `enqueueOutbox` and `scheduleNextOutreach`
+  correct per row, so a tiered import row gets its 5-15-50 reminder for free (§14). It
+  skips a row whose email is already taken (existing contact, or an earlier row in the
+  same file); a contact with no email is never a duplicate.
+- `tier` is narrowed with `toTier(Number(cell))` and `firstMetDate` parsed with
+  `parseDateInputValue` — the same helpers the rest of the app uses.

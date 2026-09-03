@@ -1,20 +1,24 @@
 import { FlatList, View } from 'react-native';
+import { useEffect, useState } from 'react';
 
 import AddIcon from '../icons/AddIcon';
 import Card from '../components/Card';
 import ContactLink from '../components/contacts/ContactLink';
 import ContactSearchBar from '../components/contacts/ContactSearchBar';
 import Header from '../components/Header';
+import ImportContactsModal from '../components/contacts/ImportContactsModal';
+import ImportIcon from '../icons/ImportIcon';
 import ScreenLayout from '../components/ScreenLayout';
 import ScreenState from '../components/ScreenState';
+import { colors } from '../theme';
 import { observeContactSummaries } from '@/db/repo/contacts';
 import { router } from 'expo-router';
 import useContactStore from '../stores/contactStore';
 import { useDB } from '@/db/dbProvider';
-import { useEffect } from 'react';
 
 const Contacts = () => {
   const db = useDB();
+  const [importVisible, setImportVisible] = useState(false);
   const contactSummaries = useContactStore(state => state.contactSummaries);
   const searchQuery = useContactStore(state => state.searchQuery);
   const searchLoading = useContactStore(state => state.searchLoading);
@@ -63,6 +67,9 @@ const Contacts = () => {
         actionEmphasis='brand'
         actionLabel='Add contact'
         onActionPress={() => router.navigate('/contacts/add')}
+        secondaryActionIcon={<ImportIcon size={20} color={colors.ink} />}
+        secondaryActionLabel='Import contacts from CSV'
+        onSecondaryActionPress={() => setImportVisible(true)}
       />
       <View className='pb-3'>
         <ContactSearchBar />
@@ -78,7 +85,7 @@ const Contacts = () => {
             noResults && searchQuery
               ? 'Try a different name.'
               : noResults
-                ? 'Add your first one with the + button.'
+                ? 'Add one with +, or import a CSV.'
                 : undefined
           }
         />
@@ -101,6 +108,10 @@ const Contacts = () => {
           />
         </Card>
       )}
+      <ImportContactsModal
+        visible={importVisible}
+        onRequestClose={() => setImportVisible(false)}
+      />
     </ScreenLayout>
   );
 };

@@ -416,3 +416,42 @@ export async function deleteContact(db: Database, id: string) {
     await enqueueOutbox(db, 'contact', 'delete', { id });
   });
 }
+
+export interface ImportResult {
+  imported: number;
+  /** Rows whose email already belongs to a contact (existing, or earlier in the file). */
+  skipped: number;
+}
+
+/**
+ * Bulk-creates contacts parsed from a CSV, skipping any whose email is already taken.
+ *
+ * Each row goes through `createContact`, which is what keeps metadata, the outbox entry
+ * and the 5-15-50 cadence correct for every imported contact — a row with a tier gets its
+ * first outreach reminder scheduled for free. A contact with no email is never treated as
+ * a duplicate, since there is nothing to match on.
+ */
+export async function importContacts(
+  db: Database,
+  contacts: ContactType[]
+): Promise<ImportResult> {
+  const existing = await db.get<Email>('emails').query().fetch();
+  const taken = new Set(existing.map(row => row.email.trim().toLowerCase()));
+
+  let imported = 0;
+  let skipped = 0;
+
+  for (const contact of contacts) {
+    const email = contact.emails[0]?.email.trim().toLowerCase();
+    if (email && taken.has(email)) {
+      skipped += 1;
+      continue;
+    }
+
+    await createContact(db, contact);
+    imported += 1;
+    if (email) taken.add(email);
+  }
+
+  return { imported, skipped };
+}

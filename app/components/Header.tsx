@@ -17,11 +17,17 @@ interface HeaderProps {
   actionLabel?: string;
   /** `brand` fills the action button — for the primary "add" on a list screen. */
   actionEmphasis?: 'plain' | 'brand';
+  /** A second, lower-emphasis action drawn to the left of the primary one. */
+  secondaryActionIcon?: React.ReactNode;
+  onSecondaryActionPress?: () => void;
+  secondaryActionLabel?: string;
 }
 
 /**
- * Screen header: optional back control, a left-aligned title, and one action. The title
- * is left-aligned rather than centred so it lines up with the content column beneath it.
+ * Screen header: optional back control, a left-aligned title, and up to two actions. The
+ * title is left-aligned rather than centred so it lines up with the content column
+ * beneath it. Only the primary action ever takes `brand` emphasis — one filled control
+ * per screen (see CLAUDE.md §13).
  */
 const Header = ({
   title,
@@ -33,7 +39,13 @@ const Header = ({
   onActionPress,
   actionLabel = 'Action',
   actionEmphasis = 'plain',
+  secondaryActionIcon,
+  onSecondaryActionPress,
+  secondaryActionLabel = 'Action',
 }: HeaderProps) => {
+  const hasPrimaryAction = Boolean(actionIcon && onActionPress);
+  const hasSecondaryAction = Boolean(secondaryActionIcon && onSecondaryActionPress);
+
   return (
     <View className='flex-row items-center gap-2 pb-4 pt-3'>
       {backButton && (
@@ -56,14 +68,23 @@ const Header = ({
         )}
         {subtitle && <Text className='mt-0.5 text-[13px] text-ink-subtle'>{subtitle}</Text>}
       </View>
-      {actionIcon && onActionPress && (
-        <View className='-mr-2'>
-          <IconButton
-            accessibilityLabel={actionLabel}
-            onPress={onActionPress}
-            icon={actionIcon}
-            emphasis={actionEmphasis}
-          />
+      {(hasSecondaryAction || hasPrimaryAction) && (
+        <View className='-mr-2 flex-row items-center'>
+          {hasSecondaryAction && (
+            <IconButton
+              accessibilityLabel={secondaryActionLabel}
+              onPress={onSecondaryActionPress!}
+              icon={secondaryActionIcon}
+            />
+          )}
+          {hasPrimaryAction && (
+            <IconButton
+              accessibilityLabel={actionLabel}
+              onPress={onActionPress!}
+              icon={actionIcon}
+              emphasis={actionEmphasis}
+            />
+          )}
         </View>
       )}
     </View>
