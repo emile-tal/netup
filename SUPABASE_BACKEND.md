@@ -698,18 +698,51 @@ server-side search, and the `app/contacts/*` → `app/(tabs)/contacts/*` routing
 
 ---
 
-## 12. What is still open
+## 12. Verification status
 
-- **End-to-end sync has not been exercised against a real session.** The mapping layer is
-  unit-checked (round-trip, null handling, unknown tier/origin) and everything typechecks,
-  lints and bundles on both platforms, but no push or pull has run against live data.
-  Verification steps 3–10 in §9 are all outstanding.
-- **Cross-account RLS is unverified.** Anonymous access is confirmed blocked (empty
-  selects, rejected insert, `push_contact` execute denied), which is not the same as
-  proving user A cannot read user B. Run `supabase/RLS_TEST.sql` with two real user ids.
-- **No test runner.** The mapping checks were run as a one-off script. `db/sync/mapping.ts`
-  and the outbox collapse in `push.ts` deserve real tests.
-- **Native is entirely untested** — no part of this has run on a device, including the
-  deep-link code exchange in `lib/auth/useAuthDeepLink.ts`.
-- **PKCE ties a reset link to the device that requested it.** Request on a phone, open on
-  a laptop, and the exchange fails.
+Exercised end to end in a browser against the live project (2026-09-02), with email
+confirmation temporarily disabled and restored afterwards:
+
+| Check | Result |
+|---|---|
+| Sign up → session → app | ✅ |
+| Create contact + email + phone + tier → push | ✅ parent, both children and the generated `auto` reminder, ids intact |
+| Server edit → pull → contact detail screen | ✅ (also proves `observeContact`) |
+| Child-only server edit → pull | ✅ the `touch_parent_contact` trigger works |
+| Child ids preserved through a pull | ✅ no forked rows, no duplicates |
+| Echo-loop check (outbox empty after pull) | ✅ |
+| Cadence unmoved by an unrelated pull | ✅ |
+| Offline edit → queue → reconnect → drain | ✅ once, no duplicates; UI showed "1 change waiting to upload" |
+| Contact delete → tombstone + cascade tombstones | ✅ after the fix below |
+| All three ConfirmDialogs (reminder, contact, sign out) | ✅ cancel and confirm |
+| Cross-account RLS (real second account) | ✅ reads empty; update/delete affect 0 rows; `push_contact` rejected `42501` |
+
+Four real bugs were found and fixed only because this ran against live data:
+
+1. **Push ordering.** `createContact` queues the generated reminder before the contact, so
+   the first push failed with a foreign-key violation (`23503`). Contacts now sort first.
+2. **Cascade tombstones.** Deleting a contact left its reminders live on the server.
+3. **Route fallback.** Signing in landed on `/reset-password`, because that unguarded
+   screen sat between the two guarded groups.
+4. **Sign-out URL.** Left `/forgot-password` in the address bar while rendering sign-in.
+
+---
+
+## 13. What is still open
+
+- **Run `supabase/migrations/20260903000000_cascade_soft_delete.sql`.** The client-side
+  half of the cascade fix is verified; this is the server-side belt-and-braces half, and
+  it has not been applied.
+- **Delete the two test accounts** (`synctest.a@example.com`, `synctest.b@example.com`) in
+  Authentication → Users. Their data rows were already removed.
+- **The auth hardening from §0.1 is not applied.** The live config still shows
+  `password_min_length = 6`, leaked-password protection off, and an empty redirect
+  allowlist. The client asks for 10 characters, so the server is the weaker of the two.
+- **Vercel env vars** — set `EXPO_PUBLIC_SUPABASE_PROJECT_ID` and
+  `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` before the next web deploy.
+- **No test runner.** The mapping checks were a one-off script.
+- **Native is still entirely untested** — including the deep-link code exchange in
+  `lib/auth/useAuthDeepLink.ts`, and the 5-15-50 drag gesture.
+- **Multi-device was simulated, not observed.** Server-side edits stood in for a second
+  device; two real clients syncing concurrently has not been tried.
+- **PKCE ties a reset link to the device that requested it.**

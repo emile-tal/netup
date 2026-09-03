@@ -7,10 +7,10 @@ import { AuthProvider, useAuth } from '@/lib/auth/AuthProvider';
 
 import { DBRootProvider } from '@/db/dbProvider';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import ScreenState from '@/app/components/ScreenState';
-import { Stack } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import { View } from 'react-native';
 import { colors } from '@/app/theme';
 import { useSync } from '@/app/hooks/useSync';
@@ -28,6 +28,20 @@ const SyncHost = ({ children }: { children: React.ReactNode }) => {
 
 const RootNavigator = () => {
   const { session, loading } = useAuth();
+
+  // The guards below decide *what renders*; this only fixes *the address bar*. When the
+  // app group unmounts, the router's fallback within `(auth)` is not `sign-in`, so a
+  // sign-out left `/forgot-password` in the URL while rendering the sign-in screen — and
+  // a reload would then strand the user there.
+  const hadSession = useRef(false);
+  useEffect(() => {
+    if (loading) return;
+    if (session) hadSession.current = true;
+    else if (hadSession.current) {
+      hadSession.current = false;
+      router.replace('/sign-in');
+    }
+  }, [session, loading]);
 
   // Hold the shell until the persisted session has been read back, so a returning user
   // never sees the sign-in screen flash past.
@@ -57,22 +71,27 @@ const RootNavigator = () => {
         >
           {/* The guards, not a redirect effect, are what keep a signed-out user out of
               the app: an unguarded screen can render (and call `useDB`) for a frame
-              before an effect gets the chance to redirect. */}
-          <Stack.Protected guard={!session}>
-            <Stack.Screen name='(auth)' />
-          </Stack.Protected>
+              before an effect gets the chance to redirect.
 
-          {/* Unguarded on purpose: following a reset link creates a real session, so a
-              screen gated on "signed out" would be unreachable exactly when it is
-              needed. See app/reset-password.tsx. */}
-          <Stack.Screen name='reset-password' />
-
+              Declaration order is load-bearing. When a guard flips, expo-router falls
+              back to the first *available* screen — so the app group has to come first,
+              or signing in would land on `reset-password` (which is unguarded) instead
+              of the contacts list. */}
           <Stack.Protected guard={!!session}>
             <Stack.Screen name='(tabs)' />
             <Stack.Screen name='contacts/[id]' />
             <Stack.Screen name='contacts/add' />
             <Stack.Screen name='contacts/edit/[id]' />
           </Stack.Protected>
+
+          <Stack.Protected guard={!session}>
+            <Stack.Screen name='(auth)' />
+          </Stack.Protected>
+
+          {/* Unguarded on purpose: following a reset link creates a real session, so a
+              screen gated on "signed out" would be unreachable exactly when it is
+              needed. Last, so it is never the fallback. See app/reset-password.tsx. */}
+          <Stack.Screen name='reset-password' />
         </Stack>
       </SyncHost>
     </DBRootProvider>

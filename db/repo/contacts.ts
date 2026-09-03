@@ -403,6 +403,15 @@ export async function deleteContact(db: Database, id: string) {
     const contacts = await db.get<Contact>('contacts').query(Q.where('id', id)).fetch();
     if (contacts[0]) await contacts[0].destroyPermanently();
 
+    // Reminders are their own sync entity, so the cascade above has to be recorded in the
+    // change log too. Emails/phones/addresses need no entry — they ride along inside the
+    // contact aggregate — but a reminder the server never hears about stays alive there,
+    // and a fresh install would pull it back as an orphan pointing at a deleted contact.
+    for (const reminder of reminderRows) {
+      await markDeletedMeta(db, 'reminder', reminder.id);
+      await enqueueOutbox(db, 'reminder', 'delete', { id: reminder.id });
+    }
+
     await markDeletedMeta(db, 'contact', id);
     await enqueueOutbox(db, 'contact', 'delete', { id });
   });

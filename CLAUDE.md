@@ -715,4 +715,17 @@ Rules that are easy to break:
 - **Children have no `updated_at`.** A trigger bumps the parent contact instead, so a
   contact in a pulled page is the signal to refetch its whole child set and reconcile.
 - Contacts pull before reminders, so a reminder never arrives pointing at a contact this
-  device has not created yet.
+  device has not created yet. **Push has the same ordering rule, for a harder reason:**
+  `reminders.contact_id` is a foreign key and `createContact` queues the generated
+  outreach reminder *before* the contact it belongs to, so pushing in queue order fails
+  with `23503`. `push.ts` sorts contacts first.
+- **`deleteContact` records its cascade in the change log.** Emails, phones and addresses
+  ride inside the contact aggregate and need no entry, but reminders are their own sync
+  entity — without a tombstone each, they stay live on the server and a fresh install
+  pulls them back as orphans pointing at a deleted contact. There is a server-side trigger
+  covering the same invariant (`20260903000000_cascade_soft_delete.sql`).
+- **Route declaration order in `app/_layout.tsx` is load-bearing.** When a `Stack.Protected`
+  guard flips, expo-router falls back to the first *available* screen. The app group is
+  declared first and unguarded `reset-password` last, or signing in lands on the reset
+  screen. Sign-out additionally does an explicit `router.replace('/sign-in')` — the guard
+  picks the right screen but not the right URL, and a reload would follow the URL.

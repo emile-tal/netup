@@ -39,3 +39,6 @@ yarn-error.*
 
 app-example
 .gstack/
+
+# Supabase CLI scratch
+supabase/.temp/

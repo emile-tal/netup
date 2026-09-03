@@ -56,7 +56,15 @@ function collapse(rows: { id: string; entity: string; payloadJson: string }[]): 
     else byKey.set(key, { entity, id: entityId, outboxIds: [row.id] });
   }
 
-  return { dirty: [...byKey.values()], unusableIds };
+  // Contacts before reminders, always. `reminders.contact_id` is a foreign key, and
+  // `createContact` queues the generated outreach reminder *before* the contact row it
+  // belongs to — so pushing in queue order would reject the reminder with a 23503 until
+  // the contact happened to go up in some later pass.
+  const dirty = [...byKey.values()].sort((a, b) =>
+    a.entity === b.entity ? 0 : a.entity === 'contact' ? -1 : 1
+  );
+
+  return { dirty, unusableIds };
 }
 
 async function pushContact(db: Database, id: string) {
