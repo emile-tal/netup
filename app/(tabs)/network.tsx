@@ -1,11 +1,15 @@
 import { ScrollView, Text, View } from 'react-native';
 
 import Header from '../components/Header';
+import InfoIcon from '../icons/InfoIcon';
 import ScreenLayout from '../components/ScreenLayout';
 import ScreenState from '../components/ScreenState';
 import TierBoard from '@/components/network/TierBoard';
+import TierInfoModal from '../components/TierInfoModal';
 import { TIERS } from '../utils/outreach';
+import { colors } from '../theme';
 import { useTierBoard } from '../hooks/useTierBoard';
+import { useTierInfo } from '../hooks/useTierInfo';
 
 /**
  * The 5-15-50 board: which circle each contact is in, and the only place that is changed.
@@ -15,6 +19,7 @@ import { useTierBoard } from '../hooks/useTierBoard';
  */
 const NetworkPage = () => {
   const { buckets, loading, error, move, total } = useTierBoard();
+  const { visible: infoVisible, open: openInfo, close: closeInfo } = useTierInfo();
   const assigned = TIERS.reduce((sum, tier) => sum + buckets.byTier[tier].length, 0);
 
   return (
@@ -22,6 +27,9 @@ const NetworkPage = () => {
       <Header
         title='5-15-50'
         subtitle={total > 0 ? `${assigned} of ${total} in a circle` : undefined}
+        secondaryActionIcon={<InfoIcon size={20} color={colors.inkMuted} />}
+        onSecondaryActionPress={openInfo}
+        secondaryActionLabel='About the 5-15-50 model'
       />
       {total === 0 ? (
         <ScreenState
@@ -45,6 +53,8 @@ const NetworkPage = () => {
           <TierBoard buckets={buckets} onMove={move} />
         </ScrollView>
       )}
+
+      <TierInfoModal visible={infoVisible} onClose={closeInfo} />
     </ScreenLayout>
   );
 };

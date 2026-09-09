@@ -9,6 +9,7 @@ import Email from './models/Email';
 import Metadata from './models/Metadata';
 import Outbox from './models/Outbox';
 import PhoneNumber from './models/PhoneNumber';
+import Profile from './models/Profile';
 import Reminder from './models/Reminder';
 
 setGenerator(() => Crypto.randomUUID());
@@ -17,6 +18,7 @@ export function makeDatabase(dbName = 'app-anon.db') {
   return new Database({
     adapter: makeAdapter(dbName),
     modelClasses: [
+      Profile,
       Contact,
       Email,
       PhoneNumber,

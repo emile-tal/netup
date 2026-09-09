@@ -1,6 +1,7 @@
-import { Modal, Pressable, Text, View } from 'react-native';
+import { Text } from 'react-native';
 
 import Button from './Button';
+import ModalShell from './ModalShell';
 
 interface ConfirmDialogProps {
   visible: boolean;
@@ -36,43 +37,33 @@ const ConfirmDialog = ({
   onCancel,
 }: ConfirmDialogProps) => {
   return (
-    <Modal
+    <ModalShell
       visible={visible}
-      onRequestClose={onCancel}
-      animationType='fade'
-      transparent
-      presentationStyle='overFullScreen'
+      // Not while the action is running, or the dialog would vanish with the work still
+      // in flight.
+      onRequestClose={busy ? undefined : onCancel}
+      title={title}
+      footer={
+        <>
+          <Button
+            label={cancelLabel}
+            variant='ghost'
+            onPress={onCancel}
+            disabled={busy}
+          />
+          <Button
+            label={busy ? (busyLabel ?? confirmLabel) : confirmLabel}
+            variant={destructive ? 'danger' : 'primary'}
+            onPress={onConfirm}
+            disabled={busy}
+          />
+        </>
+      }
     >
-      <View className='flex-1 items-center justify-center bg-black/40 p-5'>
-        {/* Tapping outside cancels — but not while the action is running, or the dialog
-            would vanish with the work still in flight. */}
-        <Pressable
-          accessibilityLabel='Dismiss'
-          onPress={busy ? undefined : onCancel}
-          className='absolute inset-0'
-        />
-        <View className='w-full max-w-[420px] rounded-2xl border border-line bg-surface p-6'>
-          <Text className='text-[18px] font-bold text-ink'>{title}</Text>
-          {message && (
-            <Text className='mt-2 text-[14px] leading-6 text-ink-muted'>{message}</Text>
-          )}
-          <View className='mt-6 flex-row justify-end gap-2'>
-            <Button
-              label={cancelLabel}
-              variant='ghost'
-              onPress={onCancel}
-              disabled={busy}
-            />
-            <Button
-              label={busy ? (busyLabel ?? confirmLabel) : confirmLabel}
-              variant={destructive ? 'danger' : 'primary'}
-              onPress={onConfirm}
-              disabled={busy}
-            />
-          </View>
-        </View>
-      </View>
-    </Modal>
+      {message && (
+        <Text className='mt-2 text-[14px] leading-6 text-ink-muted'>{message}</Text>
+      )}
+    </ModalShell>
   );
 };
 

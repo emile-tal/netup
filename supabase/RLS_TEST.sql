@@ -36,6 +36,11 @@ select public.push_contact(jsonb_build_object(
 select 'A sees contacts' as check, count(*) from public.contacts;
 select 'A sees emails'   as check, count(*) from public.emails;
 
+-- A's own profile row. `id` must equal auth.uid(), so this is also the check
+-- that the profiles_id_is_owner constraint and the stamp trigger agree.
+insert into public.profiles (id, display_name)
+values ('00000000-0000-0000-0000-00000000000A', 'Ada');
+
 -- ------------------------------------------- act as USER_B, expect zero
 set local request.jwt.claims = '{"sub":"00000000-0000-0000-0000-00000000000B","role":"authenticated"}';
 
@@ -45,6 +50,7 @@ select 'B sees emails'        as check, count(*) from public.emails;
 select 'B sees phone_numbers' as check, count(*) from public.phone_numbers;
 select 'B sees addresses'     as check, count(*) from public.addresses;
 select 'B sees reminders'     as check, count(*) from public.reminders;
+select 'B sees profiles'      as check, count(*) from public.profiles;
 
 -- EXPECT 0 rows affected: B cannot modify or delete A's data.
 update public.contacts set notes = 'pwned';
@@ -58,5 +64,11 @@ values (gen_random_uuid(),
         'should not belong to A');
 select 'forged row owner' as check, user_id
   from public.reminders where title = 'should not belong to A';
+
+-- EXPECT rejection: B cannot create a profile keyed to A. The before-insert
+-- trigger stamps user_id = B, and profiles_id_is_owner then fails the check,
+-- so a forged profile is refused outright rather than merely re-owned.
+insert into public.profiles (id, display_name)
+values ('00000000-0000-0000-0000-00000000000A', 'not B');
 
 rollback;  -- nothing above is persisted

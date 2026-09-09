@@ -1,4 +1,8 @@
-import { addColumns, schemaMigrations } from '@nozbe/watermelondb/Schema/migrations';
+import {
+  addColumns,
+  createTable,
+  schemaMigrations,
+} from '@nozbe/watermelondb/Schema/migrations';
 
 /**
  * WatermelonDB requires the highest `toVersion` here to match `schema.version`, and it is
@@ -6,7 +10,7 @@ import { addColumns, schemaMigrations } from '@nozbe/watermelondb/Schema/migrati
  * the range falls short, where the SQLite adapter would quietly reset. So every schema
  * bump needs an entry, even one that cannot fully express itself.
  *
- * Only v3 → v4 is covered. Older ranges are left out deliberately: v2 folded the
+ * v3 → v4 and v4 → v5 are covered. Older ranges are left out deliberately: v2 folded the
  * `firstMeetings` table into `contacts` and changed column types, which migrations cannot
  * express at all. A v1 or v2 dev database therefore falls outside the range, and the
  * adapter rebuilds it from the schema — the right outcome for a pre-production app with no
@@ -14,6 +18,22 @@ import { addColumns, schemaMigrations } from '@nozbe/watermelondb/Schema/migrati
  */
 export const migrations = schemaMigrations({
   migrations: [
+    {
+      // v5 adds the `profiles` table: the signed-in user's own record. A new table needs
+      // `createTable` — `addColumns` cannot conjure one, and a v5 entry that only added
+      // columns would report success while leaving the table missing, which is worse than
+      // no entry at all.
+      toVersion: 5,
+      steps: [
+        createTable({
+          name: 'profiles',
+          columns: [
+            { name: 'displayName', type: 'string' },
+            { name: 'onboardedAt', type: 'number', isOptional: true },
+          ],
+        }),
+      ],
+    },
     {
       // v4 replaces relationshipStrength/outreachGoal with the 5-15-50 tier, and tags
       // reminders with their origin. Only the additions are expressible; the two dropped

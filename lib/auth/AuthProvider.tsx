@@ -94,7 +94,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       signOut: async () => {
         const { error } = await supabase.auth.signOut();
-        if (error) throw error;
+        if (!error) return;
+
+        // Falling back to a local sign-out matters on the bootstrap screen: a device that
+        // has never downloaded the account is blocked there precisely *because* it cannot
+        // reach the server, so a sign-out that needs a round trip would leave the user
+        // with no way out. This clears the persisted session without one.
+        const { error: localError } = await supabase.auth.signOut({ scope: 'local' });
+        if (localError) throw localError;
       },
 
       sendPasswordReset: async email => {

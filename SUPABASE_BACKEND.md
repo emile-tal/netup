@@ -117,6 +117,29 @@ Column names are snake_case per Postgres convention; the local schema is mixed
 ### 2.1 Tables
 
 ```sql
+-- ---------- profiles ----------
+create table profiles (
+  id uuid primary key references auth.users on delete cascade,  -- IS the auth user id
+  user_id uuid not null default auth.uid() references auth.users on delete cascade,
+
+  display_name text not null default '',
+  onboarded_at timestamptz,                 -- set when first-run setup completes
+
+  updated_at timestamptz not null default now(),
+  -- No deleted_at: a profile is never deleted, it dies with the auth user.
+
+  constraint profiles_id_is_owner check (id = user_id)
+);
+```
+
+A singleton per account, and the one table whose `id` is *not* an independent client uuid:
+it is the auth user id. That makes push a pure upsert on a known key, so two devices
+onboarding before either pulls cannot fork the account into two profiles. `user_id` is kept
+redundantly so RLS, `stamp_user_id` and `RLS_TEST.sql` need no special case, and the check
+constraint rejects a row keyed to somebody else. **Profiles need no RPC** — they have no
+children, so a plain `upsert` is enough, exactly like reminders.
+
+```sql
 -- ---------- contacts ----------
 create table contacts (
   id uuid primary key,                      -- the CLIENT's uuid, never generated here
@@ -730,6 +753,11 @@ Four real bugs were found and fixed only because this ran against live data:
 
 ## 13. What is still open
 
+- **⚠️ Run `supabase/migrations/20260907000000_profiles.sql` before shipping the client.**
+  This one is not optional and not merely additive: `pull.ts` now pulls `profiles` first,
+  so without the table every pull throws, no device is ever marked hydrated, and any
+  device that has not already downloaded the account is held on the bootstrap screen.
+  Already-hydrated devices keep working offline, but they will report sync errors.
 - **Run `supabase/migrations/20260903000000_cascade_soft_delete.sql`.** The client-side
   half of the cascade fix is verified; this is the server-side belt-and-braces half, and
   it has not been applied.

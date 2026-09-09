@@ -3,6 +3,7 @@ import type {
   RemoteContact,
   RemoteEmail,
   RemotePhone,
+  RemoteProfile,
   RemoteReminder,
 } from './mapping';
 import {
@@ -10,9 +11,10 @@ import {
   applyRemoteContactDeletion,
   applyRemoteReminder,
   applyRemoteReminderDeletion,
+  applyRemoteProfile,
 } from './applyRemote';
-import { fromRemoteContact, fromRemoteReminder } from './mapping';
-import { readCursor, writeCursor } from './cursor';
+import { fromRemoteContact, fromRemoteProfile, fromRemoteReminder } from './mapping';
+import { markHydrated, readCursor, writeCursor } from './cursor';
 
 import type { Database } from '@nozbe/watermelondb';
 import { readOutboxQueue } from '../repo/outbox';
@@ -43,6 +45,47 @@ async function pendingIds(db: Database): Promise<Set<string>> {
 
 const newestOf = (rows: { updated_at: string }[]) =>
   rows.map(r => r.updated_at).sort().at(-1);
+
+/**
+ * The account's own profile. A singleton, so there is no pagination loop.
+ *
+ * Pulled before everything else: it is what the onboarding gate reads, so a returning
+ * user's name must be on the device before the gate can conclude they have never
+ * onboarded. There is no deletion branch — a profile has no tombstone (see the migration).
+ */
+async function pullProfile(
+  db: Database,
+  userId: string,
+  skip: Set<string>
+): Promise<number> {
+  const cursor = await readCursor(userId, 'profiles');
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .gt('updated_at', cursor)
+    .order('updated_at', { ascending: true })
+    .limit(1)
+    .returns<RemoteProfile[]>();
+  if (error) throw error;
+
+  const row = (data ?? [])[0];
+  if (!row) return 0;
+
+  // A local rename that has not been pushed yet outranks the server's older copy.
+  if (skip.has(row.id)) return 0;
+
+  await db.write(async () => {
+    await applyRemoteProfile(
+      db,
+      fromRemoteProfile(row),
+      new Date(row.updated_at).getTime()
+    );
+  });
+
+  await writeCursor(userId, 'profiles', row.updated_at);
+  return 1;
+}
 
 /**
  * Contacts, oldest change first.
@@ -204,10 +247,18 @@ async function pullReminders(
 export async function pullChanges(db: Database, userId: string): Promise<number> {
   const skip = await pendingIds(db);
 
-  // Contacts first: a reminder references a contact, so pulling the parent first avoids a
-  // window where a reminder points at a contact this device has not created yet.
+  // Contacts before reminders: a reminder references a contact, so pulling the parent
+  // first avoids a window where a reminder points at a contact this device has not
+  // created yet. The profile leads because the onboarding gate waits on it.
+  const profile = await pullProfile(db, userId, skip);
   const contacts = await pullContacts(db, userId, skip);
   const reminders = await pullReminders(db, userId, skip);
 
-  return contacts + reminders;
+  // Only now, with every table through without throwing, is the account genuinely on this
+  // device. That flag is what lets the app open offline from here on, and what keeps an
+  // existing account off a device that has never managed to download it — see
+  // `app/hooks/useHydration.ts`.
+  await markHydrated(userId);
+
+  return profile + contacts + reminders;
 }

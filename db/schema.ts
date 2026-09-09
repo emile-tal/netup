@@ -1,8 +1,17 @@
 import { appSchema, tableSchema } from '@nozbe/watermelondb';
 
 export const schema = appSchema({
-  version: 4,
+  version: 5,
   tables: [
+    tableSchema({
+      name: 'profiles',
+      // v5: the signed-in user. Exactly one row — the database file is already
+      // per-account — and its id is the Supabase auth user id.
+      columns: [
+        { name: 'displayName', type: 'string' },
+        { name: 'onboardedAt', type: 'number', isOptional: true },
+      ],
+    }),
     tableSchema({
       name: 'contacts',
       columns: [
@@ -79,7 +88,7 @@ export const schema = appSchema({
     tableSchema({
       name: 'outbox',
       columns: [
-        { name: 'entity', type: 'string' }, // 'contact' | 'reminder'
+        { name: 'entity', type: 'string' }, // 'profile' | 'contact' | 'reminder'
         { name: 'op', type: 'string' }, // 'create' | 'update' | 'delete'
         { name: 'payload_json', type: 'string' },
         { name: 'queued_at', type: 'number' },

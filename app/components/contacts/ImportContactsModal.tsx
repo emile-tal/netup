@@ -1,4 +1,4 @@
-import { Modal, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import {
   CONTACT_CSV_COLUMNS,
   ContactCsvError,
@@ -11,6 +11,7 @@ import { useEffect, useState } from 'react';
 
 import Button from '../Button';
 import DownloadIcon from '@/app/icons/DownloadIcon';
+import ModalShell from '../ModalShell';
 import { colors } from '@/app/theme';
 import { importContacts } from '@/db/repo/contacts';
 import { notify } from '@/app/utils/alert';
@@ -81,85 +82,71 @@ const ImportContactsModal = ({ visible, onRequestClose }: ImportContactsModalPro
   };
 
   return (
-    <Modal
+    <ModalShell
       visible={visible}
       onRequestClose={handleClose}
-      animationType='fade'
-      transparent
-      presentationStyle='overFullScreen'
-    >
-      <View className='flex-1 items-center justify-center bg-black/40 p-5'>
-        <Pressable
-          accessibilityLabel='Dismiss'
-          onPress={handleClose}
-          className='absolute inset-0'
-        />
-        <View className='w-full max-w-[420px] rounded-2xl border border-line bg-surface p-6'>
-          <Text className='mb-2 text-[18px] font-bold text-ink'>Import contacts</Text>
-
-          {summary ? (
-            <View className='gap-2'>
-              <Text className='text-[14px] text-ink'>
-                {summary.imported} {summary.imported === 1 ? 'contact' : 'contacts'} imported
-                {summary.skipped > 0
-                  ? ` · ${summary.skipped} skipped (duplicate email)`
-                  : ''}
-                {summary.errors.length > 0 ? ` · ${summary.errors.length} not read` : ''}
-              </Text>
-              {summary.errors.slice(0, MAX_LISTED_ERRORS).map(error => (
-                <Text key={error.row} className='text-[13px] text-ink-muted'>
-                  Row {error.row}: {error.message}
-                </Text>
-              ))}
-              {summary.errors.length > MAX_LISTED_ERRORS && (
-                <Text className='text-[13px] text-ink-subtle'>
-                  …and {summary.errors.length - MAX_LISTED_ERRORS} more.
-                </Text>
-              )}
-            </View>
-          ) : (
-            <View className='gap-4'>
-              <Text className='text-[14px] leading-5 text-ink-muted'>
-                Upload a CSV whose first row lists the column names. Contacts whose email
-                already exists are skipped.
-              </Text>
-              <View className='rounded-xl bg-surface-sunken p-3'>
-                <Text className='text-[12px] leading-4 text-ink-muted'>
-                  {CONTACT_CSV_COLUMNS.join(', ')}
-                </Text>
-              </View>
-              <Pressable
-                accessibilityRole='button'
-                accessibilityLabel='Download CSV template'
-                onPress={handleDownloadTemplate}
-                className='flex-row items-center gap-1.5 self-start'
-              >
-                <DownloadIcon size={16} color={colors.brand} />
-                <Text className='text-[14px] font-semibold text-brand'>
-                  Download template
-                </Text>
-              </Pressable>
-            </View>
-          )}
-
-          <View className='mt-6 flex-row justify-end gap-2'>
+      title='Import contacts'
+      footer={
+        <>
+          <Button
+            label={summary ? 'Done' : 'Cancel'}
+            variant='ghost'
+            onPress={handleClose}
+            disabled={importing}
+          />
+          {!summary && (
             <Button
-              label={summary ? 'Done' : 'Cancel'}
-              variant='ghost'
-              onPress={handleClose}
+              label={importing ? 'Importing…' : 'Choose CSV file'}
+              onPress={handlePickFile}
               disabled={importing}
             />
-            {!summary && (
-              <Button
-                label={importing ? 'Importing…' : 'Choose CSV file'}
-                onPress={handlePickFile}
-                disabled={importing}
-              />
-            )}
-          </View>
+          )}
+        </>
+      }
+    >
+      {summary ? (
+        <View className='mt-2 gap-2'>
+          <Text className='text-[14px] text-ink'>
+            {summary.imported} {summary.imported === 1 ? 'contact' : 'contacts'} imported
+            {summary.skipped > 0 ? ` · ${summary.skipped} skipped (duplicate email)` : ''}
+            {summary.errors.length > 0 ? ` · ${summary.errors.length} not read` : ''}
+          </Text>
+          {summary.errors.slice(0, MAX_LISTED_ERRORS).map(error => (
+            <Text key={error.row} className='text-[13px] text-ink-muted'>
+              Row {error.row}: {error.message}
+            </Text>
+          ))}
+          {summary.errors.length > MAX_LISTED_ERRORS && (
+            <Text className='text-[13px] text-ink-subtle'>
+              …and {summary.errors.length - MAX_LISTED_ERRORS} more.
+            </Text>
+          )}
         </View>
-      </View>
-    </Modal>
+      ) : (
+        <View className='mt-2 gap-4'>
+          <Text className='text-[14px] leading-5 text-ink-muted'>
+            Upload a CSV whose first row lists the column names. Contacts whose email
+            already exists are skipped.
+          </Text>
+          <View className='rounded-xl bg-surface-sunken p-3'>
+            <Text className='text-[12px] leading-4 text-ink-muted'>
+              {CONTACT_CSV_COLUMNS.join(', ')}
+            </Text>
+          </View>
+          <Pressable
+            accessibilityRole='button'
+            accessibilityLabel='Download CSV template'
+            onPress={handleDownloadTemplate}
+            className='flex-row items-center gap-1.5 self-start'
+          >
+            <DownloadIcon size={16} color={colors.brand} />
+            <Text className='text-[14px] font-semibold text-brand'>
+              Download template
+            </Text>
+          </Pressable>
+        </View>
+      )}
+    </ModalShell>
   );
 };
 

@@ -33,7 +33,7 @@ Key constraints / intent:
    function, or component. Extract repeated logic into functions.
 2. **One component per file.** Do not define multiple components inline in one file —
    extract them into their own files (this is an existing convention; follow it).
-3. **Screens never touch WatermelonDB directly.** All DB access goes through the
+7. **Screens never touch WatermelonDB directly.** All DB access goes through the
    **repository layer** in `db/repo/*`. Screens/components call repo functions and work
    with **frontend DTOs** from `app/types/*`, never with raw WatermelonDB models.
 4. **Preserve the middle layer.** The repo functions + DTOs are the seam that lets us add
@@ -78,6 +78,10 @@ static `dist/` ready for one.
 app/
   _layout.tsx              # Root: SafeAreaProvider + DBRootProvider + Stack
   theme.ts                 # Colour + layout constants (mirrored in tailwind.config.js)
+  (onboarding)/
+    _layout.tsx            # First-run group; initialRouteName 'name'
+    name.tsx               # "What's your name?" → completeOnboarding
+    welcome.tsx            # Full-page "Your network is your career." + Get started
   (tabs)/
     _layout.tsx            # Tabs + tabBarPosition, driven by the md breakpoint (§13)
     index.tsx              # Contacts list — owns the ONE contacts subscription ✅
@@ -91,6 +95,11 @@ app/
     ScreenLayout.tsx       # Page bg + safe area + the centred max-width column
     Header.tsx             # Back control / left-aligned title+subtitle / one action
     Card.tsx               # THE surface panel (white, hairline border, rounded-2xl)
+    ModalShell.tsx         # THE modal surface — every modal is built on this
+    Checkbox.tsx           # Square labelled checkbox (forms/dialogs, not ReminderRow's)
+    FullScreenLoader.tsx   # The whole-window spinner the root layout renders
+    BootstrapScreen.tsx    # "Can't reach netup" — blocks an un-downloaded device (§17)
+    TierInfoModal.tsx      # The 5-15-50 explainer (first visit + header info button)
     Button.tsx             # Pill button: primary / secondary / ghost / danger
     IconButton.tsx         # Circular tap target for a bare icon
     Avatar.tsx             # Initials circle, colour derived from the name
@@ -107,13 +116,14 @@ app/
     TierPill.tsx           # A contact's 5-15-50 circle as a pill (board + profile)
   hooks/                   # useContact, useReminders, useDebouncedCallback,
                            #   useIsWideLayout, useNavDestinations, useTierBoard,
-                           #   useOutreachRepair, useSync
+                           #   useOutreachRepair, useSync, useHydration, useTierInfo
+  providers/               # ProfileProvider — the app's one profile subscription
   utils/                   # date.ts, string.ts, id.ts, avatar.ts, outreach.ts,
                            #   inputStyle.ts(+.web), csv.ts, contactCsv.ts,
-                           #   csvFile.ts(+.web)
+                           #   csvFile.ts(+.web), prefs.ts (per-device flags)
   stores/                  # zustand: contactStore, calendarStore, contactEditStore,
                            #   syncStore
-  types/                   # Frontend DTOs: contacts.ts, reminders.ts, sync.ts
+  types/                   # Frontend DTOs: contacts.ts, reminders.ts, sync.ts, profile.ts
   icons/                   # SVG icons — all take `{ color?, size? }` (see types.ts)
 
 components/                # ⚠️ NOT under app/ — see §12. The 5-15-50 board only.
@@ -124,13 +134,13 @@ components/                # ⚠️ NOT under app/ — see §12. The 5-15-50 boa
 db/
   makeDatabase.ts          # SQLiteAdapter + schema + migrations + uuid generator
   dbProvider.tsx           # DBRootProvider + useDB() hook
-  schema.ts                # appSchema v4 (7 tables)
-  migrations.ts            # v4 step only; see §7 for why older ranges are uncovered
+  schema.ts                # appSchema v5 (8 tables)
+  migrations.ts            # v4 + v5 steps; see §7 for why older ranges are uncovered
   models/                  # WatermelonDB model classes (one per table)
-  repo/                    # ✅ THE MIDDLE LAYER: contacts.ts, reminders.ts,
+  repo/                    # ✅ THE MIDDLE LAYER: contacts.ts, reminders.ts, profile.ts,
                            #    outreach.ts (the 5-15-50 cadence), metadata.ts, outbox.ts
   sync/                    # engine.ts (push→pull), push.ts, pull.ts, applyRemote.ts,
-                           #    mapping.ts (DTO ⇄ Postgres), cursor.ts
+                           #    mapping.ts (DTO ⇄ Postgres), cursor.ts (+ hydration flag)
 
 lib/                       # ⚠️ NOT under app/ — same reason as components/ (§12)
   supabase.ts(+.web)       # the Supabase client; URL derived from the project id
@@ -224,12 +234,13 @@ optional remove control), and `editable` flows from the screen down to every car
 
 ---
 
-## 7. Database schema reference (`db/schema.ts`, v4)
+## 7. Database schema reference (`db/schema.ts`, v5)
 
 `contacts` is the aggregate root. Child tables carry an indexed `contact_id`.
 
 | Table | Key columns | Relationship |
 |-------|-------------|--------------|
+| `profiles` | displayName, onboardedAt? (epoch-ms) | the signed-in user; exactly one row |
 | `contacts` | firstName, lastName, company, jobTitle, alumni, **tier** (5\|15\|50, null = unassigned), **lastOutreachAt** (epoch-ms), source, notes, firstMetDate (epoch-ms), firstMetLocation | root |
 | `emails` | label, email, contact_id | belongs_to contact |
 | `phoneNumbers` | label, areaCode?, phoneNumber, contact_id | belongs_to contact |
@@ -270,12 +281,21 @@ addresses/reminders.
   column: it is how a completion knows to advance the cadence, and how the board tells the
   rows it owns from the ones the user wrote. See §14.
 
+**Added in v5 (the profile pass):**
+- **`profiles`** — the signed-in user's own record. Exactly one row: the database file is
+  already per-account, so nothing queries it by id, and a *pulled* row has to resolve just
+  as readily as a locally written one. Its `id` is always the Supabase auth user id, which
+  is what makes pushing it an idempotent upsert instead of a source of duplicate profiles.
+  `onboardedAt` is what §17's gate reads.
+
 **Migration policy (`db/migrations.ts`):**
 - **The highest `toVersion` must equal `schema.version`.** This is not optional: the LokiJS
   (web) adapter **throws** *"Missing migration"* at startup when the range falls short,
   where the SQLite adapter would quietly reset. An empty `migrations: []` alongside a v4
   schema is a hard crash on web — verified the hard way.
-- Only **v3 → v4** is covered, and only its additive half (`addColumns` for `tier`,
+- **A new table needs `createTable`, not `addColumns`.** The v5 entry creates `profiles`;
+  an entry that only added columns would report success while leaving the table missing.
+- **v3 → v4** and **v4 → v5** are covered. v4 covers only its additive half (`addColumns` for `tier`,
   `lastOutreachAt`, `origin`). The dropped columns cannot be expressed, so they linger
   unread in a migrated v3 DB — harmless, since the schema is what the repo reads.
 - Older ranges are deliberately uncovered: v2 folded a table *and* changed column types.
@@ -396,6 +416,10 @@ visually but not to a screen reader. Correct on native.
 - WatermelonDB requires a native build; **Expo Go won't work**.
 - The root `README.md` is still the default Expo boilerplate; **this `CLAUDE.md` is the
   source of truth** for project context.
+- **Every modal is built on `app/components/ModalShell.tsx`.** Four hand-rolled copies of
+  the same backdrop-and-panel markup is how it started; don't add a fifth. The shell adds
+  no spacing between its title and its children on purpose — each caller keeps its own
+  `mt-*` on the content root.
 - **Never write a generated outreach reminder by hand.** Go through `db/repo/outreach.ts`
   so `origin`, `lastOutreachAt` and the one-open-reminder invariant stay consistent (§14).
 
@@ -700,6 +724,14 @@ reconnect, a debounced reaction to the outbox row count, and a 5-minute backstop
 
 Rules that are easy to break:
 
+- **Push dispatch is a table, not an `if/else`.** `push.ts` keys `PUSHERS` and
+  `PUSH_ORDER` off `OutboxEntity`. The old `if contact … else` branch silently pushed
+  anything it didn't recognise into the `reminders` table; adding an entity without adding
+  a pusher must fail visibly, not quietly corrupt. Order is profile → contact → reminder,
+  and the contact-before-reminder half is load-bearing (see the `23503` note below).
+- **`pullChanges` marks the device hydrated, and only at the very end.** After profile,
+  contacts *and* reminders have all returned. That flag is what §17's gate reads, so
+  setting it earlier would let a device into the app with a partial download.
 - **The outbox is a dirty-id log, not a replay log.** `push.ts` collapses the queue to
   distinct `(entity, id)` pairs and pushes each record's *current* state. `enqueueOutbox`
   stores partial `changes` objects, so replaying them operation-by-operation is
@@ -719,8 +751,10 @@ Rules that are easy to break:
   or the server's older copy would overwrite an unsent local change.
 - **Children have no `updated_at`.** A trigger bumps the parent contact instead, so a
   contact in a pulled page is the signal to refetch its whole child set and reconcile.
-- Contacts pull before reminders, so a reminder never arrives pointing at a contact this
-  device has not created yet. **Push has the same ordering rule, for a harder reason:**
+- **The profile pulls first**, then contacts, then reminders. The profile leads because
+  §17's gate reads it: a returning user's name must be on the device before the app can
+  conclude they never onboarded. Contacts pull before reminders, so a reminder never
+  arrives pointing at a contact this device has not created yet. **Push has the same ordering rule, for a harder reason:**
   `reminders.contact_id` is a foreign key and `createContact` queues the generated
   outreach reminder *before* the contact it belongs to, so pushing in queue order fails
   with `23503`. `push.ts` sorts contacts first.
@@ -764,3 +798,67 @@ of the file seam just says so (§12).
   same file); a contact with no email is never a duplicate.
 - `tier` is narrowed with `toTier(Number(cell))` and `firstMetDate` parsed with
   `parseDateInputValue` — the same helpers the rest of the app uses.
+
+---
+
+## 17. First run: hydration, the profile, and onboarding
+
+### The rule
+
+**A device must complete one successful download before an existing account can be used on
+it.** After that the device is *hydrated* and works offline indefinitely.
+
+That is what makes the offline-first promise coherent rather than vague. It supports the
+two cases that actually matter: someone who stays on one phone forever and never thinks
+about connectivity, and someone already hydrated who is offline and still wants to add a
+reminder on the fly. What it must never do is show a hydrated-looking but empty app to a
+user whose data simply has not arrived — that is indistinguishable from data loss.
+
+`netup.hydrated.${userId}` in AsyncStorage (`db/sync/cursor.ts`) is the flag, written by
+`pullChanges` once every table has come through. **It cannot be inferred from the cursors:**
+`writeCursor` only advances from rows that came back, so an account with nothing in it
+would leave every cursor at `EPOCH` forever.
+
+### The gate
+
+`app/_layout.tsx`'s `RootStack` decides what a signed-in user sees, in order:
+
+| State | Source | Renders |
+|-------|--------|---------|
+| checking / hydrating | `useHydration` | `FullScreenLoader` |
+| failed | `useHydration` | `BootstrapScreen` (Try again / Sign out) |
+| profile not loaded yet | `ProfileProvider` | `FullScreenLoader` |
+| no `onboardedAt` | `ProfileProvider` | the `(onboarding)` group |
+| otherwise | — | the app |
+
+Rules that are easy to break:
+
+- **The first two states are early returns, not route groups.** Neither is a destination,
+  neither has back behaviour, and rendering *above* the router is what stops any route —
+  including unguarded `reset-password` — from mounting and calling `useDB()` against data
+  that is not there. The precedent is the existing `loading` return in `RootNavigator`.
+- **`(onboarding)` sits strictly between the app group and `(auth)`.** A guard flip falls
+  back to the first *available* screen, so finishing onboarding must find `(tabs)` above it
+  and signing out must find `(auth)` below it. `reset-password` stays last.
+- **Hold, don't guess, while the profile is loading.** Rendering before the first emission
+  flashes the first-run flow at a user who finished it months ago.
+- **`useHydration` owns its own promise rather than reading `syncStore`.** That store's
+  `status` starts at `'idle'` and returns to `'idle'` on success, so it cannot tell "never
+  ran" from "finished". It is a status display, not a gate signal.
+- **`signOut` falls back to `scope: 'local'`.** The escape hatch on `BootstrapScreen` is
+  offered precisely when the network is unreachable, so a sign-out needing a round trip
+  would strand the user there.
+- **A returning user cannot be re-onboarded.** `(onboarding)` is only reachable once
+  hydrated, and hydration pulls the profile first — so if a profile exists on the server it
+  is local before the gate ever looks at `onboardedAt`.
+
+### Where a first-run flag belongs
+
+| Signal | Home | Why |
+|--------|------|-----|
+| display name, `onboardedAt` | `profiles`, synced | account data; follows the user to any device |
+| device hydrated | AsyncStorage, per-user | a property of *this device*; never synced |
+| 5-15-50 modal dismissed | AsyncStorage, per-user (`app/utils/prefs.ts`) | per-device convenience, harmless to re-show |
+
+`app/utils/prefs.ts` is the place for the third kind. Anything that must follow the user
+between devices goes on the profile record instead.

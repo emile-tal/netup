@@ -1,8 +1,9 @@
-import { Modal, Pressable, Text, TextInput, View } from 'react-native';
+import { TextInput, View } from 'react-native';
 import { parseDateInputValue, toDateInputValue } from '@/app/utils/date';
 import { useEffect, useRef, useState } from 'react';
 
 import Button from '../Button';
+import ModalShell from '../ModalShell';
 import TextField from '../TextField';
 import { createReminder } from '@/db/repo/reminders';
 import { notify } from '@/app/utils/alert';
@@ -77,49 +78,39 @@ const AddReminderModal = ({
   };
 
   return (
-    <Modal
+    <ModalShell
       visible={visible}
-      onRequestClose={onRequestClose}
-      animationType='fade'
-      transparent
-      presentationStyle='overFullScreen'
+      onRequestClose={handleClose}
+      title='New reminder'
+      footer={
+        <>
+          <Button label='Cancel' variant='ghost' onPress={reset} />
+          <Button
+            label={saving ? 'Adding…' : 'Add reminder'}
+            onPress={handleAdd}
+            disabled={saving}
+          />
+        </>
+      }
     >
-      <View className='flex-1 items-center justify-center bg-black/40 p-5'>
-        <Pressable
-          accessibilityLabel='Dismiss'
-          onPress={handleClose}
-          className='absolute inset-0'
+      <View className='mt-5 gap-4'>
+        <TextField
+          ref={inputRef}
+          label='Title'
+          placeholder='Coffee with Sarah'
+          value={reminderTitle}
+          onChangeText={setReminderTitle}
         />
-        <View className='w-full max-w-[420px] rounded-2xl border border-line bg-surface p-6'>
-          <Text className='mb-5 text-[18px] font-bold text-ink'>New reminder</Text>
-          <View className='gap-4'>
-            <TextField
-              ref={inputRef}
-              label='Title'
-              placeholder='Coffee with Sarah'
-              value={reminderTitle}
-              onChangeText={setReminderTitle}
-            />
-            <TextField
-              label='Date'
-              placeholder='YYYY-MM-DD (optional)'
-              value={dateText}
-              onChangeText={setDateText}
-              invalid={invalidDate}
-              error='Use the format YYYY-MM-DD.'
-            />
-          </View>
-          <View className='mt-6 flex-row justify-end gap-2'>
-            <Button label='Cancel' variant='ghost' onPress={reset} />
-            <Button
-              label={saving ? 'Adding…' : 'Add reminder'}
-              onPress={handleAdd}
-              disabled={saving}
-            />
-          </View>
-        </View>
+        <TextField
+          label='Date'
+          placeholder='YYYY-MM-DD (optional)'
+          value={dateText}
+          onChangeText={setDateText}
+          invalid={invalidDate}
+          error='Use the format YYYY-MM-DD.'
+        />
       </View>
-    </Modal>
+    </ModalShell>
   );
 };
 

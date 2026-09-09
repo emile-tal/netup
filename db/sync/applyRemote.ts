@@ -7,6 +7,8 @@ import Contact from '../models/Contact';
 import type { Database } from '@nozbe/watermelondb';
 import Email from '../models/Email';
 import PhoneNumber from '../models/PhoneNumber';
+import Profile from '../models/Profile';
+import type { Profile as ProfileType } from '../../app/types/profile';
 import { Q } from '@nozbe/watermelondb';
 import Reminder from '../models/Reminder';
 import type { Reminder as ReminderType } from '../../app/types/reminders';
@@ -50,6 +52,40 @@ function applyReminderFields(row: Reminder, dto: ReminderType) {
   row.contactId = dto.contactId;
   row.completed = dto.completed;
   row.origin = dto.origin;
+}
+
+/**
+ * Upserts the pulled profile. Must run inside a `db.write(...)`.
+ *
+ * There is no deletion counterpart: a profile is never deleted, it dies with the auth user
+ * via the server's FK cascade, so nothing ever pulls a tombstone for one.
+ */
+export async function applyRemoteProfile(
+  db: Database,
+  dto: ProfileType,
+  serverUpdatedAt: number
+) {
+  const existing = await db
+    .get<Profile>('profiles')
+    .query(Q.where('id', dto.id))
+    .fetch();
+
+  if (existing[0]) {
+    await existing[0].update(row => {
+      row.displayName = dto.displayName;
+      row.onboardedAt = dto.onboardedAt?.getTime();
+    });
+  } else {
+    await db.get<Profile>('profiles').create(row => {
+      // The server's key is the identity. Letting WatermelonDB mint one would fork the
+      // account's single profile into two rows that then fight over every push.
+      row._raw.id = dto.id;
+      row.displayName = dto.displayName;
+      row.onboardedAt = dto.onboardedAt?.getTime();
+    });
+  }
+
+  await upsertMeta(db, 'profile', dto.id, serverUpdatedAt);
 }
 
 /**

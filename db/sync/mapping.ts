@@ -8,11 +8,19 @@
  */
 
 import type { Contact } from '../../app/types/contacts';
+import type { Profile } from '../../app/types/profile';
 import type { Reminder, ReminderOrigin } from '../../app/types/reminders';
 
 import { toTier } from '../../app/utils/outreach';
 
 // ─────────────────────────────────────────────────────────── remote row shapes
+
+export interface RemoteProfile {
+  id: string;
+  display_name: string | null;
+  onboarded_at: string | null;
+  updated_at: string;
+}
 
 export interface RemoteContact {
   id: string;
@@ -126,6 +134,21 @@ export function toRemoteContactPayload(contact: Contact): Record<string, unknown
   };
 }
 
+/**
+ * Profiles have no children, so they go up as a plain upsert like reminders.
+ *
+ * `id` is already the auth user id, so `user_id` is the same value — sent anyway to match
+ * every other table, and overwritten server-side by the `stamp_user_id` trigger regardless.
+ */
+export function toRemoteProfile(profile: Profile, userId: string) {
+  return {
+    id: profile.id,
+    user_id: userId,
+    display_name: profile.displayName,
+    onboarded_at: toIso(profile.onboardedAt),
+  };
+}
+
 /** Reminders have no children, so they go up as a plain upsert. */
 export function toRemoteReminder(reminder: Reminder, userId: string) {
   return {
@@ -140,6 +163,14 @@ export function toRemoteReminder(reminder: Reminder, userId: string) {
 }
 
 // ─────────────────────────────────────────────────────────────────── incoming
+
+export function fromRemoteProfile(row: RemoteProfile): Profile {
+  return {
+    id: row.id,
+    displayName: row.display_name ?? '',
+    onboardedAt: fromIso(row.onboarded_at),
+  };
+}
 
 export function fromRemoteContact(
   row: RemoteContact,
