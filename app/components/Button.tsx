@@ -42,7 +42,7 @@ const Button = ({
         containerStyles[variant]
       } ${fullWidth ? 'w-full' : 'self-start'} ${disabled ? 'opacity-50' : ''}`}
     >
-      <Text className={`text-[14px] font-semibold ${labelStyles[variant]}`}>{label}</Text>
+      <Text className={`font-nunito-medium text-[14px] ${labelStyles[variant]}`}>{label}</Text>
     </Pressable>
   );
 };

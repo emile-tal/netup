@@ -50,7 +50,7 @@ const TierInfoModal = ({ visible, onClose }: TierInfoModalProps) => {
       }
     >
       <View className='mt-2 gap-4'>
-        <Text className='text-[14px] leading-5 text-ink-muted'>
+        <Text className='font-nunito text-[14px] leading-5 text-ink-muted'>
           Your network works best in three circles. Put a contact in one and netup keeps
           track of when you last reached out, then reminds you when it&apos;s time again.
         </Text>
@@ -59,11 +59,11 @@ const TierInfoModal = ({ visible, onClose }: TierInfoModalProps) => {
           <View key={tier} className={`gap-1.5 rounded-xl p-3 ${TIER_STYLES[tier].wash}`}>
             <View className='flex-row items-center justify-between gap-2'>
               <TierPill tier={tier} />
-              <Text className={`text-[12px] font-semibold ${TIER_STYLES[tier].text}`}>
+              <Text className={`font-nunito text-[12px] ${TIER_STYLES[tier].text}`}>
                 {TIER_CADENCE_LABELS[tier]}
               </Text>
             </View>
-            <Text className='text-[13px] leading-5 text-ink-muted'>
+            <Text className='font-nunito text-[13px] leading-5 text-ink-muted'>
               {TIER_DESCRIPTIONS[tier]}
             </Text>
           </View>

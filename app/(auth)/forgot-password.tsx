@@ -42,7 +42,7 @@ const ForgotPasswordScreen = () => {
         <View className='flex-1 justify-center gap-6 py-8'>
           <View className='items-center gap-3'>
             <Logo size={44} />
-            <Text className='text-[26px] font-bold tracking-tight text-ink'>
+            <Text className='font-nunito text-[26px] tracking-tight text-ink'>
               Check your inbox
             </Text>
           </View>
@@ -50,8 +50,8 @@ const ForgotPasswordScreen = () => {
           <Card className='gap-2'>
             {/* Deliberately not "if an account exists" — Supabase returns success either
                 way, so promising a delivered email we cannot confirm would be a lie. */}
-            <Text className='text-center text-[14px] leading-6 text-ink-muted'>
-              If <Text className='font-semibold text-ink'>{sentTo}</Text> has an account,
+            <Text className='font-nunito text-center text-[14px] leading-6 text-ink-muted'>
+              If <Text className='font-nunito text-ink'>{sentTo}</Text> has an account,
               a reset link is on its way. The link opens netup and lets you set a new
               password.
             </Text>
@@ -62,7 +62,7 @@ const ForgotPasswordScreen = () => {
               accessibilityRole='link'
               onPress={() => router.replace('/sign-in')}
             >
-              <Text className='text-[14px] font-semibold text-brand'>
+              <Text className='font-nunito text-[14px] text-brand'>
                 Back to sign in
               </Text>
             </Pressable>
@@ -78,10 +78,10 @@ const ForgotPasswordScreen = () => {
         <View className='items-center gap-3'>
           <Logo size={44} />
           <View className='items-center gap-1'>
-            <Text className='text-[26px] font-bold tracking-tight text-ink'>
+            <Text className='font-nunito text-[26px] tracking-tight text-ink'>
               Reset your password
             </Text>
-            <Text className='px-6 text-center text-[14px] leading-6 text-ink-muted'>
+            <Text className='font-nunito px-6 text-center text-[14px] leading-6 text-ink-muted'>
               We&apos;ll email you a link to set a new one.
             </Text>
           </View>
@@ -106,7 +106,7 @@ const ForgotPasswordScreen = () => {
 
           {error && (
             <View className='rounded-xl bg-danger-light px-3 py-2.5'>
-              <Text className='text-[13px] leading-5 text-danger'>{error}</Text>
+              <Text className='font-nunito text-[13px] leading-5 text-danger'>{error}</Text>
             </View>
           )}
 
@@ -119,9 +119,9 @@ const ForgotPasswordScreen = () => {
         </Card>
 
         <View className='flex-row items-center justify-center gap-1.5'>
-          <Text className='text-[14px] text-ink-muted'>Remembered it?</Text>
+          <Text className='font-nunito text-[14px] text-ink-muted'>Remembered it?</Text>
           <Pressable accessibilityRole='link' onPress={() => router.replace('/sign-in')}>
-            <Text className='text-[14px] font-semibold text-brand'>Sign in</Text>
+            <Text className='font-nunito text-[14px] text-brand'>Sign in</Text>
           </Pressable>
         </View>
       </View>

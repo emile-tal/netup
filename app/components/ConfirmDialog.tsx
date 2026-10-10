@@ -61,7 +61,7 @@ const ConfirmDialog = ({
       }
     >
       {message && (
-        <Text className='mt-2 text-[14px] leading-6 text-ink-muted'>{message}</Text>
+        <Text className='font-nunito mt-2 text-[14px] leading-6 text-ink-muted'>{message}</Text>
       )}
     </ModalShell>
   );

@@ -48,21 +48,21 @@ const TierColumn = ({ target, count, isOver, children }: TierColumnProps) => {
       >
         <Text
           numberOfLines={2}
-          className={`text-[11px] font-bold uppercase tracking-wide ${
-            style?.text ?? 'text-ink-muted'
-          }`}
+          className={`font-nunito text-[11px] uppercase tracking-wide ${
+ style?.text ?? 'text-ink-muted'
+ }`}
         >
           {target ? TIER_LABELS[target] : 'Unassigned'}
         </Text>
-        <Text className='text-[15px] font-bold text-ink'>
+        <Text className='font-nunito text-[15px] text-ink'>
           {/* `count/target` makes over- and under-filled circles obvious, which is the
               whole point of picking 5, 15 and 50 as the sizes. */}
           {target ? `${count}/${target}` : count}
         </Text>
-        <Text numberOfLines={3} className='text-[10px] leading-[13px] text-ink-muted'>
+        <Text numberOfLines={3} className='font-nunito text-[10px] leading-[13px] text-ink-muted'>
           {target ? TIER_DESCRIPTIONS[target] : 'Not in a circle yet.'}
         </Text>
-        <Text numberOfLines={1} className='text-[10px] text-ink-muted'>
+        <Text numberOfLines={1} className='font-nunito text-[10px] text-ink-muted'>
           {target ? TIER_CADENCE_LABELS[target] : 'No reminders'}
         </Text>
       </View>

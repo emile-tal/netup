@@ -18,7 +18,7 @@ const ProfileEmailCard = ({ email, editable }: ProfileEmailCardProps) => {
   if (!editable) {
     return (
       <CardRow label={email.label}>
-        <Text className='text-[15px] text-ink'>{email.email}</Text>
+        <Text className='font-nunito text-[15px] text-ink'>{email.email}</Text>
       </CardRow>
     );
   }
@@ -36,7 +36,7 @@ const ProfileEmailCard = ({ email, editable }: ProfileEmailCardProps) => {
         placeholderTextColor={colors.inkSubtle}
         keyboardType='email-address'
         autoCapitalize='none'
-        className='rounded-lg bg-surface-muted px-2 py-1.5 text-[15px] text-ink'
+        className='font-nunito rounded-lg bg-surface-muted px-2 py-1.5 text-[15px] text-ink'
         style={noFocusRing}
       />
     </CardRow>

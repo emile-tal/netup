@@ -10,6 +10,7 @@ import { DBRootProvider } from '@/db/dbProvider';
 import FullScreenLoader from '@/app/components/FullScreenLoader';
 import { ProfileProvider, useProfile } from '@/app/providers/ProfileProvider';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { useFonts } from 'expo-font';
 import React, { useEffect, useRef } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Stack, router } from 'expo-router';
@@ -147,6 +148,19 @@ const RootNavigator = () => {
 };
 
 export default function RootLayout() {
+  // Two faces, no bold — emphasis is size and colour, never weight (see FRONTEND.md).
+  // The keys are the family names `tailwind.config.js` exposes as `font-nunito` and
+  // `font-nunito-medium`; React Native will not synthesise a weight for a custom family,
+  // so each one has to be loaded separately.
+  const [fontsLoaded] = useFonts({
+    Nunito: require('../assets/fonts/nunito/static/Nunito-Regular.ttf'),
+    NunitoMedium: require('../assets/fonts/nunito/static/Nunito-Medium.ttf'),
+  });
+
+  // Hold the whole app rather than let it paint in the system font and reflow — the type
+  // is the first thing you see, and the swap is very visible at display sizes.
+  if (!fontsLoaded) return <FullScreenLoader />;
+
   return (
     // Required by the 5-15-50 board's drag gestures on native (see
     // components/network/DraggableChip). A no-op wrapper on web.

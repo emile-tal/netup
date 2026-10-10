@@ -44,7 +44,7 @@ const ModalShell = ({
           />
         )}
         <View className='w-full max-w-[420px] rounded-2xl border border-line bg-surface p-6'>
-          {title && <Text className='text-[18px] font-bold text-ink'>{title}</Text>}
+          {title && <Text className='font-nunito text-[21px] text-ink'>{title}</Text>}
           {children}
           {footer && <View className='mt-6 flex-row justify-end gap-2'>{footer}</View>}
         </View>

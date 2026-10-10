@@ -29,12 +29,12 @@ const ProfileFirstMeetingCard = ({
       <CardRow label='First met'>
         <View>
           {firstMeeting.date && (
-            <Text className='text-[15px] leading-6 text-ink'>
+            <Text className='font-nunito text-[15px] leading-6 text-ink'>
               {formatShortDate(firstMeeting.date)}
             </Text>
           )}
           {firstMeeting.location ? (
-            <Text className='text-[15px] leading-6 text-ink-muted'>
+            <Text className='font-nunito text-[15px] leading-6 text-ink-muted'>
               {firstMeeting.location}
             </Text>
           ) : null}
@@ -54,9 +54,9 @@ const ProfileFirstMeetingCard = ({
           }}
           placeholder='YYYY-MM-DD'
           placeholderTextColor={colors.inkSubtle}
-          className={`rounded-lg bg-surface-muted px-2 py-1.5 text-[15px] ${
-            invalidDate ? 'text-danger' : 'text-ink'
-          }`}
+          className={`font-nunito rounded-lg bg-surface-muted px-2 py-1.5 text-[15px] ${
+ invalidDate ? 'text-danger' : 'text-ink'
+ }`}
           style={noFocusRing}
         />
         <TextInput
@@ -64,7 +64,7 @@ const ProfileFirstMeetingCard = ({
           onChangeText={location => updateFirstMeeting({ location })}
           placeholder='Location'
           placeholderTextColor={colors.inkSubtle}
-          className='rounded-lg bg-surface-muted px-2 py-1.5 text-[15px] text-ink'
+          className='font-nunito rounded-lg bg-surface-muted px-2 py-1.5 text-[15px] text-ink'
           style={noFocusRing}
         />
       </View>

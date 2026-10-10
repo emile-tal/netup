@@ -95,7 +95,7 @@ const ReminderRow = ({ item }: ReminderRowProps) => {
 
       <View className='min-w-0 flex-1'>
         <TextInput
-          className={`text-[15px] ${item.completed ? 'text-ink-subtle' : 'text-ink'}`}
+          className={`font-nunito text-[15px] ${item.completed ? 'text-ink-subtle' : 'text-ink'}`}
           value={title}
           onChangeText={updateTitle}
           placeholder='Untitled reminder'
@@ -107,7 +107,7 @@ const ReminderRow = ({ item }: ReminderRowProps) => {
           ]}
         />
         {secondary.length > 0 && (
-          <Text className='mt-0.5 text-[12px] text-ink-subtle'>{secondary}</Text>
+          <Text className='font-nunito mt-0.5 text-[12px] text-ink-subtle'>{secondary}</Text>
         )}
       </View>
 

@@ -24,7 +24,7 @@ const ContactChip = ({ contact, dragging }: ContactChipProps) => {
       }`}
     >
       <Avatar firstName={contact.firstName} lastName={contact.lastName} size={24} />
-      <Text numberOfLines={2} className='min-w-0 flex-1 text-[12px] leading-4 text-ink'>
+      <Text numberOfLines={2} className='font-nunito min-w-0 flex-1 text-[12px] leading-4 text-ink'>
         {fullName(contact.firstName, contact.lastName) || 'Unnamed'}
       </Text>
     </View>

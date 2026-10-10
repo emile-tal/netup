@@ -26,7 +26,7 @@ const Avatar = ({ firstName, lastName, size = 40 }: AvatarProps) => {
       }}
     >
       <Text
-        className='font-semibold'
+        className='font-nunito'
         style={{ fontSize: Math.round(size * 0.36), color: tint.fg }}
       >
         {initials(firstName, lastName)}

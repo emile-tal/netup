@@ -46,13 +46,13 @@ const DayCell = ({ day, month, year, columnWidth, rowHeight }: DayCellProps) => 
           }`}
         >
           <Text
-            className={`text-[12px] ${
-              isSelected
-                ? 'font-semibold text-white'
-                : isToday
-                  ? 'font-semibold text-brand-dark'
-                  : 'text-ink-muted'
-            }`}
+            className={`font-nunito text-[12px] ${
+ isSelected
+ ? ' text-white'
+ : isToday
+ ? ' text-brand-dark'
+ : 'text-ink-muted'
+ }`}
           >
             {day}
           </Text>
@@ -65,17 +65,17 @@ const DayCell = ({ day, month, year, columnWidth, rowHeight }: DayCellProps) => 
           numberOfLines={1}
           // Tinted, not filled: a month grid can hold dozens of these, so the wash is a
           // `-light` and the ink does the work. Done ones cross out and go green.
-          className={`mb-0.5 rounded px-1 py-0.5 text-[11px] ${
-            reminder.completed
-              ? 'bg-success-light text-success-dark line-through'
-              : 'bg-brand-light text-brand-dark'
-          }`}
+          className={`font-nunito mb-0.5 rounded px-1 py-0.5 text-[11px] ${
+ reminder.completed
+ ? 'bg-success-light text-success-dark line-through'
+ : 'bg-brand-light text-brand-dark'
+ }`}
         >
           {reminder.contactLastName || reminder.title}
         </Text>
       ))}
       {overflow > 0 && (
-        <Text className='px-1 text-[10px] text-ink-subtle'>+{overflow} more</Text>
+        <Text className='font-nunito px-1 text-[10px] text-ink-subtle'>+{overflow} more</Text>
       )}
     </Pressable>
   );

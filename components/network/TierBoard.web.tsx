@@ -65,7 +65,7 @@ const TierBoard = ({ buckets, onMove }: TierBoardProps) => {
   const renderChips = (contacts: ContactSummary[], emptyHint: string) => {
     if (contacts.length === 0) {
       return (
-        <Text className='px-1 py-3 text-center text-[11px] text-ink-subtle'>
+        <Text className='font-nunito px-1 py-3 text-center text-[11px] text-ink-subtle'>
           {emptyHint}
         </Text>
       );
@@ -93,7 +93,7 @@ const TierBoard = ({ buckets, onMove }: TierBoardProps) => {
         <DndKitColumn target={null} count={buckets.unassigned.length}>
           <View className='flex-row flex-wrap gap-1.5'>
             {buckets.unassigned.length === 0 ? (
-              <Text className='px-1 py-3 text-[11px] text-ink-subtle'>
+              <Text className='font-nunito px-1 py-3 text-[11px] text-ink-subtle'>
                 Everyone is in a circle.
               </Text>
             ) : (

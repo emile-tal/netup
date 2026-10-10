@@ -65,13 +65,13 @@ const ResetPasswordScreen = () => {
         <View className='flex-1 justify-center gap-6 py-8'>
           <View className='items-center gap-3'>
             <Logo size={44} />
-            <Text className='text-[26px] font-bold tracking-tight text-ink'>
+            <Text className='font-nunito text-[26px] tracking-tight text-ink'>
               Link expired
             </Text>
           </View>
 
           <Card>
-            <Text className='text-center text-[14px] leading-6 text-ink-muted'>
+            <Text className='font-nunito text-center text-[14px] leading-6 text-ink-muted'>
               Password reset links can only be used once, and they don&apos;t last long.
               Request a fresh one and try again.
             </Text>
@@ -82,7 +82,7 @@ const ResetPasswordScreen = () => {
               accessibilityRole='link'
               onPress={() => router.replace('/forgot-password')}
             >
-              <Text className='text-[14px] font-semibold text-brand'>
+              <Text className='font-nunito text-[14px] text-brand'>
                 Send a new link
               </Text>
             </Pressable>
@@ -98,10 +98,10 @@ const ResetPasswordScreen = () => {
         <View className='items-center gap-3'>
           <Logo size={44} />
           <View className='items-center gap-1'>
-            <Text className='text-[26px] font-bold tracking-tight text-ink'>
+            <Text className='font-nunito text-[26px] tracking-tight text-ink'>
               Set a new password
             </Text>
-            <Text className='text-[14px] text-ink-muted'>{session.user.email}</Text>
+            <Text className='font-nunito text-[14px] text-ink-muted'>{session.user.email}</Text>
           </View>
         </View>
 
@@ -141,14 +141,14 @@ const ResetPasswordScreen = () => {
           />
 
           {!(touched && (passwordError || confirmError)) && (
-            <Text className='-mt-2 text-[12px] text-ink-subtle'>
+            <Text className='font-nunito -mt-2 text-[12px] text-ink-subtle'>
               At least {MIN_PASSWORD_LENGTH} characters.
             </Text>
           )}
 
           {error && (
             <View className='rounded-xl bg-danger-light px-3 py-2.5'>
-              <Text className='text-[13px] leading-5 text-danger'>{error}</Text>
+              <Text className='font-nunito text-[13px] leading-5 text-danger'>{error}</Text>
             </View>
           )}
 

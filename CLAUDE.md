@@ -503,47 +503,25 @@ ever typechecks the non-suffixed file.
 
 ## 13. Design system & responsive shell
 
-### Colour tokens
-`app/theme.ts` holds the raw values and **`tailwind.config.js` mirrors them** as semantic
-utilities. Use `className` tokens by default; import `colors` from `app/theme` only where
-a prop needs a colour *string* (SVG `fill`, `placeholderTextColor`, `ActivityIndicator`,
-`sceneStyle`). Adding a colour means editing **both** files.
+> **`FRONTEND.md` is the source of truth for colour, type and the brand.** Read it before
+> touching anything visual. This section covers only the layout/navigation shell; the
+> palette and typography rules live there, not here.
 
-**One anchor hue, and the set is closed.** `brand` is a saturated indigo (`#4F46E5`); the
-other two circles are a deep teal and a deep ochre either side of it. The colours are
-*meant* to be vivid — that is what gives the app life. What keeps it from going rainbow is
-not desaturation but discipline:
+### The short version
 
-1. **Nothing outside the token set.** No new hue gets invented for one component. If
-   something needs colour, it uses `brand`, a `tier-*`, `success` or `danger`.
-2. **Colour only where it means something** — the one primary action per screen, a
-   contact's circle, completion, danger. A company name is `text-ink-muted`, not
-   `text-brand`: it is neither an action nor a link. Everything else is ink on paper.
-3. **Tint the field, saturate the ink.** Large areas (board column heads, calendar
-   reminder chips, tier pills) take the `-light` wash with the full tone as text. Solid
-   fills are reserved for small elements: the primary icon button, a selected pill, the
-   completed checkbox.
-
-Every tone is checked against the surface it sits on at ≥4.5:1 — the tier teal and ochre
-are deliberately deeper than the "natural" versions of those hues because a `-light` wash
-of the same family is the background they most often land on. Re-check with a contrast
-calculation before nudging any of them lighter.
-
-| Token | Use |
-|-------|-----|
-| `brand` / `brand-light` / `brand-dark` | primary actions, selection, links |
-| `tier-inner` / `tier-trusted` / `tier-strategic` (+ `-light`) | the three 5-15-50 circles (§14) |
-| `ink` / `ink-muted` / `ink-subtle` | primary / secondary / tertiary text |
-| `surface` / `surface-muted` / `surface-sunken` | cards / page background / input fills |
-| `line` / `line-strong` | hairline borders |
-| `success`, `danger` (+ `-light`, `-dark`) | completion, destructive |
-
-`avatarPalette` is separate — `app/utils/avatar.ts` hashes a name into it so a contact
-keeps the same avatar colour everywhere, with no colour stored on the record. Each entry
-is a **`{ bg, fg }` pair**: tinted paper with dark initials, not a saturated fill with
-white ones. A contacts list is a wall of avatars, so solid discs were the single loudest
-thing in the app. The six tints are the same hue family the rest of the palette uses,
-dropped to a wash — enough to tell people apart, not enough to shout.
+- **Nunito everywhere, and nothing is bold.** Emphasis is size and colour, never weight.
+  Every `<Text>`/`<TextInput>` carries `font-nunito` (or `font-nunito-medium` for a
+  pressable label) — RN doesn't cascade fonts and React 19 dropped `defaultProps`, so
+  there is no global default.
+- **Three brand colours, and they are the logo**: blue `#1A73E8` (the accent), orange-red
+  `#E8430A`, yellow `#F9AB00`. The set is closed.
+- **Each hue has four roles** — `DEFAULT` (fills), `light` (90% wash), `deep` (small text
+  and solid fills with white text), `dark` (pressed). Brand yellow is 1.93:1 on white, so
+  *solid and ink go `-deep`, tints stay pure*. See FRONTEND.md §3.
+- `app/theme.ts` holds the raw values and **`tailwind.config.js` mirrors them**. Adding a
+  colour means editing **both**. Use `className` by default; import `colors` only where a
+  prop needs a colour *string* (SVG `fill`, `placeholderTextColor`, `ActivityIndicator`).
+- Never write a raw hex or a stock Tailwind palette class (`text-gray-500`, `bg-blue-500`).
 
 ### Layout
 - **`ScreenLayout` is the only place page chrome is set**: background, safe-area edges,
@@ -569,7 +547,8 @@ up. `NavItem` renders one destination in either orientation.
 ### Icons
 Every icon takes `{ color?, size? }` (`app/icons/types.ts`) — **not** `className`.
 NativeWind's `className` does not reach react-native-svg's `fill` on native, which is why
-the old `cssClass` prop was removed.
+the old `cssClass` prop was removed. The logo is the exception: `Logo` takes only `size`,
+because its three node colours *are* the brand (FRONTEND.md §4).
 
 ### Inputs
 Style every `TextInput` with `noFocusRing` from `app/utils/inputStyle` (a `.web.ts` pair,

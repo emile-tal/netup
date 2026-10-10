@@ -6,19 +6,24 @@ interface LogoProps {
   size?: number;
 }
 
-/** The NetUp mark: three linked nodes. Fixed brand colours, so it takes no `color`. */
+/**
+ * The NetUp mark: three linked nodes, one per brand colour.
+ *
+ * A faithful port of `assets/images/netup_logo.svg` — the geometry and the fills must
+ * stay in step with that file, which is also the source for the app icon and favicon.
+ */
 const Logo = ({ size = 28 }: LogoProps) => {
   return (
     <Svg width={size} height={size} viewBox='0 0 32 32' fill='none'>
-      {/* Three nodes in the three circle colours — the mark is the 5-15-50 idea. */}
-      <Circle cx='22' cy='7' r='5' fill={colors.tierStrategic} />
-      <Circle cx='8' cy='12' r='5' fill={colors.tierTrusted} />
+      {/* Three nodes in the three brand colours — the mark is the 5-15-50 idea. */}
+      <Circle cx='22' cy='7' r='5' fill={colors.brandYellow} />
+      <Circle cx='8' cy='12' r='5' fill={colors.brandOrange} />
       <Line
         x1='22'
         y1='7'
         x2='14'
         y2='20'
-        stroke={colors.inkSubtle}
+        stroke={colors.logoConnector}
         strokeWidth='2'
         strokeLinecap='round'
       />
@@ -27,7 +32,7 @@ const Logo = ({ size = 28 }: LogoProps) => {
         y1='12'
         x2='14'
         y2='20'
-        stroke={colors.inkSubtle}
+        stroke={colors.logoConnector}
         strokeWidth='2'
         strokeLinecap='round'
       />

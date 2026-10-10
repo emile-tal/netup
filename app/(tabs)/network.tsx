@@ -45,7 +45,7 @@ const NetworkPage = () => {
           contentContainerStyle={{ paddingBottom: 24 }}
         >
           <View className='pb-3'>
-            <Text className='text-[13px] leading-5 text-ink-muted'>
+            <Text className='font-nunito text-[13px] leading-5 text-ink-muted'>
               Hold a contact and drag them between circles. Each circle sets how often
               netup reminds you to reach out.
             </Text>

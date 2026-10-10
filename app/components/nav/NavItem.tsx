@@ -41,9 +41,9 @@ const NavItem = ({
       </View>
       <Text
         numberOfLines={1}
-        className={`${isRow ? 'text-[14px]' : 'text-[11px]'} ${
-          focused ? 'font-semibold text-brand-dark' : 'font-normal text-ink-muted'
-        }`}
+        className={`font-nunito-medium ${isRow ? 'text-[14px]' : 'text-[11px]'} ${
+ focused ? ' text-brand-dark' : ' text-ink-muted'
+ }`}
       >
         {label}
       </Text>

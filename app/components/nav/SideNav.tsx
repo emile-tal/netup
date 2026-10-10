@@ -23,8 +23,8 @@ const SideNav = (props: BottomTabBarProps) => {
     >
       <View className='mb-8 flex-row items-center gap-2 px-3'>
         <Logo size={28} />
-        <Text className='text-[19px] font-semibold text-ink'>
-          Net<Text className='text-brand'>Up</Text>
+        <Text className='font-nunito text-[19px] text-ink'>
+          Net<Text className='font-nunito text-brand'>Up</Text>
         </Text>
       </View>
       <View className='gap-1'>

@@ -19,7 +19,7 @@ const WeekdayHeader = ({ columnWidth }: WeekdayHeaderProps) => {
       {WEEKDAY_LABELS.map(label => (
         <Text
           key={label}
-          className='text-center text-[12px] font-medium text-ink-subtle'
+          className='font-nunito text-center text-[12px] text-ink-subtle'
           style={{ width: columnWidth }}
         >
           {label}

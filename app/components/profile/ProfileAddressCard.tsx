@@ -31,13 +31,13 @@ const ProfileAddressCard = ({ address, editable }: ProfileAddressCardProps) => {
       <CardRow label={address.label}>
         <View>
           {address.street ? (
-            <Text className='text-[15px] leading-6 text-ink'>{address.street}</Text>
+            <Text className='font-nunito text-[15px] leading-6 text-ink'>{address.street}</Text>
           ) : null}
           {cityLine ? (
-            <Text className='text-[15px] leading-6 text-ink'>{cityLine}</Text>
+            <Text className='font-nunito text-[15px] leading-6 text-ink'>{cityLine}</Text>
           ) : null}
           {address.country ? (
-            <Text className='text-[15px] leading-6 text-ink'>{address.country}</Text>
+            <Text className='font-nunito text-[15px] leading-6 text-ink'>{address.country}</Text>
           ) : null}
         </View>
       </CardRow>
@@ -60,7 +60,7 @@ const ProfileAddressCard = ({ address, editable }: ProfileAddressCardProps) => {
             }
             placeholder={placeholder}
             placeholderTextColor={colors.inkSubtle}
-            className='rounded-lg bg-surface-muted px-2 py-1.5 text-[15px] text-ink'
+            className='font-nunito rounded-lg bg-surface-muted px-2 py-1.5 text-[15px] text-ink'
             style={noFocusRing}
           />
         ))}

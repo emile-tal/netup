@@ -31,7 +31,7 @@ const TierPill = ({ tier, selected, onPress, compact }: TierPillProps) => {
       className={`self-start rounded-full border px-2.5 py-1 ${container}`}
       accessibilityRole={onPress ? undefined : 'text'}
     >
-      <Text className={`text-[12px] font-semibold ${text}`}>{label}</Text>
+      <Text className={`font-nunito text-[12px] ${text}`}>{label}</Text>
     </View>
   );
 

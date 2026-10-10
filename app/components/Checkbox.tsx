@@ -30,7 +30,7 @@ const Checkbox = ({ checked, onChange, label }: CheckboxProps) => (
     >
       {checked && <CheckIcon size={12} color='white' />}
     </View>
-    <Text className='text-[13px] text-ink-muted'>{label}</Text>
+    <Text className='font-nunito text-[13px] text-ink-muted'>{label}</Text>
   </Pressable>
 );
 

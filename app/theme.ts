@@ -1,21 +1,42 @@
 /**
- * The single source of truth for colour and layout constants.
+ * The single source of truth for colour, type and layout constants.
  *
  * Tailwind/NativeWind classes are generated from the same values in `tailwind.config.js`
  * — use `className` wherever you can (`bg-surface`, `text-ink-muted`, `border-line`) and
  * reach for these raw values only where a prop needs a colour string: SVG `fill`,
  * `placeholderTextColor`, `underlayColor`, `ActivityIndicator`, etc.
+ *
+ * See `FRONTEND.md` for the brand rules these values exist to serve.
  */
 
-// One anchor hue — indigo — plus two jewel tones that sit either side of it for the other
-// two circles. Saturated on purpose: colour is what gives the app life. What keeps it from
-// going rainbow is that the *set is closed* (nothing outside these) and colour only lands
-// where it means something: the one primary action per screen, the 5-15-50 circles,
-// completion and danger. Everything else is ink on paper.
+// Three brand colours, and they are the logo: the mark's three nodes are exactly these.
+// Blue is the accent — the one colour that means "act on this" — and the other two belong
+// to the 5-15-50 circles. Nothing outside this set gets invented for a single component.
+//
+// Each hue has four roles, because one hex cannot do every job at a readable contrast:
+//   DEFAULT — fills, the mark, anything large. The brand value, exactly as specified.
+//   light   — a 90% white wash, for tinted fields behind dark text.
+//   deep    — small text. Clears 4.5:1 on white, on `surfaceMuted`, and on its own wash.
+//   dark    — the pressed/hover state of a solid fill.
+//
+// Brand yellow is 1.93:1 on white, so it can *never* carry small text or white text: it
+// is a fill and a wash only, and `deep` is what the words are written in. That is the
+// "tint the field, deepen the ink" rule, and it is why `deep` exists at all.
 export const colors = {
-  brand: '#4F46E5',
-  brandLight: '#EEF0FF',
-  brandDark: '#3730A3',
+  brand: '#1A73E8',
+  brandLight: '#E8F1FD',
+  brandDeep: '#1669D8',
+  brandDark: '#135CBC',
+
+  brandYellow: '#F9AB00',
+  brandYellowLight: '#FEF7E6',
+  brandYellowDeep: '#986800',
+  brandYellowDark: '#C78900',
+
+  brandOrange: '#E8430A',
+  brandOrangeLight: '#FDECE6',
+  brandOrangeDeep: '#C83A09',
+  brandOrangeDark: '#BA3608',
 
   success: '#12855B',
   successLight: '#E7F5EF',
@@ -25,13 +46,17 @@ export const colors = {
   dangerLight: '#FDECEC',
 
   // One colour per 5-15-50 circle, so a contact's circle reads the same on the board, the
-  // profile and the calendar. Mapped to Tailwind classes in `app/utils/outreach.ts`.
-  tierInner: '#4F46E5',
-  tierInnerLight: '#EEF0FF',
-  tierTrusted: '#0A6E6E',
-  tierTrustedLight: '#E4F3F3',
-  tierStrategic: '#9E5410',
-  tierStrategicLight: '#FAF0E3',
+  // profile and the calendar. These are aliases of the brand trio rather than a second
+  // palette — mapped in `app/utils/outreach.ts`.
+  tierInner: '#1A73E8',
+  tierInnerLight: '#E8F1FD',
+  tierInnerDeep: '#1669D8',
+  tierTrusted: '#E8430A',
+  tierTrustedLight: '#FDECE6',
+  tierTrustedDeep: '#C83A09',
+  tierStrategic: '#F9AB00',
+  tierStrategicLight: '#FEF7E6',
+  tierStrategicDeep: '#986800',
 
   ink: '#1A1A1A',
   inkMuted: '#5F6368',
@@ -44,6 +69,9 @@ export const colors = {
   line: 'rgba(0,0,0,0.08)',
   lineStrong: 'rgba(0,0,0,0.16)',
 
+  /** The logo's connector strokes. Part of the mark, not a text grey. */
+  logoConnector: '#BDBDBD',
+
   /** Pressed/hover wash for TouchableHighlight `underlayColor`. */
   pressed: '#EDEFF1',
 } as const;
@@ -53,17 +81,33 @@ export const colors = {
  *
  * Tinted paper with dark initials rather than a saturated fill with white initials: a
  * contacts list is a wall of avatars, so solid discs are the single loudest thing in the
- * app. These are the same six hues the rest of the palette uses, dropped to a tint, so
- * they still tell people apart at a glance without shouting.
+ * app. These are washes of the brand trio and their neighbours, so they still tell people
+ * apart at a glance without shouting.
  */
 export const avatarPalette = [
-  { bg: '#E6E6FB', fg: '#3B348F' },
-  { bg: '#DEEFF0', fg: '#14636B' },
-  { bg: '#F3E8DC', fg: '#7A4A16' },
+  { bg: '#E1ECFC', fg: '#12508F' },
+  { bg: '#FBE4DA', fg: '#9C2D07' },
+  { bg: '#FCEFD2', fg: '#7A5400' },
   { bg: '#E4EAF7', fg: '#2A4780' },
   { bg: '#EDE4F5', fg: '#5C3579' },
   { bg: '#E2EFE8', fg: '#1F5F44' },
 ] as const;
+
+/**
+ * Nunito, at two weights and no more.
+ *
+ * Nothing in this app is bold. Emphasis comes from size and colour, never from weight —
+ * see FRONTEND.md. `medium` exists only for interactive labels (buttons, nav, the one
+ * thing you are meant to press); everything else is `regular`.
+ *
+ * The keys are the family names registered with `expo-font` in `app/_layout.tsx` and
+ * mirrored as `font-*` utilities in `tailwind.config.js`. React Native does not synthesise
+ * weights for a custom family, so each weight has to be its own registered face.
+ */
+export const fonts = {
+  regular: 'Nunito',
+  medium: 'NunitoMedium',
+} as const;
 
 export const layout = {
   /** Lists, profiles, forms — anything read as a single column. */

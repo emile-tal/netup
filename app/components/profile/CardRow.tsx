@@ -28,11 +28,11 @@ const CardRow = ({ label, children, onLabelChange, onRemove }: CardRowProps) => 
             onChangeText={onLabelChange}
             placeholder='Label'
             placeholderTextColor={colors.inkSubtle}
-            className='text-[13px] text-ink-subtle'
+            className='font-nunito text-[13px] text-ink-subtle'
             style={noFocusRing}
           />
         ) : (
-          <Text className='text-[13px] text-ink-subtle'>{capitalize(label)}</Text>
+          <Text className='font-nunito text-[13px] text-ink-subtle'>{capitalize(label)}</Text>
         )}
       </View>
       <View className='min-w-0 flex-1'>{children}</View>

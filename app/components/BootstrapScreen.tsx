@@ -28,19 +28,19 @@ const BootstrapScreen = ({ error, onRetry, onSignOut }: BootstrapScreenProps) =>
       <Logo size={48} />
 
       <Card className='gap-3'>
-        <Text className='text-[20px] font-bold text-ink'>
+        <Text className='font-nunito text-[24px] text-ink'>
           We can&apos;t reach netup right now
         </Text>
-        <Text className='text-[15px] leading-6 text-ink-muted'>
+        <Text className='font-nunito text-[15px] leading-6 text-ink-muted'>
           This device hasn&apos;t finished setting up your account yet, so there&apos;s
           nothing here to show you. Connect to the internet and try again.
         </Text>
-        <Text className='text-[15px] leading-6 text-ink-muted'>
+        <Text className='font-nunito text-[15px] leading-6 text-ink-muted'>
           It only needs to work once. After that netup runs entirely on your device — you
           can add people and reminders with no signal at all.
         </Text>
         {error && (
-          <Text className='text-[12px] leading-4 text-ink-subtle'>{error.message}</Text>
+          <Text className='font-nunito text-[12px] leading-4 text-ink-subtle'>{error.message}</Text>
         )}
 
         <View className='mt-2 gap-2'>

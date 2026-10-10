@@ -42,18 +42,27 @@ const TIER_INTERVALS: Record<Tier, { days?: number; months?: number }> = {
  * Tailwind classes per tier. Written as whole literal class strings because NativeWind
  * scans source text — a class assembled at runtime (`` `bg-tier-${slug}` ``) would never
  * be generated.
+ *
+ * `fill` and `text` are the `-deep` tone, not the pure brand value. The strategic circle
+ * is brand yellow: 1.93:1 on white, so it cannot be written in, and white cannot be
+ * written on it. `wash` keeps the pure hue because it is a 90% tint carrying dark text.
+ * The rule is one line: solid and ink go `-deep`, tints stay pure. See app/theme.ts.
  */
 export const TIER_STYLES: Record<Tier, { fill: string; wash: string; text: string }> = {
-  5: { fill: 'bg-tier-inner', wash: 'bg-tier-inner-light', text: 'text-tier-inner' },
+  5: {
+    fill: 'bg-tier-inner-deep',
+    wash: 'bg-tier-inner-light',
+    text: 'text-tier-inner-deep',
+  },
   15: {
-    fill: 'bg-tier-trusted',
+    fill: 'bg-tier-trusted-deep',
     wash: 'bg-tier-trusted-light',
-    text: 'text-tier-trusted',
+    text: 'text-tier-trusted-deep',
   },
   50: {
-    fill: 'bg-tier-strategic',
+    fill: 'bg-tier-strategic-deep',
     wash: 'bg-tier-strategic-light',
-    text: 'text-tier-strategic',
+    text: 'text-tier-strategic-deep',
   },
 };
 

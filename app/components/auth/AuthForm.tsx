@@ -129,12 +129,12 @@ const AuthForm = ({
       )}
 
       {passwordHint && !(touched && (passwordError || confirmError)) && (
-        <Text className='-mt-2 text-[12px] text-ink-subtle'>{passwordHint}</Text>
+        <Text className='font-nunito -mt-2 text-[12px] text-ink-subtle'>{passwordHint}</Text>
       )}
 
       {error && (
         <View className='rounded-xl bg-danger-light px-3 py-2.5'>
-          <Text className='text-[13px] leading-5 text-danger'>{error}</Text>
+          <Text className='font-nunito text-[13px] leading-5 text-danger'>{error}</Text>
         </View>
       )}
 

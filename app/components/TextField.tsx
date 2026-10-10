@@ -50,7 +50,7 @@ const TextField = forwardRef<TextInput, TextFieldProps>(
   ) => {
     return (
       <View className='w-full gap-1.5'>
-        {label && <Text className='text-[12px] text-ink-subtle'>{label}</Text>}
+        {label && <Text className='font-nunito text-[12px] text-ink-subtle'>{label}</Text>}
         <TextInput
           ref={ref}
           value={value}
@@ -66,12 +66,12 @@ const TextField = forwardRef<TextInput, TextFieldProps>(
           returnKeyType={returnKeyType}
           onSubmitEditing={onSubmitEditing}
           editable={editable}
-          className={`w-full rounded-xl border bg-surface-muted px-3 py-2.5 text-[15px] text-ink ${
-            invalid ? 'border-danger' : 'border-line'
-          } ${editable === false ? 'opacity-60' : ''}`}
+          className={`font-nunito w-full rounded-xl border bg-surface-muted px-3 py-2.5 text-[15px] text-ink ${
+ invalid ? 'border-danger' : 'border-line'
+ } ${editable === false ? 'opacity-60' : ''}`}
           style={noFocusRing}
         />
-        {invalid && error && <Text className='text-[12px] text-danger'>{error}</Text>}
+        {invalid && error && <Text className='font-nunito text-[12px] text-danger'>{error}</Text>}
       </View>
     );
   }

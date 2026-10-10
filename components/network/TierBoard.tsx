@@ -86,7 +86,7 @@ const TierBoard = ({ buckets, onMove }: TierBoardProps) => {
               isOver={hovered === tier}
             >
               {buckets.byTier[tier].length === 0 ? (
-                <Text className='px-1 py-3 text-center text-[11px] text-ink-subtle'>
+                <Text className='font-nunito px-1 py-3 text-center text-[11px] text-ink-subtle'>
                   Drag someone here
                 </Text>
               ) : (
@@ -107,7 +107,7 @@ const TierBoard = ({ buckets, onMove }: TierBoardProps) => {
         >
           <View className='flex-row flex-wrap gap-1.5'>
             {buckets.unassigned.length === 0 ? (
-              <Text className='px-1 py-3 text-[11px] text-ink-subtle'>
+              <Text className='font-nunito px-1 py-3 text-[11px] text-ink-subtle'>
                 Everyone is in a circle.
               </Text>
             ) : (

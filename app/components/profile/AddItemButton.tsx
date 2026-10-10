@@ -13,7 +13,7 @@ const AddItemButton = ({ label, onPress }: AddItemButtonProps) => {
       onPress={onPress}
       className='self-start rounded-lg px-4 py-2 hover:bg-surface-sunken'
     >
-      <Text className='text-[14px] font-medium text-brand'>+ {label}</Text>
+      <Text className='font-nunito text-[14px] text-brand'>+ {label}</Text>
     </Pressable>
   );
 };

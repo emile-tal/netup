@@ -16,7 +16,7 @@ const SearchBar = ({ onChangeText, value, placeholder = 'Search' }: SearchBarPro
     <View className='w-full flex-row items-center gap-2 rounded-full border border-line bg-surface px-4 py-2.5'>
       <SearchIcon size={18} color={colors.inkSubtle} />
       <TextInput
-        className='flex-1 text-[15px] text-ink'
+        className='font-nunito flex-1 text-[15px] text-ink'
         placeholder={placeholder}
         placeholderTextColor={colors.inkSubtle}
         onChangeText={onChangeText}

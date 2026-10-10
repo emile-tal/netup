@@ -33,11 +33,11 @@ const ContactLink = ({
       >
         <Avatar firstName={firstName} lastName={lastName} size={40} />
         <View className='min-w-0 flex-1'>
-          <Text numberOfLines={1} className='text-[15px] font-semibold text-ink'>
+          <Text numberOfLines={1} className='font-nunito text-[15px] text-ink'>
             {fullName(firstName, lastName) || 'Unnamed contact'}
           </Text>
           {secondary.length > 0 && (
-            <Text numberOfLines={1} className='mt-0.5 text-[13px] text-ink-muted'>
+            <Text numberOfLines={1} className='font-nunito mt-0.5 text-[13px] text-ink-muted'>
               {secondary}
             </Text>
           )}

@@ -18,7 +18,7 @@ const ProfilePhoneCard = ({ phone, editable }: ProfilePhoneCardProps) => {
   if (!editable) {
     return (
       <CardRow label={phone.label}>
-        <Text className='text-[15px] text-ink'>
+        <Text className='font-nunito text-[15px] text-ink'>
           {[phone.areaCode && `+${phone.areaCode}`, phone.phoneNumber]
             .filter(Boolean)
             .join(' ')}
@@ -42,7 +42,7 @@ const ProfilePhoneCard = ({ phone, editable }: ProfilePhoneCardProps) => {
           placeholder='+1'
           placeholderTextColor={colors.inkSubtle}
           keyboardType='phone-pad'
-          className='w-14 rounded-lg bg-surface-muted px-2 py-1.5 text-[15px] text-ink'
+          className='font-nunito w-14 rounded-lg bg-surface-muted px-2 py-1.5 text-[15px] text-ink'
           style={noFocusRing}
         />
         <TextInput
@@ -51,7 +51,7 @@ const ProfilePhoneCard = ({ phone, editable }: ProfilePhoneCardProps) => {
           placeholder='555-1234'
           placeholderTextColor={colors.inkSubtle}
           keyboardType='phone-pad'
-          className='flex-1 rounded-lg bg-surface-muted px-2 py-1.5 text-[15px] text-ink'
+          className='font-nunito flex-1 rounded-lg bg-surface-muted px-2 py-1.5 text-[15px] text-ink'
           style={noFocusRing}
         />
       </View>

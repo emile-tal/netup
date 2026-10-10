@@ -26,13 +26,13 @@ const SelectedDayPanel = () => {
 
   return (
     <View className='pt-3'>
-      <Text className='mb-2 px-1 text-[12px] font-semibold uppercase tracking-wider text-ink-subtle'>
+      <Text className='font-nunito mb-2 px-1 text-[12px] uppercase tracking-wider text-ink-subtle'>
         {formatRelativeDate(selectedDate)}
       </Text>
       <Card flush className='py-1'>
         <ScrollView style={{ maxHeight: MAX_HEIGHT }} showsVerticalScrollIndicator={false}>
           {reminders.length === 0 ? (
-            <Text className='px-4 py-3 text-[14px] text-ink-subtle'>
+            <Text className='font-nunito px-4 py-3 text-[14px] text-ink-subtle'>
               Nothing scheduled
             </Text>
           ) : (

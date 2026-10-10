@@ -31,10 +31,10 @@ const NameScreen = () => {
         </View>
 
         <View className='gap-2'>
-          <Text className='text-[28px] font-bold tracking-tight text-ink'>
+          <Text className='font-nunito text-[32px] tracking-tight text-ink'>
             What&apos;s your name?
           </Text>
-          <Text className='text-[15px] leading-6 text-ink-muted'>
+          <Text className='font-nunito text-[15px] leading-6 text-ink-muted'>
             It&apos;s how netup will greet you. You can change it later.
           </Text>
         </View>

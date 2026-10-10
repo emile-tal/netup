@@ -52,15 +52,15 @@ const SettingsScreen = () => {
 
       <View className='gap-4'>
         <Card className='gap-3'>
-          <Text className='text-[12px] text-ink-subtle'>Signed in as</Text>
-          <Text className='text-[16px] font-semibold text-ink'>{user?.email}</Text>
+          <Text className='font-nunito text-[12px] text-ink-subtle'>Signed in as</Text>
+          <Text className='font-nunito text-[16px] text-ink'>{user?.email}</Text>
         </Card>
 
         <Card className='gap-2'>
-          <Text className='text-[12px] text-ink-subtle'>Sync</Text>
-          <Text className='text-[15px] text-ink'>{syncLine}</Text>
+          <Text className='font-nunito text-[12px] text-ink-subtle'>Sync</Text>
+          <Text className='font-nunito text-[15px] text-ink'>{syncLine}</Text>
           {syncError && (
-            <Text className='text-[13px] leading-5 text-danger'>
+            <Text className='font-nunito text-[13px] leading-5 text-danger'>
               Last attempt failed: {syncError.message}
             </Text>
           )}

@@ -41,7 +41,7 @@ const ProfileTierCard = ({ tier, lastOutreachAt, editable }: ProfileTierCardProp
             </View>
             {/* What the picked circle means, so the choice isn't three bare numbers. */}
             {current && (
-              <Text className='text-[13px] leading-[18px] text-ink-subtle'>
+              <Text className='font-nunito text-[13px] leading-[18px] text-ink-subtle'>
                 {TIER_DESCRIPTIONS[current]}
               </Text>
             )}
@@ -51,10 +51,10 @@ const ProfileTierCard = ({ tier, lastOutreachAt, editable }: ProfileTierCardProp
             <TierPill tier={current} />
             {current && (
               <>
-                <Text className='text-[13px] leading-[18px] text-ink-muted'>
+                <Text className='font-nunito text-[13px] leading-[18px] text-ink-muted'>
                   {TIER_DESCRIPTIONS[current]}
                 </Text>
-                <Text className='text-[13px] text-ink-subtle'>
+                <Text className='font-nunito text-[13px] text-ink-subtle'>
                   {TIER_CADENCE_LABELS[current]}
                 </Text>
               </>
@@ -64,7 +64,7 @@ const ProfileTierCard = ({ tier, lastOutreachAt, editable }: ProfileTierCardProp
       </CardRow>
       {current && (
         <CardRow label='Last outreach'>
-          <Text className='text-[15px] text-ink'>
+          <Text className='font-nunito text-[15px] text-ink'>
             {lastOutreachAt ? formatShortDate(lastOutreachAt) : 'Not yet'}
           </Text>
         </CardRow>

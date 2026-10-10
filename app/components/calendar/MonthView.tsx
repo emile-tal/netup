@@ -32,8 +32,8 @@ const MonthView = ({ year, month, columnWidth }: MonthViewProps) => {
   return (
     <View className='pb-6'>
       <View className='flex-row items-baseline gap-2 px-1 pb-3 pt-5'>
-        <Text className='text-[22px] font-bold text-ink'>{title}</Text>
-        <Text className='text-[22px] font-light text-ink-muted'>{year}</Text>
+        <Text className='font-nunito text-[22px] text-ink'>{title}</Text>
+        <Text className='font-nunito text-[22px] text-ink-muted'>{year}</Text>
       </View>
       <View
         className='flex-row flex-wrap border-l border-t border-line'

@@ -61,12 +61,12 @@ const Header = ({
         {title && (
           <Text
             numberOfLines={1}
-            className='text-[26px] font-bold tracking-tight text-ink'
+            className='font-nunito text-[30px] tracking-tight text-ink'
           >
             {title}
           </Text>
         )}
-        {subtitle && <Text className='mt-0.5 text-[13px] text-ink-subtle'>{subtitle}</Text>}
+        {subtitle && <Text className='font-nunito mt-0.5 text-[13px] text-ink-subtle'>{subtitle}</Text>}
       </View>
       {(hasSecondaryAction || hasPrimaryAction) && (
         <View className='-mr-2 flex-row items-center'>

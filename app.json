@@ -15,7 +15,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#FFFFFF"
       },
       "edgeToEdgeEnabled": true,
       "package": "com.emiletal.netup"
@@ -30,10 +30,10 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/icon.png",
+          "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
+          "backgroundColor": "#FFFFFF"
         }
       ],
       [
@@ -45,13 +45,18 @@
                 "name": "simdjson",
                 "path": "../node_modules/@nozbe/simdjson",
                 "modular_headers": true,
-                "configurations": ["Debug", "Release"]
+                "configurations": [
+                  "Debug",
+                  "Release"
+                ]
               }
             ]
           }
         }
       ]
     ],
-    "experiments": { "typedRoutes": true }
+    "experiments": {
+      "typedRoutes": true
+    }
   }
 }

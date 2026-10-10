@@ -17,10 +17,10 @@ const SignInScreen = () => {
         <View className='items-center gap-3'>
           <Logo size={44} />
           <View className='items-center gap-1'>
-            <Text className='text-[26px] font-bold tracking-tight text-ink'>
+            <Text className='font-nunito text-[26px] tracking-tight text-ink'>
               Welcome back
             </Text>
-            <Text className='text-[14px] text-ink-muted'>Sign in to your network.</Text>
+            <Text className='font-nunito text-[14px] text-ink-muted'>Sign in to your network.</Text>
           </View>
         </View>
 
@@ -33,19 +33,19 @@ const SignInScreen = () => {
             accessibilityRole='link'
             onPress={() => router.replace('/forgot-password')}
           >
-            <Text className='text-[14px] font-semibold text-brand'>
+            <Text className='font-nunito text-[14px] text-brand'>
               Forgot your password?
             </Text>
           </Pressable>
         </View>
 
         <View className='flex-row items-center justify-center gap-1.5'>
-          <Text className='text-[14px] text-ink-muted'>New here?</Text>
+          <Text className='font-nunito text-[14px] text-ink-muted'>New here?</Text>
           <Pressable
             accessibilityRole='link'
             onPress={() => router.replace('/sign-up')}
           >
-            <Text className='text-[14px] font-semibold text-brand'>Create an account</Text>
+            <Text className='font-nunito text-[14px] text-brand'>Create an account</Text>
           </Pressable>
         </View>
       </View>

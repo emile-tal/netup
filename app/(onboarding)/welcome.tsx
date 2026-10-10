@@ -11,7 +11,8 @@ import { useDB } from '@/db/dbProvider';
 import { useEffect, useState } from 'react';
 
 /** Shared by all three headline lines, so they can't drift apart. */
-const HEADLINE = 'text-center text-[42px] font-bold leading-[52px] tracking-tight md:text-[48px] md:leading-[58px]';
+const HEADLINE =
+  'text-center text-[44px] leading-[54px] tracking-tight md:text-[52px] md:leading-[62px]';
 
 /**
  * The last page of setup: what netup is for, then the way in.
@@ -56,24 +57,24 @@ const WelcomeScreen = () => {
         {/* The mark and the wordmark, which is the one place "Up" carries the accent. */}
         <View className='flex-row items-center gap-2'>
           <Logo size={40} />
-          <Text className='text-[30px] font-bold tracking-tight text-ink'>
-            Net<Text className='text-brand'>Up</Text>
+          <Text className='font-nunito text-[30px] tracking-tight text-ink'>
+            Net<Text className='font-nunito text-brand'>Up</Text>
           </Text>
         </View>
 
         {/* Three lines rather than one wrapped string: the breaks are the design's, and
             "career." earns its own line as the payoff. */}
         <View>
-          <Text className={`${HEADLINE} text-ink`}>Your network</Text>
-          <Text className={`${HEADLINE} text-ink`}>is your</Text>
-          <Text className={`${HEADLINE} text-brand`}>career.</Text>
+          <Text className={`font-nunito ${HEADLINE} text-ink`}>Your network</Text>
+          <Text className={`font-nunito ${HEADLINE} text-ink`}>is your</Text>
+          <Text className={`font-nunito ${HEADLINE} text-brand`}>career.</Text>
         </View>
 
         <View className='gap-1'>
-          <Text className='text-center text-[16px] leading-6 text-ink-muted'>
+          <Text className='font-nunito text-center text-[16px] leading-6 text-ink-muted'>
             Most opportunities never get posted.
           </Text>
-          <Text className='text-center text-[16px] leading-6 text-ink-muted'>
+          <Text className='font-nunito text-center text-[16px] leading-6 text-ink-muted'>
             NetUp helps you stay in the rooms where they happen.
           </Text>
         </View>

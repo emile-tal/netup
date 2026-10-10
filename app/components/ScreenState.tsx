@@ -35,8 +35,8 @@ const ScreenState = ({
   if (error) {
     return (
       <View className='flex-1 items-center justify-center gap-2 px-6 py-16'>
-        <Text className='text-[16px] font-semibold text-ink'>Something went wrong</Text>
-        <Text className='text-center text-[14px] leading-6 text-ink-muted'>
+        <Text className='font-nunito text-[16px] text-ink'>Something went wrong</Text>
+        <Text className='font-nunito text-center text-[14px] leading-6 text-ink-muted'>
           {error.message}
         </Text>
         {onRetry && (
@@ -51,9 +51,9 @@ const ScreenState = ({
   if (emptyMessage) {
     return (
       <View className='flex-1 items-center justify-center gap-1.5 px-6 py-16'>
-        <Text className='text-[16px] font-semibold text-ink'>{emptyMessage}</Text>
+        <Text className='font-nunito text-[16px] text-ink'>{emptyMessage}</Text>
         {emptyHint && (
-          <Text className='text-center text-[14px] leading-6 text-ink-subtle'>
+          <Text className='font-nunito text-center text-[14px] leading-6 text-ink-subtle'>
             {emptyHint}
           </Text>
         )}

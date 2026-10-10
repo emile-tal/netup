@@ -106,30 +106,30 @@ const ImportContactsModal = ({ visible, onRequestClose }: ImportContactsModalPro
     >
       {summary ? (
         <View className='mt-2 gap-2'>
-          <Text className='text-[14px] text-ink'>
+          <Text className='font-nunito text-[14px] text-ink'>
             {summary.imported} {summary.imported === 1 ? 'contact' : 'contacts'} imported
             {summary.skipped > 0 ? ` · ${summary.skipped} skipped (duplicate email)` : ''}
             {summary.errors.length > 0 ? ` · ${summary.errors.length} not read` : ''}
           </Text>
           {summary.errors.slice(0, MAX_LISTED_ERRORS).map(error => (
-            <Text key={error.row} className='text-[13px] text-ink-muted'>
+            <Text key={error.row} className='font-nunito text-[13px] text-ink-muted'>
               Row {error.row}: {error.message}
             </Text>
           ))}
           {summary.errors.length > MAX_LISTED_ERRORS && (
-            <Text className='text-[13px] text-ink-subtle'>
+            <Text className='font-nunito text-[13px] text-ink-subtle'>
               …and {summary.errors.length - MAX_LISTED_ERRORS} more.
             </Text>
           )}
         </View>
       ) : (
         <View className='mt-2 gap-4'>
-          <Text className='text-[14px] leading-5 text-ink-muted'>
+          <Text className='font-nunito text-[14px] leading-5 text-ink-muted'>
             Upload a CSV whose first row lists the column names. Contacts whose email
             already exists are skipped.
           </Text>
           <View className='rounded-xl bg-surface-sunken p-3'>
-            <Text className='text-[12px] leading-4 text-ink-muted'>
+            <Text className='font-nunito text-[12px] leading-4 text-ink-muted'>
               {CONTACT_CSV_COLUMNS.join(', ')}
             </Text>
           </View>
@@ -140,7 +140,7 @@ const ImportContactsModal = ({ visible, onRequestClose }: ImportContactsModalPro
             className='flex-row items-center gap-1.5 self-start'
           >
             <DownloadIcon size={16} color={colors.brand} />
-            <Text className='text-[14px] font-semibold text-brand'>
+            <Text className='font-nunito text-[14px] text-brand'>
               Download template
             </Text>
           </Pressable>

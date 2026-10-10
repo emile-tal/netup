@@ -19,26 +19,26 @@ const SignUpScreen = () => {
         <View className='flex-1 justify-center gap-6 py-8'>
           <View className='items-center gap-3'>
             <Logo size={44} />
-            <Text className='text-[26px] font-bold tracking-tight text-ink'>
+            <Text className='font-nunito text-[26px] tracking-tight text-ink'>
               Check your inbox
             </Text>
           </View>
 
           <Card className='gap-2'>
-            <Text className='text-center text-[14px] leading-6 text-ink-muted'>
+            <Text className='font-nunito text-center text-[14px] leading-6 text-ink-muted'>
               We sent a confirmation link to{' '}
-              <Text className='font-semibold text-ink'>{confirmationSentTo}</Text>. Open it
+              <Text className='font-nunito text-ink'>{confirmationSentTo}</Text>. Open it
               to finish setting up your account, then come back and sign in.
             </Text>
           </Card>
 
           <View className='flex-row items-center justify-center gap-1.5'>
-            <Text className='text-[14px] text-ink-muted'>Already confirmed?</Text>
+            <Text className='font-nunito text-[14px] text-ink-muted'>Already confirmed?</Text>
             <Pressable
               accessibilityRole='link'
               onPress={() => router.replace('/sign-in')}
             >
-              <Text className='text-[14px] font-semibold text-brand'>Sign in</Text>
+              <Text className='font-nunito text-[14px] text-brand'>Sign in</Text>
             </Pressable>
           </View>
         </View>
@@ -52,10 +52,10 @@ const SignUpScreen = () => {
         <View className='items-center gap-3'>
           <Logo size={44} />
           <View className='items-center gap-1'>
-            <Text className='text-[26px] font-bold tracking-tight text-ink'>
+            <Text className='font-nunito text-[26px] tracking-tight text-ink'>
               Create your account
             </Text>
-            <Text className='text-[14px] text-ink-muted'>
+            <Text className='font-nunito text-[14px] text-ink-muted'>
               Your network, on every device.
             </Text>
           </View>
@@ -75,12 +75,12 @@ const SignUpScreen = () => {
         />
 
         <View className='flex-row items-center justify-center gap-1.5'>
-          <Text className='text-[14px] text-ink-muted'>Already have an account?</Text>
+          <Text className='font-nunito text-[14px] text-ink-muted'>Already have an account?</Text>
           <Pressable
             accessibilityRole='link'
             onPress={() => router.replace('/sign-in')}
           >
-            <Text className='text-[14px] font-semibold text-brand'>Sign in</Text>
+            <Text className='font-nunito text-[14px] text-brand'>Sign in</Text>
           </Pressable>
         </View>
       </View>
