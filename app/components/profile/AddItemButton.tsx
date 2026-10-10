@@ -11,9 +11,9 @@ const AddItemButton = ({ label, onPress }: AddItemButtonProps) => {
     <Pressable
       accessibilityRole='button'
       onPress={onPress}
-      className='self-start rounded-lg px-4 py-2 hover:bg-surface-sunken'
+      className='self-start rounded-lg px-4 py-2 hover:bg-grey-light'
     >
-      <Text className='font-nunito text-[14px] text-brand'>+ {label}</Text>
+      <Text className='font-nunito text-[14px] text-blue'>+ {label}</Text>
     </Pressable>
   );
 };

@@ -58,7 +58,7 @@ const SettingsScreen = () => {
           <Text className='font-nunito text-[12px] text-ink-subtle'>Sync</Text>
           <Text className='font-nunito text-[15px] text-ink'>{syncLine}</Text>
           {syncError && (
-            <Text className='font-nunito text-[13px] leading-5 text-danger'>
+            <Text className='font-nunito text-[13px] leading-5 text-error-dark'>
               Last attempt failed: {syncError.message}
             </Text>
           )}
@@ -66,7 +66,7 @@ const SettingsScreen = () => {
 
         <Button
           label='Sign out'
-          variant='danger'
+          variant='destructive'
           onPress={() => setConfirmingSignOut(true)}
           fullWidth
         />

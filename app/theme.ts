@@ -9,71 +9,115 @@
  * See `FRONTEND.md` for the brand rules these values exist to serve.
  */
 
-// Three brand colours, and they are the logo: the mark's three nodes are exactly these.
-// Blue is the accent — the one colour that means "act on this" — and the other two belong
-// to the 5-15-50 circles. Nothing outside this set gets invented for a single component.
+// ---------------------------------------------------------------------------------------
+// The palette. Five hues, five greys, black and white, and nothing else.
 //
-// Each hue has four roles, because one hex cannot do every job at a readable contrast:
-//   DEFAULT — fills, the mark, anything large. The brand value, exactly as specified.
-//   light   — a 90% white wash, for tinted fields behind dark text.
-//   deep    — small text. Clears 4.5:1 on white, on `surfaceMuted`, and on its own wash.
-//   dark    — the pressed/hover state of a solid fill.
+// **Three brand colours, and they are the logo**: the mark's three nodes are exactly
+// `blue`, `yellow` and `red`. Blue is the accent — the one colour that means "act on
+// this". Yellow and red are the other two 5-15-50 circles. The set is closed.
 //
-// Brand yellow is 1.93:1 on white, so it can *never* carry small text or white text: it
-// is a fill and a wash only, and `deep` is what the words are written in. That is the
-// "tint the field, deepen the ink" rule, and it is why `deep` exists at all.
+// **Every hue has the same five steps**, generated in HSL off the brand value by moving
+// lightness only, so the ramps behave the same way and nothing has a bespoke tone:
+//
+//   lighter — a near-white wash. Tinted fields, washes behind dark text.
+//   light   — the light tone. The hover/press state of a solid fill (see below).
+//   DEFAULT — the brand value, exactly as specified. Solid fills.
+//   dark    — small text and icons on a light surface. Clears 4.5:1 on white.
+//   darker  — small text that needs more room, and text on the hue's own wash.
+//
+// **Ink on a colour is always black, never white.** Every `DEFAULT` fill clears 4.5:1
+// against `#000` (blue 4.66, red 5.24, yellow 10.85, error 5.59, success 4.53) and none
+// of them clears it against white, so black is the only ink that works on all five.
+//
+// **A fill's hover step is whichever neighbour keeps black above 4.5:1.** For a `DEFAULT`
+// fill that means going *lighter*, never darker. The primary action is the exception that
+// proves the rule: it rests on `blueLight` (black 7.71:1) because black on the full
+// `blue` is only 4.66 — legal, but the label has to work for it — and deepens to `blue`
+// on hover, which still clears the bar.
+//
+// **Text on paper is `ink`, not black.** Pure black is reserved for the inside of a
+// coloured fill; body text stays the softer `#1A1A1A`.
+// ---------------------------------------------------------------------------------------
+
+/**
+ * The five greys. `grey` is the one visible divider tone; the rest are the page, the
+ * input fill, and the two text greys. The semantic names below (`ink*`, `surface*`) are
+ * aliases of these, so there is one grey scale rather than two.
+ */
+const GREY = {
+  lighter: '#F8F9FA',
+  light: '#F1F3F4',
+  DEFAULT: '#DADCE0',
+  dark: '#9AA0A6',
+  darker: '#5F6368',
+} as const;
+
 export const colors = {
-  brand: '#1A73E8',
-  brandLight: '#E8F1FD',
-  brandDeep: '#1669D8',
-  brandDark: '#135CBC',
+  /** The accent, and the logo's blue node. 4.51:1 on white, so it may carry small text. */
+  blue: '#1A73E8',
+  blueLighter: '#E7F1FD',
+  blueLight: '#619FEF',
+  blueDark: '#125BBA',
+  blueDarker: '#0E4690',
 
-  brandYellow: '#F9AB00',
-  brandYellowLight: '#FEF7E6',
-  brandYellowDeep: '#986800',
-  brandYellowDark: '#C78900',
+  /** 5-15-50: trusted network. 1.93:1 on white — a fill and a wash only, never ink. */
+  yellow: '#F9AB00',
+  yellowLighter: '#FEF5E2',
+  yellowLight: '#FFCC5C',
+  yellowDark: '#C28500',
+  yellowDarker: '#946600',
 
-  brandOrange: '#E8430A',
-  brandOrangeLight: '#FDECE6',
-  brandOrangeDeep: '#C83A09',
-  brandOrangeDark: '#BA3608',
+  /** 5-15-50: strategic network. 4.01:1 on white, so its text tone is `-dark` or lower. */
+  red: '#E8430A',
+  redLighter: '#FDEDE7',
+  redLight: '#F88962',
+  redDark: '#BA3608',
+  redDarker: '#932A06',
 
+  /**
+   * Failure: a validation message, a destructive action. A rose, deliberately a different
+   * hue from brand `red` (350° vs 15°) so "this is broken" never reads as "this contact is
+   * in the strategic circle". Black on `error` is 5.59:1; `error` on white is only 3.76,
+   * so error *text* is `errorDark` (7.43) and error *fills* carry black.
+   */
+  error: '#E64C66',
+  errorLighter: '#FDE7EB',
+  errorLight: '#F599A8',
+  errorDark: '#A51D34',
+  errorDarker: '#7E1627',
+
+  /** Completion. Same five steps, same rules. */
   success: '#12855B',
-  successLight: '#E7F5EF',
-  successDark: '#0C6244',
+  successLighter: '#E9F7F2',
+  successLight: '#90D5BC',
+  successDark: '#115F43',
+  successDarker: '#0C4531',
 
-  danger: '#DC2626',
-  dangerLight: '#FDECEC',
+  grey: GREY.DEFAULT,
+  greyLighter: GREY.lighter,
+  greyLight: GREY.light,
+  greyDark: GREY.dark,
+  greyDarker: GREY.darker,
 
-  // One colour per 5-15-50 circle, so a contact's circle reads the same on the board, the
-  // profile and the calendar. These are aliases of the brand trio rather than a second
-  // palette — mapped in `app/utils/outreach.ts`.
-  tierInner: '#1A73E8',
-  tierInnerLight: '#E8F1FD',
-  tierInnerDeep: '#1669D8',
-  tierTrusted: '#E8430A',
-  tierTrustedLight: '#FDECE6',
-  tierTrustedDeep: '#C83A09',
-  tierStrategic: '#F9AB00',
-  tierStrategicLight: '#FEF7E6',
-  tierStrategicDeep: '#986800',
+  /** Ink *inside a coloured fill* — the one place pure black is used. */
+  black: '#000000',
+  white: '#FFFFFF',
 
+  /** Text on paper. `ink` is a soft near-black; the other two are grey aliases. */
   ink: '#1A1A1A',
-  inkMuted: '#5F6368',
-  inkSubtle: '#9AA0A6',
+  inkMuted: GREY.darker,
+  inkSubtle: GREY.dark,
 
   surface: '#FFFFFF',
-  surfaceMuted: '#F8F9FA',
-  surfaceSunken: '#F1F3F4',
+  surfaceMuted: GREY.lighter,
+  surfaceSunken: GREY.light,
 
+  /** Hairlines. Alpha, not grey, so they sit on any surface without banding. */
   line: 'rgba(0,0,0,0.08)',
   lineStrong: 'rgba(0,0,0,0.16)',
 
   /** The logo's connector strokes. Part of the mark, not a text grey. */
   logoConnector: '#BDBDBD',
-
-  /** Pressed/hover wash for TouchableHighlight `underlayColor`. */
-  pressed: '#EDEFF1',
 } as const;
 
 /**

@@ -62,7 +62,7 @@ const ForgotPasswordScreen = () => {
               accessibilityRole='link'
               onPress={() => router.replace('/sign-in')}
             >
-              <Text className='font-nunito text-[14px] text-brand'>
+              <Text className='font-nunito text-[14px] text-blue'>
                 Back to sign in
               </Text>
             </Pressable>
@@ -105,8 +105,8 @@ const ForgotPasswordScreen = () => {
           />
 
           {error && (
-            <View className='rounded-xl bg-danger-light px-3 py-2.5'>
-              <Text className='font-nunito text-[13px] leading-5 text-danger'>{error}</Text>
+            <View className='rounded-xl bg-error-lighter px-3 py-2.5'>
+              <Text className='font-nunito text-[13px] leading-5 text-error-dark'>{error}</Text>
             </View>
           )}
 
@@ -121,7 +121,7 @@ const ForgotPasswordScreen = () => {
         <View className='flex-row items-center justify-center gap-1.5'>
           <Text className='font-nunito text-[14px] text-ink-muted'>Remembered it?</Text>
           <Pressable accessibilityRole='link' onPress={() => router.replace('/sign-in')}>
-            <Text className='font-nunito text-[14px] text-brand'>Sign in</Text>
+            <Text className='font-nunito text-[14px] text-blue'>Sign in</Text>
           </Pressable>
         </View>
       </View>

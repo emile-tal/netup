@@ -47,7 +47,7 @@ const BootstrapScreen = ({ error, onRetry, onSignOut }: BootstrapScreenProps) =>
           {/* Tapping this returns the gate to its loading state, so the screen is
               replaced rather than showing a busy label in place. */}
           <Button label='Try again' onPress={onRetry} fullWidth />
-          <Button label='Sign out' variant='ghost' onPress={onSignOut} fullWidth />
+          <Button label='Sign out' variant='grey' onPress={onSignOut} fullWidth />
         </View>
       </Card>
     </View>

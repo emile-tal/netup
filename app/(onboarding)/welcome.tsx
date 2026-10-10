@@ -58,7 +58,7 @@ const WelcomeScreen = () => {
         <View className='flex-row items-center gap-2'>
           <Logo size={40} />
           <Text className='font-nunito text-[30px] tracking-tight text-ink'>
-            Net<Text className='font-nunito text-brand'>Up</Text>
+            Net<Text className='font-nunito text-blue'>Up</Text>
           </Text>
         </View>
 
@@ -67,7 +67,7 @@ const WelcomeScreen = () => {
         <View>
           <Text className={`font-nunito ${HEADLINE} text-ink`}>Your network</Text>
           <Text className={`font-nunito ${HEADLINE} text-ink`}>is your</Text>
-          <Text className={`font-nunito ${HEADLINE} text-brand`}>career.</Text>
+          <Text className={`font-nunito ${HEADLINE} text-blue`}>career.</Text>
         </View>
 
         <View className='gap-1'>

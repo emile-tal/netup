@@ -87,10 +87,10 @@ const ReminderRow = ({ item }: ReminderRowProps) => {
         accessibilityState={{ checked: !!item.completed }}
         accessibilityLabel={item.completed ? 'Mark as not done' : 'Mark as done'}
         className={`h-6 w-6 items-center justify-center rounded-full border-2 ${
-          item.completed ? 'border-success bg-success' : 'border-line-strong hover:border-brand'
+          item.completed ? 'border-success bg-success' : 'border-line-strong hover:border-blue'
         }`}
       >
-        {item.completed && <CheckIcon size={14} color='white' />}
+        {item.completed && <CheckIcon size={14} color={colors.black} />}
       </Pressable>
 
       <View className='min-w-0 flex-1'>
@@ -115,7 +115,7 @@ const ReminderRow = ({ item }: ReminderRowProps) => {
         onPress={() => setConfirmingDelete(true)}
         accessibilityRole='button'
         accessibilityLabel='Delete reminder'
-        className='h-8 w-8 items-center justify-center rounded-full hover:bg-danger-light'
+        className='h-8 w-8 items-center justify-center rounded-full hover:bg-error-lighter'
       >
         <XIcon size={16} color={colors.inkSubtle} />
       </Pressable>

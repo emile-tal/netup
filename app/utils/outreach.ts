@@ -39,30 +39,34 @@ const TIER_INTERVALS: Record<Tier, { days?: number; months?: number }> = {
 };
 
 /**
- * Tailwind classes per tier. Written as whole literal class strings because NativeWind
- * scans source text — a class assembled at runtime (`` `bg-tier-${slug}` ``) would never
- * be generated.
+ * Tailwind classes per tier, and the only place a circle is tied to a colour:
+ * **5 is blue, 15 is yellow, 50 is red** — the three brand hues, in the order the logo
+ * reads them.
  *
- * `fill` and `text` are the `-deep` tone, not the pure brand value. The strategic circle
- * is brand yellow: 1.93:1 on white, so it cannot be written in, and white cannot be
- * written on it. `wash` keeps the pure hue because it is a 90% tint carrying dark text.
- * The rule is one line: solid and ink go `-deep`, tints stay pure. See app/theme.ts.
+ * Written as whole literal class strings because NativeWind scans source text — a class
+ * assembled at runtime (`` `bg-${hue}` ``) would never be generated.
+ *
+ * `fill` is the pure brand hue, and the ink on it is **black** (`TierPill` supplies it):
+ * every `DEFAULT` in the palette clears 4.5:1 against black, and none of them does
+ * against white. `wash` is the `-lighter` step. `text` — words on paper, or on that wash
+ * — is `-darker`, because yellow only reaches 4.5:1 on white at that step (5.05, against
+ * 3.16 for `-dark`), and one tone per role beats three exceptions. See app/theme.ts.
  */
 export const TIER_STYLES: Record<Tier, { fill: string; wash: string; text: string }> = {
   5: {
-    fill: 'bg-tier-inner-deep',
-    wash: 'bg-tier-inner-light',
-    text: 'text-tier-inner-deep',
+    fill: 'bg-blue',
+    wash: 'bg-blue-lighter',
+    text: 'text-blue-darker',
   },
   15: {
-    fill: 'bg-tier-trusted-deep',
-    wash: 'bg-tier-trusted-light',
-    text: 'text-tier-trusted-deep',
+    fill: 'bg-yellow',
+    wash: 'bg-yellow-lighter',
+    text: 'text-yellow-darker',
   },
   50: {
-    fill: 'bg-tier-strategic-deep',
-    wash: 'bg-tier-strategic-light',
-    text: 'text-tier-strategic-deep',
+    fill: 'bg-red',
+    wash: 'bg-red-lighter',
+    text: 'text-red-darker',
   },
 };
 

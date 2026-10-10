@@ -38,7 +38,7 @@ const SignUpScreen = () => {
               accessibilityRole='link'
               onPress={() => router.replace('/sign-in')}
             >
-              <Text className='font-nunito text-[14px] text-brand'>Sign in</Text>
+              <Text className='font-nunito text-[14px] text-blue'>Sign in</Text>
             </Pressable>
           </View>
         </View>
@@ -80,7 +80,7 @@ const SignUpScreen = () => {
             accessibilityRole='link'
             onPress={() => router.replace('/sign-in')}
           >
-            <Text className='font-nunito text-[14px] text-brand'>Sign in</Text>
+            <Text className='font-nunito text-[14px] text-blue'>Sign in</Text>
           </Pressable>
         </View>
       </View>

@@ -82,7 +82,7 @@ const ResetPasswordScreen = () => {
               accessibilityRole='link'
               onPress={() => router.replace('/forgot-password')}
             >
-              <Text className='font-nunito text-[14px] text-brand'>
+              <Text className='font-nunito text-[14px] text-blue'>
                 Send a new link
               </Text>
             </Pressable>
@@ -147,8 +147,8 @@ const ResetPasswordScreen = () => {
           )}
 
           {error && (
-            <View className='rounded-xl bg-danger-light px-3 py-2.5'>
-              <Text className='font-nunito text-[13px] leading-5 text-danger'>{error}</Text>
+            <View className='rounded-xl bg-error-lighter px-3 py-2.5'>
+              <Text className='font-nunito text-[13px] leading-5 text-error-dark'>{error}</Text>
             </View>
           )}
 

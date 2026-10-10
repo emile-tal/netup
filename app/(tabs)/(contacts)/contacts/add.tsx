@@ -61,7 +61,7 @@ const AddContactPage = () => {
           backButton
           backIconProp={<XIcon size={20} color={colors.ink} />}
           onBackPress={() => router.back()}
-          actionIcon={<CheckIcon size={20} color='white' />}
+          actionIcon={<CheckIcon size={20} color={colors.black} />}
           actionEmphasis='brand'
           actionLabel='Save contact'
           onActionPress={handleSave}

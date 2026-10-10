@@ -1,3 +1,4 @@
+import { colors } from '../theme';
 import CalendarAddIcon from '../icons/CalendarAddIcon';
 import AddReminderModal from '../components/calendar/AddReminderModal';
 import Header from '../components/Header';
@@ -26,7 +27,7 @@ const CalendarPage = () => {
       header={
         <Header
           title='Calendar'
-          actionIcon={<CalendarAddIcon size={22} color='white' />}
+          actionIcon={<CalendarAddIcon size={22} color={colors.black} />}
           actionEmphasis='brand'
           actionLabel='Add reminder'
           onActionPress={() => setAddVisible(true)}

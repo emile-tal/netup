@@ -17,28 +17,66 @@ module.exports = {
         nunito: ['Nunito'],
         'nunito-medium': ['NunitoMedium'],
       },
+      // Kept in lockstep with `colors` in app/theme.ts — the five-step shape and the
+      // contrast rules behind it are documented there and in FRONTEND.md §3.
+      //
+      // These keys deliberately shadow Tailwind's stock `blue`/`yellow`/`red`/`gray`
+      // ramps, so `bg-blue-500` and friends no longer compile. That is the point: there
+      // is one blue in this app and it is the logo's.
       colors: {
-        // Blue: the accent. The one colour that means "act on this".
-        brand: {
+        // The accent, and the logo's blue node.
+        blue: {
           DEFAULT: '#1A73E8',
-          light: '#E8F1FD',
-          deep: '#1669D8',
-          dark: '#135CBC',
+          lighter: '#E7F1FD',
+          light: '#619FEF',
+          dark: '#125BBA',
+          darker: '#0E4690',
         },
-        // The other two brand hues. `deep` is the only one of each that may carry small
-        // text — brand yellow is 1.93:1 on white. See the note in app/theme.ts.
-        'brand-yellow': {
+        // 5-15-50: trusted network. 1.93:1 on white — fills and washes only, never ink.
+        yellow: {
           DEFAULT: '#F9AB00',
-          light: '#FEF7E6',
-          deep: '#986800',
-          dark: '#C78900',
+          lighter: '#FEF5E2',
+          light: '#FFCC5C',
+          dark: '#C28500',
+          darker: '#946600',
         },
-        'brand-orange': {
+        // 5-15-50: strategic network.
+        red: {
           DEFAULT: '#E8430A',
-          light: '#FDECE6',
-          deep: '#C83A09',
+          lighter: '#FDEDE7',
+          light: '#F88962',
           dark: '#BA3608',
+          darker: '#932A06',
         },
+        // Failure. A rose at 350°, a different hue from brand `red` on purpose.
+        error: {
+          DEFAULT: '#E64C66',
+          lighter: '#FDE7EB',
+          light: '#F599A8',
+          dark: '#A51D34',
+          darker: '#7E1627',
+        },
+        // Completion.
+        success: {
+          DEFAULT: '#12855B',
+          lighter: '#E9F7F2',
+          light: '#90D5BC',
+          dark: '#115F43',
+          darker: '#0C4531',
+        },
+        // The five greys. `ink-*` and `surface-*` below are aliases of these, so there
+        // is one grey scale rather than two.
+        grey: {
+          DEFAULT: '#DADCE0',
+          lighter: '#F8F9FA',
+          light: '#F1F3F4',
+          dark: '#9AA0A6',
+          darker: '#5F6368',
+        },
+        black: '#000000',
+        white: '#FFFFFF',
+        // Text on paper. `ink` is a soft near-black; pure `black` is only ever used
+        // *inside* a coloured fill.
         ink: {
           DEFAULT: '#1A1A1A',
           muted: '#5F6368',
@@ -49,38 +87,10 @@ module.exports = {
           muted: '#F8F9FA',
           sunken: '#F1F3F4',
         },
+        // Hairlines. Alpha, not grey, so they sit on any surface without banding.
         line: {
           DEFAULT: 'rgba(0,0,0,0.08)',
           strong: 'rgba(0,0,0,0.16)',
-        },
-        success: {
-          DEFAULT: '#12855B',
-          light: '#E7F5EF',
-          dark: '#0C6244',
-        },
-        danger: {
-          DEFAULT: '#DC2626',
-          light: '#FDECEC',
-        },
-        // One colour per 5-15-50 circle — aliases of the brand trio, not a second
-        // palette. `TIER_STYLES` in app/utils/outreach.ts holds the literal class
-        // strings, since NativeWind scans source text.
-        tier: {
-          inner: {
-            DEFAULT: '#1A73E8',
-            light: '#E8F1FD',
-            deep: '#1669D8',
-          },
-          trusted: {
-            DEFAULT: '#E8430A',
-            light: '#FDECE6',
-            deep: '#C83A09',
-          },
-          strategic: {
-            DEFAULT: '#F9AB00',
-            light: '#FEF7E6',
-            deep: '#986800',
-          },
         },
       },
       maxWidth: {

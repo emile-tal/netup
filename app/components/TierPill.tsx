@@ -22,9 +22,10 @@ const TierPill = ({ tier, selected, onPress, compact }: TierPillProps) => {
   const label = tier ? (compact ? String(tier) : TIER_LABELS[tier]) : 'Unassigned';
 
   const container = selected
-    ? `${style?.fill ?? 'bg-ink-subtle'} border-transparent`
-    : `${style?.wash ?? 'bg-surface-sunken'} border-transparent`;
-  const text = selected ? 'text-white' : (style?.text ?? 'text-ink-muted');
+    ? `${style?.fill ?? 'bg-grey-dark'} border-transparent`
+    : `${style?.wash ?? 'bg-grey-light'} border-transparent`;
+  // Black on the circle's own hue — every brand fill carries black ink (app/theme.ts).
+  const text = selected ? 'text-black' : (style?.text ?? 'text-ink-muted');
 
   const content = (
     <View

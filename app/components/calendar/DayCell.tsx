@@ -34,23 +34,23 @@ const DayCell = ({ day, month, year, columnWidth, rowHeight }: DayCellProps) => 
       accessibilityLabel={date ? date.toDateString() : undefined}
       style={{ width: columnWidth, height: rowHeight }}
       className={`border-b border-r border-line px-1 pt-1 ${
-        date ? 'bg-surface hover:bg-surface-sunken' : 'bg-surface-muted'
-      } ${isSelected ? 'bg-brand-light' : ''}`}
+        date ? 'bg-surface hover:bg-grey-light' : 'bg-surface-muted'
+      } ${isSelected ? 'bg-blue-lighter' : ''}`}
       disabled={!date}
       onPress={() => date && setSelectedDate(date)}
     >
       <View className='mb-1 h-6 w-6 items-center justify-center self-start rounded-full'>
         <View
           className={`h-6 w-6 items-center justify-center rounded-full ${
-            isSelected ? 'bg-brand' : isToday ? 'bg-brand-light' : ''
+            isSelected ? 'bg-blue' : isToday ? 'bg-blue-lighter' : ''
           }`}
         >
           <Text
             className={`font-nunito text-[12px] ${
  isSelected
- ? ' text-white'
+ ? ' text-black'
  : isToday
- ? ' text-brand-dark'
+ ? ' text-blue-dark'
  : 'text-ink-muted'
  }`}
           >
@@ -67,8 +67,8 @@ const DayCell = ({ day, month, year, columnWidth, rowHeight }: DayCellProps) => 
           // `-light` and the ink does the work. Done ones cross out and go green.
           className={`font-nunito mb-0.5 rounded px-1 py-0.5 text-[11px] ${
  reminder.completed
- ? 'bg-success-light text-success-dark line-through'
- : 'bg-brand-light text-brand-dark'
+ ? 'bg-success-lighter text-success-dark line-through'
+ : 'bg-blue-lighter text-blue-dark'
  }`}
         >
           {reminder.contactLastName || reminder.title}

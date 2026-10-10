@@ -35,14 +35,14 @@ const TierColumn = ({ target, count, isOver, children }: TierColumnProps) => {
   return (
     <View
       className={`min-h-[160px] flex-1 rounded-2xl border ${
-        isOver ? 'border-brand bg-brand-light' : 'border-line bg-surface-muted'
+        isOver ? 'border-blue bg-blue-lighter' : 'border-line bg-surface-muted'
       }`}
     >
       {/* Fixed head height: the label and the description wrap to different line counts
           per column at phone width, and without it the first chip in each column starts
           at a different y. */}
       <View
-        className={`gap-0.5 rounded-t-2xl px-2 py-2 ${style?.wash ?? 'bg-surface-sunken'} ${
+        className={`gap-0.5 rounded-t-2xl px-2 py-2 ${style?.wash ?? 'bg-grey-light'} ${
           target ? 'min-h-[112px] md:min-h-0' : ''
         }`}
       >

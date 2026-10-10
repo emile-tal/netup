@@ -10,7 +10,7 @@ interface TextFieldProps {
   value: string;
   onChangeText: (text: string) => void;
   placeholder?: string;
-  /** Draws the field in the danger colour and shows `error` beneath it. */
+  /** Draws the field in the error colour and shows `error` beneath it. */
   invalid?: boolean;
   error?: string;
   autoFocus?: boolean;
@@ -67,11 +67,11 @@ const TextField = forwardRef<TextInput, TextFieldProps>(
           onSubmitEditing={onSubmitEditing}
           editable={editable}
           className={`font-nunito w-full rounded-xl border bg-surface-muted px-3 py-2.5 text-[15px] text-ink ${
- invalid ? 'border-danger' : 'border-line'
+ invalid ? 'border-error-dark' : 'border-line'
  } ${editable === false ? 'opacity-60' : ''}`}
           style={noFocusRing}
         />
-        {invalid && error && <Text className='font-nunito text-[12px] text-danger'>{error}</Text>}
+        {invalid && error && <Text className='font-nunito text-[12px] text-error-dark'>{error}</Text>}
       </View>
     );
   }

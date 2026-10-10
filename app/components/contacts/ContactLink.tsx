@@ -29,7 +29,7 @@ const ContactLink = ({
       <Pressable
         accessibilityRole='link'
         accessibilityLabel={fullName(firstName, lastName)}
-        className='w-full flex-row items-center gap-3 px-4 py-3 hover:bg-surface-muted active:bg-surface-sunken'
+        className='w-full flex-row items-center gap-3 px-4 py-3 hover:bg-grey-lighter active:bg-grey-light'
       >
         <Avatar firstName={firstName} lastName={lastName} size={40} />
         <View className='min-w-0 flex-1'>

@@ -23,7 +23,8 @@ const ContactsPage = () => {
           // Deep links and the post-save `dismissTo` can both leave this screen at the
           // root of the stack, where `back()` is a no-op — fall back to the contacts list.
           onBackPress={() => (router.canGoBack() ? router.back() : router.navigate('/'))}
-          actionIcon={contact ? <EditIcon size={20} color={colors.ink} /> : undefined}
+          actionIcon={contact ? <EditIcon size={20} color={colors.black} /> : undefined}
+          actionEmphasis='brand'
           actionLabel='Edit contact'
           // `push`, so edit always sits *above* this screen for `dismissTo` to unwind to.
           onActionPress={() => router.push(`/contacts/edit/${id}`)}

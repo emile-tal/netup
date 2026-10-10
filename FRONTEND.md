@@ -52,64 +52,110 @@ secondary 13–14, meta 12.
 
 ## 3. Colour
 
+One palette: **five hues × five steps**, **five greys**, black, white, and two alpha
+hairlines. Nothing else. Every value lives in `app/theme.ts` and is mirrored in
+`tailwind.config.js`.
+
 ### The three brand colours
 
 They are the logo. The mark's three nodes are exactly these, and the set is **closed** —
 no fourth hue gets invented for one component.
 
-| | Hex | Role |
-|---|---|---|
-| **Blue** | `#1A73E8` | The accent. The one colour that means "act on this". |
-| **Orange-red** | `#E8430A` | 5-15-50: trusted network. |
-| **Yellow** | `#F9AB00` | 5-15-50: strategic network. |
+| | Token | Hex | Role |
+|---|---|---|---|
+| **Blue** | `blue` | `#1A73E8` | The accent. The one colour that means "act on this". 5-15-50: inner circle. |
+| **Yellow** | `yellow` | `#F9AB00` | 5-15-50: trusted network. |
+| **Red** | `red` | `#E8430A` | 5-15-50: strategic network. |
 
-Everything else is ink, paper, and the two status colours (`success`, `danger`).
+Plus two status hues on the same five-step shape: **`error`** (`#E64C66`, a rose at 350° —
+a *different hue* from brand red on purpose, so "this is broken" never reads as "this
+contact is in the strategic circle") and **`success`** (`#12855B`).
 
-### Four roles per hue
+### Five steps per hue
 
-One hex cannot do every job at a readable contrast, so each brand colour has four tokens:
+Each ramp is generated in HSL off the brand value by moving **lightness only**, so every
+hue behaves the same way and nothing has a bespoke tone:
 
-| Token | Use | Rule |
-|-------|-----|------|
-| `DEFAULT` | fills, the mark, anything large | the brand value, exactly as specified |
-| `light` | tinted fields behind dark text | a 90% white wash |
-| `deep` | small text, and solid fills carrying white text | clears 4.5:1 on white, on `surface-muted`, and on its own wash |
-| `dark` | pressed/hover state of a solid fill | — |
+| Step | Class | Use |
+|------|-------|-----|
+| `lighter` | `bg-blue-lighter` | a near-white wash — tinted fields behind dark text |
+| `light` | `bg-blue-light` | the light tone — the hover/press state of a solid fill |
+| `DEFAULT` | `bg-blue` | the brand value, exactly as specified — solid fills |
+| `dark` | `text-blue-dark` | small text and icons on a light surface; clears 4.5:1 on white |
+| `darker` | `text-blue-darker` | small text that needs more room, and text on the hue's own wash |
 
-**Tint the field, deepen the ink.** Large areas take the pure hue or its wash; words take
-`deep`.
+### The two rules that fall out of contrast
 
-> **Why `deep` exists.** Brand yellow is **1.93:1** on white. It cannot be written in, and
-> white cannot be written on it. Orange-red is 4.01:1 — also short. Only blue clears 4.5:1
-> unaided, and only just. So: *solid and ink go `-deep`; tints stay pure.* That is the
-> whole rule, and it is why a selected yellow pill reads as dark gold rather than as the
-> brand yellow. The pure hue still carries the logo, the washes, and every large fill.
+**1. Ink on a colour is always black, never white.** Every `DEFAULT` clears 4.5:1 against
+`#000` — blue 4.66, red 5.24, yellow 10.85, error 5.59, success 4.53 — and *none* of them
+clears it against white. Black is the only ink that works on all five, so it is the only
+ink that is used on any of them. That covers button labels, a filled `TierPill`, the
+selected day in the calendar, and the tick inside a checkbox.
+
+**2. A fill's hover step is whichever neighbour keeps black above 4.5:1.** For a
+`DEFAULT` fill that means going *lighter*, never darker: `bg-error hover:bg-error-light`.
+
+The primary action is the exception that proves the rule. Black on the full `blue` is
+4.66:1 — legal, but the label has to work for it — so **the primary button and the
+brand-filled header `IconButton` rest on `blue-light`** (black 7.71:1) and *deepen* to
+`blue` on hover, which still clears the bar. **The active nav destination is a primary
+button** and uses the same pair, with its label and icon black in both states — the fill
+is the only thing that marks the current tab. The full `blue` stays the accent where it
+carries no ink of its own: the logo, a selected calendar day, the inner circle's chip.
+
+> **Text on paper is `ink` (`#1A1A1A`), not black.** Pure `black` is reserved for the
+> inside of a coloured fill. Body text, titles and labels on white or on a wash stay the
+> softer ink.
+
+Picking a text tone: blue is the only hue whose `DEFAULT` may carry small text on white
+(4.51:1, and only just — `-dark` is 6.50 and preferable). Yellow is **1.93:1** on white
+and can never be written in: its text tone is `-darker` (5.05). Red's `DEFAULT` is 4.01,
+also short. On a hue's own `-lighter` wash, use `-darker`.
 
 ### Colour only where it means something
 
 Colour is a signal, not decoration. It lands on: the one primary action per screen, a
-contact's 5-15-50 circle, completion, and danger. A company name is `text-ink-muted`, not
-`text-brand` — it is neither an action nor a link. Everything else is ink on paper.
+contact's 5-15-50 circle, completion, and failure. A company name is `text-ink-muted`, not
+`text-blue` — it is neither an action nor a link. Everything else is ink on paper.
 
-### The rest of the palette
+### Greys, and the semantic names over them
 
-| Token | Use |
-|-------|-----|
-| `ink` / `ink-muted` / `ink-subtle` | primary / secondary / tertiary text |
-| `surface` / `surface-muted` / `surface-sunken` | cards / page background / input fills |
-| `line` / `line-strong` | hairline borders |
-| `success`, `danger` (+ `-light`, `-dark`) | completion, destructive |
-| `tier-inner` / `tier-trusted` / `tier-strategic` (+ `-light`, `-deep`) | the three circles — aliases of the brand trio, not a second palette |
+Five greys, and the `ink-*` / `surface-*` names are **aliases of them** — one grey scale,
+not two.
+
+| Grey | Hex | Alias | Use |
+|------|-----|-------|-----|
+| `grey-lighter` | `#F8F9FA` | `surface-muted` | the page |
+| `grey-light` | `#F1F3F4` | `surface-sunken` | input fills, and every hover wash |
+| `grey` | `#DADCE0` | — | the one visible divider tone |
+| `grey-dark` | `#9AA0A6` | `ink-subtle` | tertiary text, placeholders |
+| `grey-darker` | `#5F6368` | `ink-muted` | secondary text |
+
+`white` / `surface` is paper, `ink` is `#1A1A1A`, and `line` / `line-strong` are **alpha**
+blacks (8% / 16%) rather than greys, so a hairline sits on any surface without banding.
 
 `avatarPalette` is separate: `app/utils/avatar.ts` hashes a name into it so a contact keeps
 the same avatar colour everywhere with no colour stored on the record. Each entry is a
 `{ bg, fg }` pair — tinted paper with dark initials, never a saturated disc. A contacts
 list is a wall of avatars, so solid fills there are the single loudest thing in the app.
 
+### Buttons
+
+Four variants, and the call site picks a **role**, never a colour (`app/components/Button.tsx`):
+
+| Variant | Fill | Label | Hover |
+|---------|------|-------|-------|
+| `primary` | `bg-blue-light` | `text-black` | `bg-blue` |
+| `secondary` | `bg-grey-light` | `text-ink` | `bg-grey` |
+| `grey` | none — no background, no border | `text-ink` | `bg-grey-light` |
+| `destructive` | `bg-error` | `text-black` | `bg-error-light` |
+
 ### Non-negotiables
 
-- **Never write a raw hex or a stock Tailwind palette class** (`text-gray-500`,
-  `bg-blue-500`) in a component. Add a token to `app/theme.ts` *and* `tailwind.config.js`.
+- **Never write a raw hex.** Add a token to `app/theme.ts` *and* `tailwind.config.js`.
+- **`bg-blue-500` and friends do not exist.** Our `blue` / `yellow` / `red` / `grey` keys
+  shadow Tailwind's stock ramps on purpose, so a stock palette class fails to compile
+  rather than quietly shipping a colour that isn't ours.
 - **Check contrast before you nudge anything lighter.** ≥4.5:1 for body text against the
   surface it actually sits on — which for a tier tone is its own wash, not white.
 - `className` is the default. Import `colors` from `app/theme` only where a prop needs a
@@ -126,7 +172,7 @@ list is a wall of avatars, so solid fills there are the single loudest thing in 
   that same SVG. Re-render them if the mark changes.
 - The mark takes a `size` only. It has no `color` prop: the three node colours are the
   brand and are not themeable.
-- The wordmark is "Net" in `text-ink` + "Up" in `text-brand`. That is the one place the
+- The wordmark is "Net" in `text-ink` + "Up" in `text-blue`. That is the one place the
   accent appears inside a word.
 
 ---

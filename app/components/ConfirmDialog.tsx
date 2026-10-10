@@ -10,7 +10,7 @@ interface ConfirmDialogProps {
   message?: string;
   confirmLabel?: string;
   cancelLabel?: string;
-  /** Draws the confirm action in the danger colour. */
+  /** Draws the confirm action as the destructive button (the `error` fill). */
   destructive?: boolean;
   /** Disables both actions and swaps the confirm label while work is in flight. */
   busy?: boolean;
@@ -47,13 +47,13 @@ const ConfirmDialog = ({
         <>
           <Button
             label={cancelLabel}
-            variant='ghost'
+            variant='grey'
             onPress={onCancel}
             disabled={busy}
           />
           <Button
             label={busy ? (busyLabel ?? confirmLabel) : confirmLabel}
-            variant={destructive ? 'danger' : 'primary'}
+            variant={destructive ? 'destructive' : 'primary'}
             onPress={onConfirm}
             disabled={busy}
           />

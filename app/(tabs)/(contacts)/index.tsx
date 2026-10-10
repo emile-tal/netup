@@ -67,7 +67,7 @@ const Contacts = () => {
             subtitle={
               count > 0 ? `${count} ${count === 1 ? 'person' : 'people'}` : undefined
             }
-            actionIcon={<PersonAddIcon size={22} color='white' />}
+            actionIcon={<PersonAddIcon size={22} color={colors.black} />}
             actionEmphasis='brand'
             actionLabel='Add contact'
             // `push`, so the form sits above the list and its X can simply pop.

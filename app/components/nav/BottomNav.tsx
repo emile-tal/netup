@@ -21,10 +21,7 @@ const BottomNav = (props: BottomTabBarProps) => {
           orientation='column'
           label={destination.label}
           focused={destination.focused}
-          icon={destination.renderIcon(
-            destination.focused ? colors.brandDark : colors.inkMuted,
-            22
-          )}
+          icon={destination.renderIcon(colors.black, 22)}
           onPress={destination.onPress}
           onLongPress={destination.onLongPress}
         />

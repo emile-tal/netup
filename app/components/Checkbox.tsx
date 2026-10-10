@@ -1,6 +1,7 @@
 import { Pressable, Text, View } from 'react-native';
 
 import CheckIcon from '../icons/CheckIcon';
+import { colors } from '../theme';
 
 interface CheckboxProps {
   checked: boolean;
@@ -25,10 +26,10 @@ const Checkbox = ({ checked, onChange, label }: CheckboxProps) => (
   >
     <View
       className={`h-5 w-5 items-center justify-center rounded-md border-2 ${
-        checked ? 'border-brand bg-brand' : 'border-line-strong'
+        checked ? 'border-blue bg-blue' : 'border-line-strong'
       }`}
     >
-      {checked && <CheckIcon size={12} color='white' />}
+      {checked && <CheckIcon size={12} color={colors.black} />}
     </View>
     <Text className='font-nunito text-[13px] text-ink-muted'>{label}</Text>
   </Pressable>

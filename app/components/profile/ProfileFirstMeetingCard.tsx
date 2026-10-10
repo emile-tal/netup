@@ -55,7 +55,7 @@ const ProfileFirstMeetingCard = ({
           placeholder='YYYY-MM-DD'
           placeholderTextColor={colors.inkSubtle}
           className={`font-nunito rounded-lg bg-surface-muted px-2 py-1.5 text-[15px] ${
- invalidDate ? 'text-danger' : 'text-ink'
+ invalidDate ? 'text-error-dark' : 'text-ink'
  }`}
           style={noFocusRing}
         />

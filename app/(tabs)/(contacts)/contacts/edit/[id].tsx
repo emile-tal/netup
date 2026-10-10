@@ -91,7 +91,7 @@ const EditContactPage = () => {
           backButton
           backIconProp={<XIcon size={20} color={colors.ink} />}
           onBackPress={closeToContact}
-          actionIcon={<CheckIcon size={20} color='white' />}
+          actionIcon={<CheckIcon size={20} color={colors.black} />}
           actionEmphasis='brand'
           actionLabel='Save changes'
           onActionPress={handleSave}
@@ -112,7 +112,7 @@ const EditContactPage = () => {
           footer={
             <Button
               label='Delete contact'
-              variant='danger'
+              variant='destructive'
               onPress={() => setConfirmingDelete(true)}
             />
           }

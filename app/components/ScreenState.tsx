@@ -27,7 +27,7 @@ const ScreenState = ({
   if (loading) {
     return (
       <View className='flex-1 items-center justify-center py-16'>
-        <ActivityIndicator color={colors.brand} />
+        <ActivityIndicator color={colors.blue} />
       </View>
     );
   }

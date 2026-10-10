@@ -19,7 +19,7 @@ const ContactChip = ({ contact, dragging }: ContactChipProps) => {
     <View
       className={`w-full flex-row items-center gap-2 rounded-xl border px-2 py-2 ${
         dragging
-          ? 'border-brand bg-surface shadow-lg'
+          ? 'border-blue bg-surface shadow-lg'
           : 'border-line bg-surface hover:border-line-strong'
       }`}
     >

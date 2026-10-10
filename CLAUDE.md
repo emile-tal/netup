@@ -513,11 +513,21 @@ ever typechecks the non-suffixed file.
   Every `<Text>`/`<TextInput>` carries `font-nunito` (or `font-nunito-medium` for a
   pressable label) — RN doesn't cascade fonts and React 19 dropped `defaultProps`, so
   there is no global default.
-- **Three brand colours, and they are the logo**: blue `#1A73E8` (the accent), orange-red
-  `#E8430A`, yellow `#F9AB00`. The set is closed.
-- **Each hue has four roles** — `DEFAULT` (fills), `light` (90% wash), `deep` (small text
-  and solid fills with white text), `dark` (pressed). Brand yellow is 1.93:1 on white, so
-  *solid and ink go `-deep`, tints stay pure*. See FRONTEND.md §3.
+- **Three brand colours, and they are the logo**: `blue` `#1A73E8` (the accent, and the
+  inner circle), `yellow` `#F9AB00` (trusted), `red` `#E8430A` (strategic). The set is
+  closed. Two status hues ride the same shape: `error` (a rose at 350°, deliberately not
+  brand red) and `success`.
+- **Five steps per hue**, generated in HSL off the brand value by lightness alone:
+  `lighter` (wash) · `light` (hover of a fill) · `DEFAULT` (fill) · `dark` (small text on
+  white) · `darker` (text on the hue's own wash). Five greys too, with `ink-*`/`surface-*`
+  as aliases of them.
+- **Ink on a colour is always black, never white** — no `DEFAULT` in the palette clears
+  4.5:1 against white and all of them do against black. A fill's hover step is whichever
+  neighbour keeps black above that, so a `DEFAULT` fill hovers *lighter*; the primary
+  button and the brand-filled header `IconButton` are the exception, resting on
+  `blue-light` (7.71:1) and deepening to `blue`. Text on paper stays `ink` (`#1A1A1A`);
+  pure `black` is only ever used inside a fill. `bg-blue-500` and the other stock Tailwind
+  ramps no longer compile, on purpose. See FRONTEND.md §3.
 - `app/theme.ts` holds the raw values and **`tailwind.config.js` mirrors them**. Adding a
   colour means editing **both**. Use `className` by default; import `colors` only where a
   prop needs a colour *string* (SVG `fill`, `placeholderTextColor`, `ActivityIndicator`).
@@ -596,9 +606,9 @@ Every contact sits in one **circle**, or none:
 
 | Tier | Label | What it means | Cadence | Colour token |
 |------|-------|---------------|---------|--------------|
-| `5` | Inner circle | Your closest allies: Mentors, sponsors, champions. | every 14 days | `tier-inner` |
-| `15` | Trusted network | Strategic contacts who would advocate for you. | monthly | `tier-trusted` |
-| `50` | Strategic network | Valuable weak ties that open new doors. | quarterly | `tier-strategic` |
+| `5` | Inner circle | Your closest allies: Mentors, sponsors, champions. | every 14 days | `blue` |
+| `15` | Trusted network | Strategic contacts who would advocate for you. | monthly | `yellow` |
+| `50` | Strategic network | Valuable weak ties that open new doors. | quarterly | `red` |
 | `null` | Unassigned | — | none | neutral |
 
 The "what it means" column is `TIER_DESCRIPTIONS`, and it is the **user's copy** — shown on
@@ -656,8 +666,8 @@ slice) → `TierBoard`.
 
 Three columns plus an **Unassigned** pool, side by side even on a phone (~110px each), and
 the header shows `count/target` so an over- or under-filled circle is obvious, over the
-circle's `TIER_DESCRIPTIONS` line and its cadence. The head carries the circle's `-light`
-wash with the label in the full tone; **the wash stops at the head** — twelve chips on a
+circle's `TIER_DESCRIPTIONS` line and its cadence. The head carries the circle's `-lighter`
+wash with the label in its `-darker` tone; **the wash stops at the head** — twelve chips on a
 tinted field turn the column into a highlighter block. That head carries a
 `min-h-[112px] md:min-h-0`, because at phone width
 the label and description wrap to different line counts per column and the first chip in

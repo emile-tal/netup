@@ -84,7 +84,7 @@ const AddReminderModal = ({
       title='New reminder'
       footer={
         <>
-          <Button label='Cancel' variant='ghost' onPress={reset} />
+          <Button label='Cancel' variant='grey' onPress={reset} />
           <Button
             label={saving ? 'Adding…' : 'Add reminder'}
             onPress={handleAdd}

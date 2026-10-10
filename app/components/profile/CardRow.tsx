@@ -41,7 +41,7 @@ const CardRow = ({ label, children, onLabelChange, onRemove }: CardRowProps) => 
           onPress={onRemove}
           accessibilityRole='button'
           accessibilityLabel={`Remove ${label}`}
-          className='h-6 w-6 items-center justify-center rounded-full hover:bg-danger-light'
+          className='h-6 w-6 items-center justify-center rounded-full hover:bg-error-lighter'
         >
           <XIcon size={14} color={colors.inkSubtle} />
         </Pressable>

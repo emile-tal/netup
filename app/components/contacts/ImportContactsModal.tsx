@@ -90,7 +90,7 @@ const ImportContactsModal = ({ visible, onRequestClose }: ImportContactsModalPro
         <>
           <Button
             label={summary ? 'Done' : 'Cancel'}
-            variant='ghost'
+            variant='grey'
             onPress={handleClose}
             disabled={importing}
           />
@@ -139,8 +139,8 @@ const ImportContactsModal = ({ visible, onRequestClose }: ImportContactsModalPro
             onPress={handleDownloadTemplate}
             className='flex-row items-center gap-1.5 self-start'
           >
-            <DownloadIcon size={16} color={colors.brand} />
-            <Text className='font-nunito text-[14px] text-brand'>
+            <DownloadIcon size={16} color={colors.blue} />
+            <Text className='font-nunito text-[14px] text-blue'>
               Download template
             </Text>
           </Pressable>

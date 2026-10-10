@@ -24,7 +24,7 @@ const SideNav = (props: BottomTabBarProps) => {
       <View className='mb-8 flex-row items-center gap-2 px-3'>
         <Logo size={28} />
         <Text className='font-nunito text-[19px] text-ink'>
-          Net<Text className='font-nunito text-brand'>Up</Text>
+          Net<Text className='font-nunito text-blue'>Up</Text>
         </Text>
       </View>
       <View className='gap-1'>
@@ -34,10 +34,7 @@ const SideNav = (props: BottomTabBarProps) => {
             orientation='row'
             label={destination.label}
             focused={destination.focused}
-            icon={destination.renderIcon(
-              destination.focused ? colors.brandDark : colors.inkMuted,
-              22
-            )}
+            icon={destination.renderIcon(colors.black, 22)}
             onPress={destination.onPress}
             onLongPress={destination.onLongPress}
           />

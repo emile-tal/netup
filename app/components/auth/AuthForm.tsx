@@ -133,8 +133,8 @@ const AuthForm = ({
       )}
 
       {error && (
-        <View className='rounded-xl bg-danger-light px-3 py-2.5'>
-          <Text className='font-nunito text-[13px] leading-5 text-danger'>{error}</Text>
+        <View className='rounded-xl bg-error-lighter px-3 py-2.5'>
+          <Text className='font-nunito text-[13px] leading-5 text-error-dark'>{error}</Text>
         </View>
       )}
 
