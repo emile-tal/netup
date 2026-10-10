@@ -23,14 +23,17 @@ const NetworkPage = () => {
   const assigned = TIERS.reduce((sum, tier) => sum + buckets.byTier[tier].length, 0);
 
   return (
-    <ScreenLayout width='wide'>
-      <Header
-        title='5-15-50'
-        subtitle={total > 0 ? `${assigned} of ${total} in a circle` : undefined}
-        secondaryActionIcon={<InfoIcon size={20} color={colors.inkMuted} />}
-        onSecondaryActionPress={openInfo}
-        secondaryActionLabel='About the 5-15-50 model'
-      />
+    <ScreenLayout
+      header={
+        <Header
+          title='5-15-50'
+          subtitle={total > 0 ? `${assigned} of ${total} in a circle` : undefined}
+          secondaryActionIcon={<InfoIcon size={20} color={colors.inkMuted} />}
+          onSecondaryActionPress={openInfo}
+          secondaryActionLabel='About the 5-15-50 model'
+        />
+      }
+    >
       {total === 0 ? (
         <ScreenState
           loading={loading}

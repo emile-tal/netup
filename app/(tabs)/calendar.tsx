@@ -1,4 +1,4 @@
-import AddIcon from '../icons/AddIcon';
+import CalendarAddIcon from '../icons/CalendarAddIcon';
 import AddReminderModal from '../components/calendar/AddReminderModal';
 import Header from '../components/Header';
 import InfiniteListCalendar from '../components/calendar/InfiniteListCalendar';
@@ -22,14 +22,17 @@ const CalendarPage = () => {
   const columnWidth = Math.floor((gridWidth - GRID_BORDER_WIDTH) / 7);
 
   return (
-    <ScreenLayout width='wide'>
-      <Header
-        title='Calendar'
-        actionIcon={<AddIcon size={22} color='white' />}
-        actionEmphasis='brand'
-        actionLabel='Add reminder'
-        onActionPress={() => setAddVisible(true)}
-      />
+    <ScreenLayout
+      header={
+        <Header
+          title='Calendar'
+          actionIcon={<CalendarAddIcon size={22} color='white' />}
+          actionEmphasis='brand'
+          actionLabel='Add reminder'
+          onActionPress={() => setAddVisible(true)}
+        />
+      }
+    >
       <View
         className='flex-1'
         onLayout={event => setGridWidth(event.nativeEvent.layout.width)}

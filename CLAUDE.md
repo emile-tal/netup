@@ -84,16 +84,18 @@ app/
     welcome.tsx            # Full-page "Your network is your career." + Get started
   (tabs)/
     _layout.tsx            # Tabs + tabBarPosition, driven by the md breakpoint (§13)
-    index.tsx              # Contacts list — owns the ONE contacts subscription ✅
+    (contacts)/            # The contacts TAB is a nested stack (§13), so a contact
+      _layout.tsx          #   opens where the list renders. Parens ⇒ no URL segment.
+      index.tsx            # Contacts list (URL `/`) — owns the ONE contacts subscription ✅
+      contacts/[id].tsx    # View one contact + its reminders ✅
+      contacts/add.tsx     # New-contact form (ProfileCard editable → createContact) ✅
+      contacts/edit/[id].tsx # Edit + delete (→ updateContact / deleteContact) ✅
     calendar.tsx           # Month grid + SelectedDayPanel (the editable day list) ✅
     network.tsx            # The 5-15-50 board — drag contacts between circles ✅
-  contacts/
-    [id].tsx               # View one contact + its reminders ✅
-    add.tsx                # New-contact form (ProfileCard editable → createContact) ✅
-    edit/[id].tsx          # Edit + delete (→ updateContact / deleteContact) ✅
+    settings.tsx           # Account + sync status + sign out ✅
   components/
-    ScreenLayout.tsx       # Page bg + safe area + the centred max-width column
-    Header.tsx             # Back control / left-aligned title+subtitle / one action
+    ScreenLayout.tsx       # Page bg + safe area + the white header bar + the column
+    Header.tsx             # THE header row: back control / title+subtitle left / actions right
     Card.tsx               # THE surface panel (white, hairline border, rounded-2xl)
     ModalShell.tsx         # THE modal surface — every modal is built on this
     Checkbox.tsx           # Square labelled checkbox (forms/dialogs, not ReminderRow's)
@@ -341,10 +343,8 @@ also done. What remains:
    that contact's screen (`ContactReminders`). The calendar "+" creates unlinked reminders.
 5. **Date entry** — `firstMeeting` and the reminder modal use `YYYY-MM-DD` text inputs
    with validation, not a picker (no date-picker dependency is installed).
-6. **Contact routes sit outside `(tabs)`** — `app/contacts/*` are Stack screens, so on
-   desktop the side rail disappears while viewing/editing a contact. Moving them under
-   `app/(tabs)/contacts/` (with `href: null`) would keep the rail, at the cost of the
-   push transition on mobile. Left undecided: it is a routing/URL change, not styling.
+6. ~~Contact routes sit outside `(tabs)`~~ ✅ **done.** They are a stack nested in the
+   contacts tab now; see §13.
 
 ---
 
@@ -525,9 +525,23 @@ ever typechecks the non-suffixed file.
 
 ### Layout
 - **`ScreenLayout` is the only place page chrome is set**: background, safe-area edges,
-  and a `self-center` (auto-margin) column capped at `max-w-content` (720px) or
-  `max-w-wide` (1040px, calendar only), padded `px-4 md:px-8`. Screens render `Header`
-  and their list *inside* it — never their own `SafeAreaView`.
+  the white header bar, and a `self-center` (auto-margin) column padded `px-4 md:px-8`.
+  Screens render their list *inside* it — never their own `SafeAreaView`.
+- **Every app page is `max-w-wide` (1040px)** — one page size, so the title and actions
+  land in the same place on every tab. `max-w-content` (720px) is now only for the
+  signed-out and first-run screens (auth, onboarding, `BootstrapScreen`,
+  `reset-password`), which are short centred forms; they pass `width='content'`.
+- **The header goes in `ScreenLayout`'s `header` slot, not the page body.** The slot
+  draws the full-bleed white bar (hairline bottom border) and owns the **top safe-area
+  inset**, so the status bar reads as part of it — which is why `ScreenLayout` drops the
+  `top` edge when a header is present. `Header` itself sets no background. The slot takes
+  a node, so anything that belongs in the bar rather than the scrolling page goes in it
+  too: the contacts search field is in there, which is how it stays put while the list
+  scrolls. The gap under the bar is the slot's (`pt-4`); don't re-add it per screen.
+- **Every page uses `Header`, with the title on the left and the actions on the right.**
+  One filled (`brand`) action per screen, and the add actions are *specific* icons:
+  `PersonAddIcon` on contacts, `CalendarAddIcon` on the calendar. `AddIcon` (the bare
+  plus) is for inline "add another row" controls, never a header's primary action.
 - Safe-area edges follow the nav: the bottom bar owns the bottom inset on mobile, the
   left rail owns the left inset on desktop, so `ScreenLayout` swaps `edges` accordingly.
   Don't re-add `insets.bottom` padding in a screen's `contentContainerStyle`.
@@ -538,6 +552,15 @@ breakpoint. Two things read it and **must stay in sync**:
 1. `app/(tabs)/_layout.tsx` sets `tabBarPosition: isWide ? 'left' : 'bottom'`, which is
    what makes react-navigation lay the bar out on the correct axis.
 2. `components/nav/NavBar.tsx` renders `SideNav` or `BottomNav`.
+
+**The contacts tab is a nested stack, and that is deliberate.** `app/(tabs)/(contacts)/`
+is a *group* (parens ⇒ no URL segment) with its own `Stack` layout: `index.tsx` is the
+list at `/`, and the profile / add / edit screens are pushed on top of it at
+`/contacts/...`. Because the stack lives inside the tab, a contact opens **in the region
+the list occupies** — the bottom bar or side rail stays put, and the form replaces the
+list instead of covering the window. The push transition and the `dismissTo` unwinding in
+§10 are unchanged; `dismissTo('/')` now unwinds to the list at the root of *this* stack.
+Switching tabs leaves the stack where it was, which is the standard tab behaviour.
 
 Both bars are built from `useNavDestinations(props)`, which flattens react-navigation's
 `state`/`descriptors`/`navigation` into a plain list (label, focused, `renderIcon`,
@@ -694,9 +717,9 @@ this repo. Run `supabase/RLS_TEST.sql` after any policy change.
 
 ### Sync
 
-`db/sync/`, mounted by `app/hooks/useSync.ts` in **`app/_layout.tsx`** — not the tab
-layout, because `app/contacts/*` are Stack routes outside `(tabs)` (§9) and the loop must
-keep running while a contact is being edited.
+`db/sync/`, mounted by `app/hooks/useSync.ts` in **`app/_layout.tsx`** — above every
+route, so the loop survives a sign-in and keeps running whatever screen the user is on.
+(`useOutreachRepair` can sit lower, in the tab layout: it is a one-shot launch pass.)
 
 One pass is **push, then pull**. Triggers: sign-in, `AppState` → active, NetInfo
 reconnect, a debounced reaction to the outbox row count, and a 5-minute backstop.

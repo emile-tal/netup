@@ -24,10 +24,11 @@ interface HeaderProps {
 }
 
 /**
- * Screen header: optional back control, a left-aligned title, and up to two actions. The
- * title is left-aligned rather than centred so it lines up with the content column
- * beneath it. Only the primary action ever takes `brand` emphasis — one filled control
- * per screen (see CLAUDE.md §13).
+ * THE screen header, and every page uses it: an optional back control, the title on the
+ * left, and up to two actions on the right. It is rendered through `ScreenLayout`'s
+ * `header` slot, which supplies the white bar and the safe-area inset — so this component
+ * only lays out the row and must not set its own background. Only the primary action ever
+ * takes `brand` emphasis — one filled control per screen (see CLAUDE.md §13).
  */
 const Header = ({
   title,
@@ -47,7 +48,7 @@ const Header = ({
   const hasSecondaryAction = Boolean(secondaryActionIcon && onSecondaryActionPress);
 
   return (
-    <View className='flex-row items-center gap-2 pb-4 pt-3'>
+    <View className='min-h-[60px] flex-row items-center gap-2 py-2.5'>
       {backButton && (
         <View className='-ml-2'>
           <IconButton

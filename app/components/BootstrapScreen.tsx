@@ -23,7 +23,7 @@ interface BootstrapScreenProps {
  * needs the round trip to finish setting up.
  */
 const BootstrapScreen = ({ error, onRetry, onSignOut }: BootstrapScreenProps) => (
-  <ScreenLayout>
+  <ScreenLayout width='content'>
     <View className='flex-1 items-center justify-center gap-6'>
       <Logo size={48} />
 

@@ -15,7 +15,7 @@ const SignUpScreen = () => {
 
   if (confirmationSentTo) {
     return (
-      <ScreenLayout>
+      <ScreenLayout width='content'>
         <View className='flex-1 justify-center gap-6 py-8'>
           <View className='items-center gap-3'>
             <Logo size={44} />
@@ -47,7 +47,7 @@ const SignUpScreen = () => {
   }
 
   return (
-    <ScreenLayout>
+    <ScreenLayout width='content'>
       <View className='flex-1 justify-center gap-6 py-8'>
         <View className='items-center gap-3'>
           <Logo size={44} />

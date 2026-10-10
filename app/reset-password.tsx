@@ -52,7 +52,7 @@ const ResetPasswordScreen = () => {
   // Hold while the code in the URL is still being exchanged for a session.
   if (loading) {
     return (
-      <ScreenLayout>
+      <ScreenLayout width='content'>
         <ScreenState loading />
       </ScreenLayout>
     );
@@ -61,7 +61,7 @@ const ResetPasswordScreen = () => {
   // No session here means the link was never followed, or it expired or was already used.
   if (!session) {
     return (
-      <ScreenLayout>
+      <ScreenLayout width='content'>
         <View className='flex-1 justify-center gap-6 py-8'>
           <View className='items-center gap-3'>
             <Logo size={44} />
@@ -93,7 +93,7 @@ const ResetPasswordScreen = () => {
   }
 
   return (
-    <ScreenLayout>
+    <ScreenLayout width='content'>
       <View className='flex-1 justify-center gap-6 py-8'>
         <View className='items-center gap-3'>
           <Logo size={44} />

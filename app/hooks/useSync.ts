@@ -15,10 +15,9 @@ const INTERVAL_MS = 5 * 60 * 1000;
 /**
  * Runs the sync loop for the signed-in user.
  *
- * Mounted in `app/_layout.tsx` rather than `app/(tabs)/_layout.tsx`, where
- * `useOutreachRepair` lives: `app/contacts/*` are Stack routes *outside* `(tabs)`
- * (CLAUDE.md §9), so a loop mounted there would stop running while the user is editing a
- * contact — exactly when writes happen.
+ * Mounted in `app/_layout.tsx`, above every route, so it keeps running through a sign-in
+ * and through whatever screen the user is on. `useOutreachRepair` can sit lower, in
+ * `app/(tabs)/_layout.tsx`, because it is a one-shot launch pass rather than a loop.
  */
 export function useSync() {
   // Optional, not `useDB`: this hook mounts above the auth guards, where there is no

@@ -10,7 +10,7 @@ const SignInScreen = () => {
   const { signIn } = useAuth();
 
   return (
-    <ScreenLayout>
+    <ScreenLayout width='content'>
       {/* Centred rather than top-aligned: there is no list to anchor to, and the form is
           short enough that a top-aligned one looks stranded on a desktop viewport. */}
       <View className='flex-1 justify-center gap-6 py-8'>

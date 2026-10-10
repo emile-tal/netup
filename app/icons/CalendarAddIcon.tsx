@@ -1,0 +1,18 @@
+import { DEFAULT_ICON_COLOR, DEFAULT_ICON_SIZE, IconProps } from './types';
+import { Path, Svg } from 'react-native-svg';
+
+/**
+ * The calendar frame from `CalendarIcon` with a plus centred in its body — the "add
+ * reminder" action (never the bare plus). Both paths share one `fill`, so the plus is
+ * drawn as a solid cross inside the frame's empty interior.
+ */
+const CalendarAddIcon = ({ color = DEFAULT_ICON_COLOR, size = DEFAULT_ICON_SIZE }: IconProps) => {
+  return (
+    <Svg height={size} width={size} viewBox='0 -960 960 960' fill={color}>
+      <Path d='M212.31-100Q182-100 161-121q-21-21-21-51.31v-535.38Q140-738 161-759q21-21 51.31-21h55.38v-53.85q0-13.15 8.81-21.96 8.81-8.8 21.96-8.8 13.16 0 21.96 8.8 8.81 8.81 8.81 21.96V-780h303.08v-54.61q0-12.77 8.61-21.39 8.62-8.61 21.39-8.61 12.77 0 21.38 8.61 8.62 8.62 8.62 21.39V-780h55.38Q778-780 799-759q21 21 21 51.31v535.38Q820-142 799-121q-21 21-51.31 21H212.31Zm0-60h535.38q4.62 0 8.46-3.85 3.85-3.84 3.85-8.46v-375.38H200v375.38q0 4.62 3.85 8.46 3.84 3.85 8.46 3.85ZM200-607.69h560v-100q0-4.62-3.85-8.46-3.84-3.85-8.46-3.85H212.31q-4.62 0-8.46 3.85-3.85 3.84-3.85 8.46v100Z' />
+      <Path d='M450-460h60v90h90v60h-90v90h-60v-90h-90v-60h90v-90Z' />
+    </Svg>
+  );
+};
+
+export default CalendarAddIcon;

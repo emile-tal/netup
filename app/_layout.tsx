@@ -20,9 +20,8 @@ import { useSync } from '@/app/hooks/useSync';
 
 /**
  * Hosts the sync loop. It sits inside DBRootProvider (it reads the database) and above
- * every route, because `app/contacts/*` are Stack routes outside `(tabs)` — mounting the
- * loop in the tab layout would stop it while the user edits a contact, which is exactly
- * when writes happen. It is a no-op while signed out.
+ * every route, so it keeps running whatever the user is looking at — including the
+ * contact edit form, which is exactly when writes happen. It is a no-op while signed out.
  */
 const SyncHost = ({ children }: { children: React.ReactNode }) => {
   useSync();
@@ -88,10 +87,9 @@ const RootStack = () => {
           or signing in would land on `reset-password` (which is unguarded) instead
           of the contacts list. */}
       <Stack.Protected guard={!!session && onboarded}>
+        {/* The whole app, tabs and all: the contact profile/add/edit screens are a stack
+            nested inside the contacts tab, so they are not declared here. */}
         <Stack.Screen name='(tabs)' />
-        <Stack.Screen name='contacts/[id]' />
-        <Stack.Screen name='contacts/add' />
-        <Stack.Screen name='contacts/edit/[id]' />
       </Stack.Protected>
 
       <Stack.Protected guard={!!session && !onboarded}>

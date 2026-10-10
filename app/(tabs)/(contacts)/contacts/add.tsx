@@ -2,17 +2,17 @@ import {
   emptyContact,
   useContactEditStore,
   withoutBlankChildren,
-} from '../stores/contactEditStore';
+} from '../../../stores/contactEditStore';
 import { useEffect, useState } from 'react';
 
-import CheckIcon from '../icons/CheckIcon';
-import Header from '../components/Header';
-import ProfileCard from '../components/profile/ProfileCard';
-import ScreenLayout from '../components/ScreenLayout';
-import XIcon from '../icons/XIcon';
-import { colors } from '../theme';
+import CheckIcon from '../../../icons/CheckIcon';
+import Header from '../../../components/Header';
+import ProfileCard from '../../../components/profile/ProfileCard';
+import ScreenLayout from '../../../components/ScreenLayout';
+import XIcon from '../../../icons/XIcon';
+import { colors } from '../../../theme';
 import { createContact } from '@/db/repo/contacts';
-import { notify } from '../utils/alert';
+import { notify } from '../../../utils/alert';
 import { useDB } from '@/db/dbProvider';
 import { useRouter } from 'expo-router';
 
@@ -54,17 +54,20 @@ const AddContactPage = () => {
   };
 
   return (
-    <ScreenLayout>
-      <Header
-        title='New contact'
-        backButton
-        backIconProp={<XIcon size={20} color={colors.ink} />}
-        onBackPress={() => router.back()}
-        actionIcon={<CheckIcon size={20} color='white' />}
-        actionEmphasis='brand'
-        actionLabel='Save contact'
-        onActionPress={handleSave}
-      />
+    <ScreenLayout
+      header={
+        <Header
+          title='New contact'
+          backButton
+          backIconProp={<XIcon size={20} color={colors.ink} />}
+          onBackPress={() => router.back()}
+          actionIcon={<CheckIcon size={20} color='white' />}
+          actionEmphasis='brand'
+          actionLabel='Save contact'
+          onActionPress={handleSave}
+        />
+      }
+    >
       <ProfileCard contact={blank} editable />
     </ScreenLayout>
   );

@@ -1,19 +1,19 @@
 import { FlatList, View } from 'react-native';
 import { useEffect, useState } from 'react';
 
-import AddIcon from '../icons/AddIcon';
-import Card from '../components/Card';
-import ContactLink from '../components/contacts/ContactLink';
-import ContactSearchBar from '../components/contacts/ContactSearchBar';
-import Header from '../components/Header';
-import ImportContactsModal from '../components/contacts/ImportContactsModal';
-import ImportIcon from '../icons/ImportIcon';
-import ScreenLayout from '../components/ScreenLayout';
-import ScreenState from '../components/ScreenState';
-import { colors } from '../theme';
+import PersonAddIcon from '../../icons/PersonAddIcon';
+import Card from '../../components/Card';
+import ContactLink from '../../components/contacts/ContactLink';
+import ContactSearchBar from '../../components/contacts/ContactSearchBar';
+import Header from '../../components/Header';
+import ImportContactsModal from '../../components/contacts/ImportContactsModal';
+import ImportIcon from '../../icons/ImportIcon';
+import ScreenLayout from '../../components/ScreenLayout';
+import ScreenState from '../../components/ScreenState';
+import { colors } from '../../theme';
 import { observeContactSummaries } from '@/db/repo/contacts';
 import { router } from 'expo-router';
-import useContactStore from '../stores/contactStore';
+import useContactStore from '../../stores/contactStore';
 import { useDB } from '@/db/dbProvider';
 
 const Contacts = () => {
@@ -59,21 +59,31 @@ const Contacts = () => {
   const count = contactSummaries.length;
 
   return (
-    <ScreenLayout>
-      <Header
-        title='Contacts'
-        subtitle={count > 0 ? `${count} ${count === 1 ? 'person' : 'people'}` : undefined}
-        actionIcon={<AddIcon size={22} color='white' />}
-        actionEmphasis='brand'
-        actionLabel='Add contact'
-        onActionPress={() => router.navigate('/contacts/add')}
-        secondaryActionIcon={<ImportIcon size={20} color={colors.ink} />}
-        secondaryActionLabel='Import contacts from CSV'
-        onSecondaryActionPress={() => setImportVisible(true)}
-      />
-      <View className='pb-3'>
-        <ContactSearchBar />
-      </View>
+    <ScreenLayout
+      header={
+        <>
+          <Header
+            title='Contacts'
+            subtitle={
+              count > 0 ? `${count} ${count === 1 ? 'person' : 'people'}` : undefined
+            }
+            actionIcon={<PersonAddIcon size={22} color='white' />}
+            actionEmphasis='brand'
+            actionLabel='Add contact'
+            // `push`, so the form sits above the list and its X can simply pop.
+            onActionPress={() => router.push('/contacts/add')}
+            secondaryActionIcon={<ImportIcon size={20} color={colors.ink} />}
+            secondaryActionLabel='Import contacts from CSV'
+            onSecondaryActionPress={() => setImportVisible(true)}
+          />
+          {/* The search field belongs to the header bar, not the page: the list below it
+              scrolls, and the field must not scroll away with it. */}
+          <View className='pb-3'>
+            <ContactSearchBar />
+          </View>
+        </>
+      }
+    >
       {count === 0 ? (
         <ScreenState
           loading={searchLoading}
@@ -85,7 +95,7 @@ const Contacts = () => {
             noResults && searchQuery
               ? 'Try a different name.'
               : noResults
-                ? 'Add one with +, or import a CSV.'
+                ? 'Use the add button, or import a CSV.'
                 : undefined
           }
         />

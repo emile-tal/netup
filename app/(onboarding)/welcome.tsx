@@ -52,7 +52,7 @@ const WelcomeScreen = () => {
   };
 
   return (
-    <ScreenLayout>
+    <ScreenLayout width='content'>
       <View className='flex-1 items-center justify-center gap-10'>
         {/* The mark and the wordmark, which is the one place "Up" carries the accent. */}
         <View className='flex-row items-center gap-2'>

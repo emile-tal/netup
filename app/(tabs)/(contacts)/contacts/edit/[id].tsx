@@ -1,22 +1,22 @@
-import { notify } from '../../utils/alert';
+import { notify } from '../../../../utils/alert';
 import { deleteContact, updateContact } from '@/db/repo/contacts';
 import { useEffect, useRef, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
-import Button from '../../components/Button';
-import ConfirmDialog from '../../components/ConfirmDialog';
+import Button from '../../../../components/Button';
+import ConfirmDialog from '../../../../components/ConfirmDialog';
 import CheckIcon from '@/app/icons/CheckIcon';
-import Header from '../../components/Header';
-import ProfileCard from '../../components/profile/ProfileCard';
-import ScreenLayout from '../../components/ScreenLayout';
-import ScreenState from '../../components/ScreenState';
+import Header from '../../../../components/Header';
+import ProfileCard from '../../../../components/profile/ProfileCard';
+import ScreenLayout from '../../../../components/ScreenLayout';
+import ScreenState from '../../../../components/ScreenState';
 import XIcon from '@/app/icons/XIcon';
 import { colors } from '@/app/theme';
-import { useContact } from '../../hooks/useContact';
+import { useContact } from '../../../../hooks/useContact';
 import {
   useContactEditStore,
   withoutBlankChildren,
-} from '../../stores/contactEditStore';
+} from '../../../../stores/contactEditStore';
 import { useDB } from '@/db/dbProvider';
 
 const EditContactPage = () => {
@@ -84,17 +84,20 @@ const EditContactPage = () => {
   };
 
   return (
-    <ScreenLayout>
-      <Header
-        title='Edit contact'
-        backButton
-        backIconProp={<XIcon size={20} color={colors.ink} />}
-        onBackPress={closeToContact}
-        actionIcon={<CheckIcon size={20} color='white' />}
-        actionEmphasis='brand'
-        actionLabel='Save changes'
-        onActionPress={handleSave}
-      />
+    <ScreenLayout
+      header={
+        <Header
+          title='Edit contact'
+          backButton
+          backIconProp={<XIcon size={20} color={colors.ink} />}
+          onBackPress={closeToContact}
+          actionIcon={<CheckIcon size={20} color='white' />}
+          actionEmphasis='brand'
+          actionLabel='Save changes'
+          onActionPress={handleSave}
+        />
+      }
+    >
       {loading || error || !contact ? (
         <ScreenState
           loading={loading}

@@ -19,6 +19,10 @@ const tabIcon = (Icon: (props: IconProps) => React.ReactElement) => {
   return TabIcon;
 };
 
+// The contacts stack is the app's landing tab; naming it explicitly keeps that from
+// depending on how the route files happen to sort.
+export const unstable_settings = { initialRouteName: '(contacts)' };
+
 const Layout = () => {
   const isWide = useIsWideLayout();
   // The tab layout mounts once for the life of the app, so this is where the 5-15-50
@@ -38,8 +42,11 @@ const Layout = () => {
           sceneStyle: { backgroundColor: colors.surfaceMuted },
         }}
       >
+        {/* A *group*, not a screen: the contacts tab is a nested stack (list → profile →
+            add/edit) so all four render inside the tab region, exactly where the list
+            does. The parens keep the group out of the URL, so the list is still `/`. */}
         <Tabs.Screen
-          name='index'
+          name='(contacts)'
           options={{ title: 'Contacts', tabBarIcon: tabIcon(ContactsIcon) }}
         />
         <Tabs.Screen

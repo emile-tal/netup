@@ -47,9 +47,7 @@ const SettingsScreen = () => {
   };
 
   return (
-    <ScreenLayout>
-      <Header title='Settings' />
-
+    <ScreenLayout header={<Header title='Settings' />}>
       <View className='gap-4'>
         <Card className='gap-3'>
           <Text className='font-nunito text-[12px] text-ink-subtle'>Signed in as</Text>

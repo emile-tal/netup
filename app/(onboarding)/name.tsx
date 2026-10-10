@@ -24,7 +24,7 @@ const NameScreen = () => {
   };
 
   return (
-    <ScreenLayout>
+    <ScreenLayout width='content'>
       <View className='flex-1 justify-center gap-8'>
         <View className='items-center'>
           <Logo size={48} />
