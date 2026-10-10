@@ -4,7 +4,7 @@ import CardRow from './CardRow';
 import { Phone } from '../../types/contacts';
 import { colors } from '../../theme';
 import { noFocusRing } from '../../utils/inputStyle';
-import { useContactEditStore } from '../../stores/contactEditStore';
+import { isRemovableItem, useContactEditStore } from '../../stores/contactEditStore';
 
 interface ProfilePhoneCardProps {
   phone: Phone;
@@ -31,7 +31,12 @@ const ProfilePhoneCard = ({ phone, editable }: ProfilePhoneCardProps) => {
     <CardRow
       label={phone.label}
       onLabelChange={label => updateItem('phones', phone.id, { label })}
-      onRemove={() => removeItem('phones', phone.id)}
+      // Removable only once a number is typed — same rule as the email rows.
+      onRemove={
+        isRemovableItem('phones', phone)
+          ? () => removeItem('phones', phone.id)
+          : undefined
+      }
     >
       <View className='flex-row items-center gap-2'>
         <TextInput

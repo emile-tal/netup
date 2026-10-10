@@ -23,7 +23,6 @@ const addressFields: { key: keyof Omit<Address, 'id' | 'label'>; placeholder: st
 
 const ProfileAddressCard = ({ address, editable }: ProfileAddressCardProps) => {
   const updateItem = useContactEditStore(s => s.updateItem);
-  const removeItem = useContactEditStore(s => s.removeItem);
 
   if (!editable) {
     const cityLine = [address.city, address.state, address.zip].filter(Boolean).join(' ');
@@ -48,7 +47,9 @@ const ProfileAddressCard = ({ address, editable }: ProfileAddressCardProps) => {
     <CardRow
       label={address.label}
       onLabelChange={label => updateItem('addresses', address.id, { label })}
-      onRemove={() => removeItem('addresses', address.id)}
+      // No remove control, and no "add" either: a contact holds exactly one address row
+      // for now. Clearing its fields is how an address goes away — `withoutBlankChildren`
+      // drops the empty row on save, and `syncChildren` reads the absence as a delete.
     >
       <View className='gap-1'>
         {addressFields.map(({ key, placeholder }) => (

@@ -24,8 +24,10 @@ const TierPill = ({ tier, selected, onPress, compact }: TierPillProps) => {
   const container = selected
     ? `${style?.fill ?? 'bg-grey-dark'} border-transparent`
     : `${style?.wash ?? 'bg-grey-light'} border-transparent`;
-  // Black on the circle's own hue — every brand fill carries black ink (app/theme.ts).
-  const text = selected ? 'text-black' : (style?.text ?? 'text-ink-muted');
+  // Black in both states: on the circle's own hue (every brand fill carries black ink)
+  // and on its `-lighter` wash, where black is 18:1. One ink, so a picker of these reads
+  // as one set of buttons rather than three different-coloured labels.
+  const text = 'text-black';
 
   const content = (
     <View

@@ -1,7 +1,5 @@
 import { Address, Contact, Email, FirstMeeting, Phone, Tier } from '../../types/contacts';
-import { hiddenFields, sortOrder } from './utils';
 
-import AddItemButton from './AddItemButton';
 import Card from '../Card';
 import { Fragment } from 'react';
 import ProfileAddressCard from './ProfileAddressCard';
@@ -11,6 +9,7 @@ import ProfileFirstMeetingCard from './ProfileFirstMeetingCard';
 import ProfileKeyDataCard from './ProfileKeyDataCard';
 import ProfilePhoneCard from './ProfilePhoneCard';
 import ProfileTierCard from './ProfileTierCard';
+import { SECTIONS } from './utils';
 import { ScrollView, View } from 'react-native';
 import { humanizeKey } from '../../utils/string';
 import { useContactEditStore } from '../../stores/contactEditStore';
@@ -22,19 +21,21 @@ interface ProfileCardProps {
   footer?: React.ReactNode;
 }
 
-/** Keys that belong in the "reach them" section; everything else is context. */
-const reachKeys = ['emails', 'phones', 'addresses'];
-
 const ProfileCard = ({ contact, editable, footer }: ProfileCardProps) => {
   const working = useContactEditStore(s => s.workingContact);
-  const addItem = useContactEditStore(s => s.addItem);
 
   // In edit mode the store is the source of truth so newly added/removed child rows
   // render immediately; the scalar cards bind to the store themselves.
   const source = editable ? (working ?? contact) : contact;
 
-  // One entry per field, ordered by the shared config rather than object key order.
-  const renderEntry = ([key, value]: [string, unknown]): React.ReactNode => {
+  /**
+   * One field, by key. Collections carry no "add" control: the store keeps a blank row at
+   * the end of emails and phones (`withTrailingBlanks`), so the next empty input is
+   * already on screen, and addresses are capped at one row.
+   */
+  const renderField = (key: keyof Contact): React.ReactNode => {
+    const value = source[key];
+
     if (key === 'emails') {
       const emails = value as Email[];
       if (!editable && emails.length === 0) return null;
@@ -43,9 +44,6 @@ const ProfileCard = ({ contact, editable, footer }: ProfileCardProps) => {
           {emails.map(email => (
             <ProfileEmailCard key={email.id} email={email} editable={editable} />
           ))}
-          {editable && (
-            <AddItemButton label='Add email' onPress={() => addItem('emails')} />
-          )}
         </Fragment>
       );
     }
@@ -58,9 +56,6 @@ const ProfileCard = ({ contact, editable, footer }: ProfileCardProps) => {
           {phones.map(phone => (
             <ProfilePhoneCard key={phone.id} phone={phone} editable={editable} />
           ))}
-          {editable && (
-            <AddItemButton label='Add phone' onPress={() => addItem('phones')} />
-          )}
         </Fragment>
       );
     }
@@ -73,9 +68,6 @@ const ProfileCard = ({ contact, editable, footer }: ProfileCardProps) => {
           {addresses.map(address => (
             <ProfileAddressCard key={address.id} address={address} editable={editable} />
           ))}
-          {editable && (
-            <AddItemButton label='Add address' onPress={() => addItem('addresses')} />
-          )}
         </Fragment>
       );
     }
@@ -112,19 +104,18 @@ const ProfileCard = ({ contact, editable, footer }: ProfileCardProps) => {
         key={key}
         label={humanizeKey(key)}
         value={text}
-        fieldKey={key as keyof Contact}
+        fieldKey={key}
         editable={editable}
       />
     );
   };
 
-  const entries = Object.entries(source)
-    .filter(([key]) => !hiddenFields.includes(key))
-    .sort((a, b) => sortOrder.indexOf(a[0]) - sortOrder.indexOf(b[0]));
-
-  const reachRows = entries.filter(([key]) => reachKeys.includes(key)).map(renderEntry);
-  const detailRows = entries.filter(([key]) => !reachKeys.includes(key)).map(renderEntry);
-  const hasRows = (rows: React.ReactNode[]) => rows.some(Boolean);
+  // A section with nothing to show (every field empty on a read-only profile) draws no
+  // card at all, rather than an empty one.
+  const sections = SECTIONS.map(keys => ({
+    key: keys.join(),
+    rows: keys.map(renderField),
+  })).filter(section => section.rows.some(Boolean));
 
   return (
     <ScrollView
@@ -140,16 +131,11 @@ const ProfileCard = ({ contact, editable, footer }: ProfileCardProps) => {
         company={source.company}
         editable={editable}
       />
-      {hasRows(reachRows) && (
-        <Card flush className='mt-4 py-2'>
-          {reachRows}
+      {sections.map(section => (
+        <Card key={section.key} flush className='mt-4 py-2'>
+          {section.rows}
         </Card>
-      )}
-      {hasRows(detailRows) && (
-        <Card flush className='mt-4 py-2'>
-          {detailRows}
-        </Card>
-      )}
+      ))}
       {footer && <View className='mt-4'>{footer}</View>}
     </ScrollView>
   );

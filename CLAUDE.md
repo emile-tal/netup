@@ -98,6 +98,8 @@ app/
     Header.tsx             # THE header row: back control / title+subtitle left / actions right
     Card.tsx               # THE surface panel (white, hairline border, rounded-2xl)
     ModalShell.tsx         # THE modal surface — every modal is built on this
+    DateField.tsx          # Date input: value + clear x, opens DatePickerModal (§18)
+    DatePickerModal.tsx    # THE date picker — a hand-rolled month grid, no native module
     Checkbox.tsx           # Square labelled checkbox (forms/dialogs, not ReminderRow's)
     FullScreenLoader.tsx   # The whole-window spinner the root layout renders
     BootstrapScreen.tsx    # "Can't reach netup" — blocks an un-downloaded device (§17)
@@ -128,7 +130,8 @@ app/
   types/                   # Frontend DTOs: contacts.ts, reminders.ts, sync.ts, profile.ts
   icons/                   # SVG icons — all take `{ color?, size? }` (see types.ts)
 
-components/                # ⚠️ NOT under app/ — see §12. The 5-15-50 board only.
+components/                # ⚠️ NOT under app/ — see §12. Platform-split components whose
+                           #   halves carry platform-only dependencies. The board only.
   network/                 # TierBoard.tsx (native) | TierBoard.web.tsx (dnd-kit),
                            #   TierColumn, ContactChip, DraggableChip, DropZone,
                            #   DndKitChip.web / DndKitColumn.web, board.ts (shared plumbing)
@@ -222,12 +225,22 @@ subscription that writes the same store slice.
 (board) and `updateContact` (edit form) both funnel through `scheduleNextOutreach`, so the
 generated reminder can't drift from the tier. See §14.
 
-**Config-driven rendering** — `app/components/profile/ProfileCard.tsx` iterates contact
-entries through one `renderEntry` function and delegates to typed sub-cards, using
-`profile/utils.ts` (`hiddenFields`, `sortOrder`) to control visibility/order and a local
-`reachKeys` list to split them into two `Card` sections (contact details vs context).
-Extend the config, not the JSX. All rows share `CardRow` (label column + value column +
-optional remove control), and `editable` flows from the screen down to every card.
+**Config-driven rendering** — `app/components/profile/ProfileCard.tsx` walks
+`SECTIONS` from `profile/utils.ts` — one array of field keys per `Card` section, in render
+order — through a single `renderField` function that delegates to the typed sub-cards.
+That array is both the order *and* the allowlist: a key it does not list is never
+rendered, and a section whose fields are all empty draws no card. Extend the config, not
+the JSX. All rows share `CardRow` (label column + value column + optional remove
+control), and `editable` flows from the screen down to every card.
+
+**Collections have no "add" button** — `contactEditStore`'s `withTrailingBlanks` keeps
+emails and phones ending in exactly one blank row, so the next empty input is already on
+screen; addresses are capped at one row. A row is removable only once it holds something
+(`isRemovableItem`), which is what stops the user deleting the blank row that *is* the add
+control. Removing the only filled row leaves that blank behind, so a collection can never
+reach zero rows in edit mode. Blank rows are stripped on save by `withoutBlankChildren`,
+and `syncChildren` reads a missing row as a delete — so **clearing a field is how you
+delete it**, and that is the only way to drop an address.
 
 **Screen shell** — wrap screens in `ScreenLayout`, and render loading/error/empty through
 `ScreenState` (with `onRetry`) instead of bespoke per-screen states.
@@ -341,8 +354,11 @@ also done. What remains:
    `expo-document-picker` + `expo-file-system` + `expo-sharing` and a dev-client rebuild.
 4. **Contact picker for reminders** — a reminder can be linked to a contact only from
    that contact's screen (`ContactReminders`). The calendar "+" creates unlinked reminders.
-5. **Date entry** — `firstMeeting` and the reminder modal use `YYYY-MM-DD` text inputs
-   with validation, not a picker (no date-picker dependency is installed).
+5. **Date entry in the reminder modal** — `AddReminderModal` still uses a validated
+   `YYYY-MM-DD` text input. `firstMeeting` goes through `DateField` (§18), so moving the
+   modal over is a matter of swapping the field — but the cap is the opposite one (a
+   reminder is in the *future*), so `DatePickerModal` needs a `minimumDate` to match its
+   `maximumDate` first.
 6. ~~Contact routes sit outside `(tabs)`~~ ✅ **done.** They are a stack nested in the
    contacts tab now; see §13.
 
@@ -449,6 +465,7 @@ ever typechecks the non-suffixed file.
 > board. If you add another platform-split component with a platform-only dependency, put it
 > in `components/`, not `app/components/`, and remember `tailwind.config.js` scans **both**
 > trees.
+>
 
 | Concern | Native | Web |
 |---------|--------|-----|
@@ -874,3 +891,36 @@ Rules that are easy to break:
 
 `app/utils/prefs.ts` is the place for the third kind. Anything that must follow the user
 between devices goes on the profile record instead.
+
+---
+
+## 18. Dates in forms
+
+`app/components/DateField.tsx` is the one date input, and
+`app/components/DatePickerModal.tsx` is the one picker behind it. **Hand-rolled on
+purpose** — there is no date-picker dependency, and the native module that was briefly
+here is gone.
+
+Why a custom grid rather than the platform picker:
+
+- **"No date" has to be a real state.** A native picker opens on *some* day and reports
+  it, so a field backed by one acquires a value just for being opened. Here today is only
+  ever *marked* (`blue-lighter` + `blue-dark` ink); nothing is stored until a day is
+  pressed, and the **x** on the field clears it back to empty. `emptyContact()` therefore
+  leaves `firstMeeting.date` undefined — a contact you have not met yet is a real case.
+- **One behaviour on both platforms.** `@react-native-community/datetimepicker` has no
+  web build, which forced a `components/` platform split (§12) and two different
+  interaction models. The grid is plain RN primitives, so there is one file and one look.
+- **It stays inside the design system.** The selected day is the same `blue-light` + black
+  pair as a primary button, and the panel is `ModalShell` like every other modal (§11).
+
+Details worth keeping:
+
+- **Monday-first, from `calendar/weekdays.ts`.** It shares `WEEKDAY_LABELS` and
+  `mondayFirstOffset` with the calendar tab, so the two cannot disagree about which column
+  a date falls in. `getDay() - 1` would return `-1` for a month starting on a Sunday —
+  that is what the helper exists for.
+- **`maximumDate` defaults to today**, and days past it render but are not pressable. The
+  next-month control is held at the cap rather than hidden, so the header doesn't reflow.
+- **The displayed month re-anchors on every open** (an effect on `visible`), or the month
+  left behind by a previous visit becomes where the next one starts.

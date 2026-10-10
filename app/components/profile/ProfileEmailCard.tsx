@@ -4,7 +4,7 @@ import CardRow from './CardRow';
 import { Email } from '../../types/contacts';
 import { colors } from '../../theme';
 import { noFocusRing } from '../../utils/inputStyle';
-import { useContactEditStore } from '../../stores/contactEditStore';
+import { isRemovableItem, useContactEditStore } from '../../stores/contactEditStore';
 
 interface ProfileEmailCardProps {
   email: Email;
@@ -27,7 +27,15 @@ const ProfileEmailCard = ({ email, editable }: ProfileEmailCardProps) => {
     <CardRow
       label={email.label}
       onLabelChange={label => updateItem('emails', email.id, { label })}
-      onRemove={() => removeItem('emails', email.id)}
+      // No remove control until the row holds an address: the trailing blank row is the
+      // form's "add another" affordance, so deleting it would delete the control itself.
+      // Removing the only filled row leaves that blank row behind (see the store's
+      // `withTrailingBlanks`), which is exactly the empty input to type the next one in.
+      onRemove={
+        isRemovableItem('emails', email)
+          ? () => removeItem('emails', email.id)
+          : undefined
+      }
     >
       <TextInput
         value={email.email}
