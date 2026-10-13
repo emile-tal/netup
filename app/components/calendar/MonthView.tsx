@@ -39,8 +39,11 @@ const MonthView = ({ year, month, columnWidth }: MonthViewProps) => {
 
   // Which week row the drawer follows — only in the month that owns the selected day, so
   // exactly one drawer exists across the whole list.
+  // `null` once the user presses the open day again, which closes the drawer everywhere.
   const drawerAfterWeek =
-    selectedDate.getFullYear() === year && selectedDate.getMonth() === month
+    selectedDate &&
+    selectedDate.getFullYear() === year &&
+    selectedDate.getMonth() === month
       ? Math.floor((mondayFirstOffset(year, month) + selectedDate.getDate() - 1) / 7)
       : -1;
 
@@ -68,7 +71,9 @@ const MonthView = ({ year, month, columnWidth }: MonthViewProps) => {
                 />
               ))}
             </View>
-            {weekIndex === drawerAfterWeek && <DayDrawer date={selectedDate} />}
+            {weekIndex === drawerAfterWeek && selectedDate && (
+              <DayDrawer date={selectedDate} />
+            )}
           </View>
         ))}
       </View>

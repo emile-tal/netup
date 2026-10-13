@@ -15,7 +15,7 @@ interface DayCellProps {
 }
 
 const DayCell = ({ day, month, year, columnWidth, rowHeight }: DayCellProps) => {
-  const setSelectedDate = useCalendarStore(state => state.setSelectedDate);
+  const toggleSelectedDate = useCalendarStore(state => state.toggleSelectedDate);
   const selectedDate = useCalendarStore(state => state.selectedDate);
   // Leading blanks that pad the first week have no day number.
   const date = day ? new Date(year, month, parseInt(day, 10)) : null;
@@ -25,7 +25,7 @@ const DayCell = ({ day, month, year, columnWidth, rowHeight }: DayCellProps) => 
   const outreach = date ? (outreachByDay[toDayKey(date)] ?? []) : [];
 
   const isToday = date ? isSameDay(date, new Date()) : false;
-  const isSelected = date ? isSameDay(date, selectedDate) : false;
+  const isSelected = date && selectedDate ? isSameDay(date, selectedDate) : false;
   const overflow = outreach.length - MAX_VISIBLE_OUTREACH;
 
   return (
@@ -37,7 +37,9 @@ const DayCell = ({ day, month, year, columnWidth, rowHeight }: DayCellProps) => 
         date ? 'bg-surface hover:bg-grey-light' : 'bg-surface-muted'
       } ${isSelected ? 'bg-blue-lighter' : ''}`}
       disabled={!date}
-      onPress={() => date && setSelectedDate(date)}
+      accessibilityState={{ expanded: isSelected }}
+      // A press is a toggle: the day's drawer opens, and pressing the open day shuts it.
+      onPress={() => date && toggleSelectedDate(date)}
     >
       <View className='mb-1 h-6 w-6 items-center justify-center self-start rounded-full'>
         <View

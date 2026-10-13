@@ -101,6 +101,7 @@ app/
     DateField.tsx          # Date input: value + clear x, opens DatePickerModal (§18)
     DatePickerModal.tsx    # THE date picker — a hand-rolled month grid, no native module
     Checkbox.tsx           # Square labelled checkbox (forms/dialogs, not OutreachRow's)
+    MentionTextInput.tsx   # Auto-growing text field with `@` contact tagging (§21)
     FullScreenLoader.tsx   # The whole-window spinner the root layout renders
     BootstrapScreen.tsx    # "Can't reach netup" — blocks an un-downloaded device (§17)
     TierInfoModal.tsx      # The 5-15-50 explainer (first visit + header info button)
@@ -116,25 +117,30 @@ app/
     profile/               # ProfileCard + per-field sub-cards + CardRow + utils.ts
     calendar/              # InfiniteListCalendar, MonthView, DayCell, WeekdayHeader,
                            #   weekdays.ts, AddOutreachModal, OutreachRow,
+                           #   NewOutreachRow (the trailing blank line — §20),
                            #   DayDrawer (the selected day, inside the grid — §20)
     TierPill.tsx           # A contact's 5-15-50 circle as a pill (board + profile)
   hooks/                   # useContact, useOutreach, useDebouncedCallback,
                            #   useIsWideLayout, useNavDestinations, useTierBoard,
-                           #   useOutreachRepair, useSync, useHydration, useTierInfo
+                           #   useOutreachRepair, useSync, useHydration, useTierInfo,
+                           #   useContactDirectory (every contact, for `@` tagging — §21)
   providers/               # ProfileProvider — the app's one profile subscription
   utils/                   # date.ts, string.ts, id.ts, avatar.ts, outreach.ts,
                            #   inputStyle.ts(+.web), csv.ts, contactCsv.ts,
-                           #   csvFile.ts(+.web), prefs.ts (per-device flags)
+                           #   csvFile.ts(+.web), prefs.ts (per-device flags),
+                           #   mentions.ts (the pure `@` tagging logic — §21)
   stores/                  # zustand: contactStore, calendarStore, contactEditStore,
                            #   syncStore
   types/                   # Frontend DTOs: contacts.ts, outreach.ts, sync.ts, profile.ts
   icons/                   # SVG icons — all take `{ color?, size? }` (see types.ts)
 
 components/                # ⚠️ NOT under app/ — see §12. Platform-split components whose
-                           #   halves carry platform-only dependencies. The board only.
+                           #   halves carry platform-only dependencies.
   network/                 # TierBoard.tsx (native) | TierBoard.web.tsx (dnd-kit),
                            #   TierColumn, ContactChip, DraggableChip, DropZone,
                            #   DndKitChip.web / DndKitColumn.web, board.ts (shared plumbing)
+  mentions/                # MentionMenu.tsx (native) | MentionMenu.web.tsx (react-dom
+                           #   portal), MentionList, menu.ts (shared plumbing) — §21
 
 db/
   makeDatabase.ts          # SQLiteAdapter + schema + migrations + uuid generator
@@ -402,7 +408,10 @@ Fixed during the web-enablement pass:
 Open, but not defects: **none of this has been run on a device** — the repo has no tests
 and WatermelonDB needs a native build, so the native changes are typechecked, linted, and
 verified to *bundle* (`expo export -p ios`) only. In particular **the native drag gesture
-in `components/network/DraggableChip.tsx` has never been touched by a finger.**
+in `components/network/DraggableChip.tsx` has never been touched by a finger.** The same
+goes for the native half of the `@` tag popup (`components/mentions/MentionMenu.tsx`),
+which positions itself against its parent and can therefore be clipped by an ancestor
+that hides its overflow — the web half portals out of the problem (§21).
 
 The **web build has been exercised end to end in a browser**: create/edit/delete contact,
 create/complete/delete reminder, persistence across reload, and every 5-15-50 transition
@@ -473,6 +482,7 @@ ever typechecks the non-suffixed file.
 | Alerts (`app/utils/alert.ts` / `.web.ts`) | `Alert.alert` | `window.alert` / `window.confirm` |
 | 5-15-50 drag (`components/network/TierBoard.tsx` / `.web.tsx`) | gesture-handler pan + measured drop zones | dnd-kit (`DndContext`, `DragOverlay`) |
 | CSV file I/O (`app/utils/csvFile.ts` / `.web.ts`) | stub — `notify()` says web-only | `<input type=file>` + `FileReader`, `Blob` + `<a download>` |
+| `@` tag popup (`components/mentions/MentionMenu.tsx` / `.web.tsx`) | absolute child of the field it belongs to | `react-dom` portal to `document.body`, `position: fixed` |
 
 - **Missing migrations behave differently per adapter.** `LokiJSAdapter` throws; `SQLiteAdapter`
   resets. See the migration policy in §7 — the web adapter is the strict one, so develop
@@ -964,11 +974,92 @@ day you tapped a long way from its own list.
 - **Exactly one drawer exists across the list.** `drawerAfterWeek` is `-1` unless the
   month being rendered owns the selected date, and the week index comes from the same
   `mondayFirstOffset` the grid is built with — so the drawer cannot land in the wrong row.
-- **It is always open**, for whichever day is selected (today, on first mount). There is no
-  "no day selected" state to represent, and the old panel was always visible too.
+- **Pressing a day is a toggle.** The cell that opened the drawer closes it again
+  (`DayCell` → `calendarStore.toggleSelectedDate`), so `selectedDate` is `Date | null` and
+  every reader has to cope with `null` — `MonthView` renders no drawer, and
+  `AddOutreachModal` falls back to today. It still opens on today on first mount.
+- **The drawer does not print its own date.** It is attached to the highlighted cell the
+  user just pressed, so a date heading above the list only restates its position.
+- **Adding is the trailing blank line, not a button.** `NewOutreachRow` always sits last
+  in the list: the user types where the next item goes and presses Enter (blurring commits
+  too), and the row is dated to the day the drawer is open on, so nothing has to be asked
+  for. This is the same move as the contact form's collections, where the trailing blank
+  row *is* the add control (§6). There is no "nothing scheduled" empty state any more —
+  an empty day is that one blank line, which says what to do instead of what is missing.
+  **`AddOutreachModal` is still the calendar header's action**, where no day is implied,
+  and the contact profile's.
 - **Variable month height is fine here.** `getItemLayout` is deliberately not set on the
   `FlatList` (there is a commented-out line and it should stay commented), so FlatList
   measures rows; and months already differ by a week row between 5- and 6-row months.
   `DAY_ROW_HEIGHT` is fixed so week rows line up, *not* so months match. The prepend
   anchoring in `InfiniteListCalendar` keys off row *keys and indices*, never offsets, so
   it is unaffected — but if you ever enable `getItemLayout`, the drawer breaks it.
+
+---
+
+## 21. Tagging a contact with `@`
+
+Typing `@sar` into an outreach title opens a popup of matching contacts; picking one
+writes `@Sarah Smith` into the text, and the name renders **bold and underlined**.
+
+**A tag is plain characters in the title, not a relation.** There is no join table, no
+second column and no id: the title is one `text` column that the repo, the outbox and the
+sync wire already carry unchanged (§19), so tagging costs no schema and no migration. A
+tag is *recognised* by matching the text against the live contact list, which means a
+renamed contact simply stops matching rather than leaving a dangling id behind. The
+trade: a tag is not a queryable link. **`reminders.contact_id` is still the real link**
+(§14) — the generated 5-15-50 rows and anything created from a contact's profile use it,
+and §9.4's contact picker is about that column, not about this.
+
+The pieces:
+
+| Concern | Where |
+|---------|-------|
+| Detection, matching, insertion, segmentation, caret maths | `app/utils/mentions.ts` — all pure |
+| The field: two layers, auto-grow, key handling | `app/components/MentionTextInput.tsx` |
+| The popup's position | `components/mentions/MentionMenu.tsx` / `.web.tsx` (§12) |
+| The popup's contents | `components/mentions/MentionList.tsx` + `menu.ts` |
+| Who can be tagged | `app/hooks/useContactDirectory()` |
+
+### Rules that are easy to break
+
+- **`findMentionQuery` has three gates, and all three are deliberate**: the `@` must open
+  a word (so an email address in a title never opens the popup), at least one character
+  must follow it, and the query may not contain whitespace. That last one is why *the
+  spacebar closes the popup with no handling at all* — not a coincidence to be optimised
+  away.
+- **The field is two stacked layers and has to stay that way.** A `TextInput` cannot style
+  a range of its own text (on web it is a `textarea`). So a `Text` draws the styled version
+  and the input absolutely fills the box on top of it. The `Text` is the only child in the
+  layout flow, which is **also how the field auto-grows** — `onContentSizeChange` is not
+  implemented on web — up to `MENTION_INPUT_MAX_HEIGHT` (60px, ~3 lines), after which the
+  input scrolls. The input paints its own text only while focused; blurred, its ink goes
+  transparent and the styled layer shows through. Known consequence: a tag is plain while
+  you type in that field and turns bold when you leave it. Making it live would need a
+  permanently transparent input, which also hides the caret — browsers take `caret-color`
+  from `color`.
+- **The caret is derived by diffing, not read.** `onSelectionChange` fires on web only
+  when a *range* is selected — a keystroke or a caret move does not fire it — so
+  `caretAfterChange(previous, next)` is what keeps the popup pointed at the right `@`.
+  Arrow/Home/End keys close the popup for the same reason: the field cannot tell where the
+  caret went.
+- **Keys come through `onKeyPress`, which on web is the keydown event.** `key` sits on the
+  event itself there and on `nativeEvent` on native, so read both. `preventDefault()` is
+  what stops Enter inserting a newline and Tab moving focus — and react-native-web checks
+  `isDefaultPrevented()` before running its own submit handling, which is why
+  `blurOnSubmit={false}` plus a prevented Enter keeps the focus in the field for the next
+  entry.
+- **The web popup must be portalled, and must swallow `mousedown`.** `position: fixed`
+  inside a react-native-web `ScrollView` is re-anchored to the scroll container (§12), and
+  the drawer's card hides its overflow — the portal escapes both. `onMouseDown` is
+  prevented on the portal so clicking a row does not blur the field: a blur is what
+  commits the day's trailing blank line (§20), so without it picking a contact with the
+  mouse would save the half-typed `@sar`.
+- **`useContactDirectory` is called once per screen, not once per row.** `DayDrawer` calls
+  it because exactly one drawer exists across the whole month list (§20) and passes the
+  list down. It holds its own subscription rather than reading `contactStore`, which the
+  contacts screen keeps filtered by the search query — sharing it would mean a popup that
+  can only find whatever was last searched for (§6).
+- **Bold is allowed here and nowhere else.** `font-nunito-bold` (the `NunitoBold` face,
+  registered in `app/_layout.tsx`) exists for this one token, because a tag is a reference
+  to a person embedded in prose rather than emphasis. See FRONTEND.md §2.

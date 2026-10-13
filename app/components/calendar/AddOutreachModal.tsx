@@ -25,13 +25,17 @@ const AddOutreachModal = ({
   const db = useDB();
   const selectedDate = useCalendarStore(state => state.selectedDate);
   const [draftTitle, setDraftTitle] = useState('');
-  const [dateText, setDateText] = useState(() => toDateInputValue(selectedDate));
+  // Falls back to today: the modal is also the calendar header's action, which is
+  // reachable with no day open at all.
+  const [dateText, setDateText] = useState(() =>
+    toDateInputValue(selectedDate ?? new Date())
+  );
   const [saving, setSaving] = useState(false);
   const inputRef = useRef<TextInput>(null);
 
   // Re-seed the date each time the modal opens so it follows the day the user picked.
   useEffect(() => {
-    if (visible) setDateText(toDateInputValue(selectedDate));
+    if (visible) setDateText(toDateInputValue(selectedDate ?? new Date()));
   }, [visible, selectedDate]);
 
   const parsedDate = parseDateInputValue(dateText);

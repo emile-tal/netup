@@ -13,9 +13,11 @@ module.exports = {
       fontFamily: {
         // The family names registered with expo-font in app/_layout.tsx. React Native
         // does not synthesise weights for a custom family, so each face is its own
-        // family rather than a `font-weight`. There is no bold face on purpose.
+        // family rather than a `font-weight`. `nunito-bold` exists for exactly one thing
+        // — a contact tagged inside an outreach title — see FRONTEND.md §2.
         nunito: ['Nunito'],
         'nunito-medium': ['NunitoMedium'],
+        'nunito-bold': ['NunitoBold'],
       },
       // Kept in lockstep with `colors` in app/theme.ts — the five-step shape and the
       // contrast rules behind it are documented there and in FRONTEND.md §3.

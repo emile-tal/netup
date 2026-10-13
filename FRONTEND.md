@@ -12,26 +12,32 @@
 
 ## 1. The one-line version
 
-**Classy, not loud.** Ink on paper, one accent, generous type. Nothing is bold — emphasis
-comes from **size and colour**, never from weight.
+**Classy, not loud.** Ink on paper, one accent, generous type. Emphasis comes from
+**size and colour**, never from weight — with one named exception (§2).
 
 ---
 
 ## 2. Type
 
-**Nunito, everywhere, at two weights.**
+**Nunito, everywhere, at three weights.**
 
 | Face | Family name | Tailwind | Used for |
 |------|-------------|----------|----------|
 | Regular (400) | `Nunito` | `font-nunito` | everything |
 | Medium (500) | `NunitoMedium` | `font-nunito-medium` | labels on things you press: `Button`, `NavItem` |
+| Bold (700) | `NunitoBold` | `font-nunito-bold` | **only** a contact tagged with `@` inside an outreach title |
 
 Rules:
 
-- **Never use a bold weight.** `font-bold`, `font-semibold`, `font-black` and friends are
-  not part of this design. If something needs to stand out, make it *bigger*, give it the
-  accent colour, or give it space. A title is a title because it is 30px, not because it
-  is heavy.
+- **Never use a bold weight, with one exception.** `font-bold`, `font-semibold`,
+  `font-black` and friends are not part of this design. If something needs to stand out,
+  make it *bigger*, give it the accent colour, or give it space. A title is a title
+  because it is 30px, not because it is heavy.
+- **The exception is a tagged contact.** `@Sarah Smith` written into an outreach title
+  renders bold **and** underlined (`font-nunito-bold underline`), because it is not
+  emphasis — it is a reference to a person embedded in prose, and it has to be
+  recognisable as one at 15px in the middle of a sentence. It is the only thing in the app
+  allowed to use `font-nunito-bold`; see CLAUDE.md §21.
 - **Medium is not bold.** It exists only so an interactive label holds its own against the
   text around it. If you are reaching for it on something that isn't pressable, don't.
 - **Every `<Text>` and `<TextInput>` carries a family class.** React Native does not

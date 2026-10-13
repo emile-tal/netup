@@ -146,13 +146,15 @@ const RootNavigator = () => {
 };
 
 export default function RootLayout() {
-  // Two faces, no bold — emphasis is size and colour, never weight (see FRONTEND.md).
-  // The keys are the family names `tailwind.config.js` exposes as `font-nunito` and
-  // `font-nunito-medium`; React Native will not synthesise a weight for a custom family,
-  // so each one has to be loaded separately.
+  // Emphasis is size and colour, never weight (see FRONTEND.md). The keys are the family
+  // names `tailwind.config.js` exposes as `font-nunito` / `font-nunito-medium` /
+  // `font-nunito-bold`; React Native will not synthesise a weight for a custom family, so
+  // each one has to be loaded separately. Bold is the single documented exception: a
+  // tagged contact inside an outreach title (FRONTEND.md §2).
   const [fontsLoaded] = useFonts({
     Nunito: require('../assets/fonts/nunito/static/Nunito-Regular.ttf'),
     NunitoMedium: require('../assets/fonts/nunito/static/Nunito-Medium.ttf'),
+    NunitoBold: require('../assets/fonts/nunito/static/Nunito-Bold.ttf'),
   });
 
   // Hold the whole app rather than let it paint in the system font and reflow — the type
