@@ -1,5 +1,5 @@
 // The 5-15-50 config: one place that says what each circle is called, how often it wants
-// contact, and how it is drawn. Everything else (the board, the profile card, the reminder
+// contact, and how it is drawn. Everything else (the board, the profile card, the outreach
 // generator in db/repo/outreach.ts) reads from here rather than restating a cadence.
 
 import type { Tier } from '../types/contacts';
@@ -96,7 +96,7 @@ function addMonths(date: Date, months: number): Date {
  * schedules one full cadence out).
  *
  * Clamped to today: a cadence that lapsed while the contact sat untiered is due now, and
- * dating a freshly generated reminder in the past would bury it in the calendar.
+ * dating a freshly generated outreach in the past would bury it in the calendar.
  */
 export function nextOutreachDate(tier: Tier, from: Date): Date {
   const interval = TIER_INTERVALS[tier];
@@ -108,7 +108,7 @@ export function nextOutreachDate(tier: Tier, from: Date): Date {
   return due.getTime() < today.getTime() ? today : due;
 }
 
-/** Title for a generated outreach reminder. */
+/** Title for a generated outreach outreach. */
 export function outreachTitle(firstName?: string, lastName?: string): string {
   const name = fullName(firstName, lastName);
   return name ? `Reach out to ${name}` : 'Reach out';

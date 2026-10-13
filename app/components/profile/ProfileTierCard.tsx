@@ -9,14 +9,14 @@ import { useContactEditStore } from '../../stores/contactEditStore';
 
 interface ProfileTierCardProps {
   tier: Tier | null;
-  /** Read-only: set by completing an outreach reminder, never typed in. */
+  /** Read-only: set by completing an outreach outreach, never typed in. */
   lastOutreachAt?: Date;
   editable?: boolean;
 }
 
 /**
  * The contact's 5-15-50 circle, plus the outreach state that follows from it. Editable as
- * a pick-one row rather than a text field, because the circle drives a generated reminder
+ * a pick-one row rather than a text field, because the circle drives a generated outreach
  * cadence (`db/repo/outreach.ts`) and only the three values mean anything.
  */
 const ProfileTierCard = ({ tier, lastOutreachAt, editable }: ProfileTierCardProps) => {

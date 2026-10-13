@@ -90,7 +90,7 @@ app/
       contacts/[id].tsx    # View one contact + its reminders ✅
       contacts/add.tsx     # New-contact form (ProfileCard editable → createContact) ✅
       contacts/edit/[id].tsx # Edit + delete (→ updateContact / deleteContact) ✅
-    calendar.tsx           # Month grid + SelectedDayPanel (the editable day list) ✅
+    calendar.tsx           # Month grid; the day list unfolds inside it (§20) ✅
     network.tsx            # The 5-15-50 board — drag contacts between circles ✅
     settings.tsx           # Account + sync status + sign out ✅
   components/
@@ -100,7 +100,7 @@ app/
     ModalShell.tsx         # THE modal surface — every modal is built on this
     DateField.tsx          # Date input: value + clear x, opens DatePickerModal (§18)
     DatePickerModal.tsx    # THE date picker — a hand-rolled month grid, no native module
-    Checkbox.tsx           # Square labelled checkbox (forms/dialogs, not ReminderRow's)
+    Checkbox.tsx           # Square labelled checkbox (forms/dialogs, not OutreachRow's)
     FullScreenLoader.tsx   # The whole-window spinner the root layout renders
     BootstrapScreen.tsx    # "Can't reach netup" — blocks an un-downloaded device (§17)
     TierInfoModal.tsx      # The 5-15-50 explainer (first visit + header info button)
@@ -111,14 +111,14 @@ app/
     SearchBar.tsx          # Pill search input with a clear control
     ScreenState.tsx        # Shared loading / error+retry / empty rendering
     nav/                   # NavBar (picks) → SideNav | BottomNav → NavItem
-    contacts/              # ContactLink, ContactSearchBar, ContactReminders,
+    contacts/              # ContactLink, ContactSearchBar, ContactOutreach,
                            #   ImportContactsModal (CSV import, §16)
     profile/               # ProfileCard + per-field sub-cards + CardRow + utils.ts
     calendar/              # InfiniteListCalendar, MonthView, DayCell, WeekdayHeader,
-                           #   weekdays.ts, AddReminderModal, SelectedDayPanel,
-                           #   ReminderRow (one editable reminder)
+                           #   weekdays.ts, AddOutreachModal, OutreachRow,
+                           #   DayDrawer (the selected day, inside the grid — §20)
     TierPill.tsx           # A contact's 5-15-50 circle as a pill (board + profile)
-  hooks/                   # useContact, useReminders, useDebouncedCallback,
+  hooks/                   # useContact, useOutreach, useDebouncedCallback,
                            #   useIsWideLayout, useNavDestinations, useTierBoard,
                            #   useOutreachRepair, useSync, useHydration, useTierInfo
   providers/               # ProfileProvider — the app's one profile subscription
@@ -127,7 +127,7 @@ app/
                            #   csvFile.ts(+.web), prefs.ts (per-device flags)
   stores/                  # zustand: contactStore, calendarStore, contactEditStore,
                            #   syncStore
-  types/                   # Frontend DTOs: contacts.ts, reminders.ts, sync.ts, profile.ts
+  types/                   # Frontend DTOs: contacts.ts, outreach.ts, sync.ts, profile.ts
   icons/                   # SVG icons — all take `{ color?, size? }` (see types.ts)
 
 components/                # ⚠️ NOT under app/ — see §12. Platform-split components whose
@@ -218,7 +218,7 @@ rather than hand-rolling a `timeoutRef`.
 
 **One subscription per collection** — the contacts list screen owns the only
 `observeContactSummaries` subscription and re-runs it when `contactStore.searchQuery`
-changes; `useReminders()` does the same for the calendar store. Don't add a second
+changes; `useOutreach()` does the same for the calendar store. Don't add a second
 subscription that writes the same store slice.
 
 **Tier-driven writes** — the 5-15-50 circle is never written directly. `setContactTier`
@@ -353,8 +353,8 @@ also done. What remains:
 3. **Native CSV import** — `app/utils/csvFile.ts` is a stub (§16). Filling it in needs
    `expo-document-picker` + `expo-file-system` + `expo-sharing` and a dev-client rebuild.
 4. **Contact picker for reminders** — a reminder can be linked to a contact only from
-   that contact's screen (`ContactReminders`). The calendar "+" creates unlinked reminders.
-5. **Date entry in the reminder modal** — `AddReminderModal` still uses a validated
+   that contact's screen (`ContactOutreach`). The calendar "+" creates unlinked rows.
+5. **Date entry in the outreach modal** — `AddOutreachModal` still uses a validated
    `YYYY-MM-DD` text input. `firstMeeting` goes through `DateField` (§18), so moving the
    modal over is a matter of swapping the field — but the cap is the opposite one (a
    reminder is in the *future*), so `DatePickerModal` needs a `minimumDate` to match its
@@ -370,10 +370,10 @@ All previously listed bugs are fixed:
 
 - ~~Edit mode inert / save no-op / dead store~~ ✅ the full edit flow is wired, including
   emails, phones, addresses and firstMeeting (add + edit + remove).
-- ~~Reminders don't persist~~ ✅ `ReminderRow` (debounced title, completed toggle, delete)
-  and `AddReminderModal` write through `db/repo/reminders.ts`.
-- ~~Calendar uses mock data~~ ✅ `DayCell` reads `calendarStore.remindersByDay`, which
-  `useReminders()` fills from `observeReminderSummaries`.
+- ~~Outreach doesn't persist~~ ✅ `OutreachRow` (debounced title, completed toggle,
+  delete) and `AddOutreachModal` write through `db/repo/reminders.ts`.
+- ~~Calendar uses mock data~~ ✅ `DayCell` reads `calendarStore.outreachByDay`, which
+  `useOutreach()` fills from `observeReminderSummaries`.
 - ~~Silent errors~~ ✅ `readContact` queries by id instead of `.catch(() => null)`;
   screens render `ScreenState` (loading / error + retry / empty) and write failures
   raise an `Alert`.
@@ -643,7 +643,7 @@ user must be able to retitle, re-date, delete and add. The resolution is a **rol
 of one**: a tiered contact has exactly one *open* generated reminder at a time.
 
 That is the whole trick. Generated rows are **ordinary `reminders` rows** — same table,
-same DTO, same repo — so the calendar, the day panel, `ReminderRow` and the outbox all work
+same DTO, same repo — so the calendar, the day panel, `OutreachRow` and the outbox all work
 on them with no special cases, and a tier change rewrites one row instead of regenerating a
 year of them. `origin` is the only thing that distinguishes them.
 
@@ -924,3 +924,51 @@ Details worth keeping:
   next-month control is held at the cap rather than hidden, so the header doesn't reflow.
 - **The displayed month re-anchors on every open** (an effect on `visible`), or the month
   left behind by a previous visit becomes where the next one starts.
+
+---
+
+## 19. "Outreach" is the product word; "reminder" is the table
+
+The user-facing name for a dated item is **outreach** — in copy, and in every identifier
+above the repo layer. The **persistence layer keeps `reminder`**, and the split is
+deliberate:
+
+| Layer | Word | Where |
+|-------|------|-------|
+| UI copy, components, hooks, stores, DTOs | **outreach** | `app/types/outreach.ts` (`Outreach`, `OutreachSummary`, `OutreachInput`, `OutreachOrigin`), `OutreachRow`, `AddOutreachModal`, `ContactOutreach`, `useOutreach`, `calendarStore.outreachByDay` |
+| SQLite, Postgres, the sync wire | `reminder` | `reminders` table + columns, `db/models/Reminder.ts`, `db/repo/reminders.ts` (`createReminder`, `observeReminderSummaries`, …), `OutboxEntity`'s `'reminder'`, `RemoteReminder`, the sync cursor keys |
+
+Why the data layer was left alone: `OutboxEntity`'s `'reminder'` is a **string on the
+wire** and in rows already queued on devices; the Postgres table, its RLS policies and its
+cascade trigger are named after it; and WatermelonDB cannot rename a table in a migration.
+Renaming any of that is a schema change with a data-migration tail, not a rebrand — ask
+for it explicitly if you want it.
+
+This is the same seam the contact DTO already uses: the UI says `firstMeeting`, the column
+is `firstMetDate` (§7). The repo maps between the two, which is exactly what it is for
+(§2.4). So: **in `app/`, write outreach. In `db/` and `supabase/`, reminder is correct.**
+
+---
+
+## 20. The calendar's day drawer
+
+Tapping a day unfolds its outreach **inside the month grid**, directly beneath that day's
+week row (`app/components/calendar/DayDrawer.tsx`, injected by `MonthView`). It replaced
+`SelectedDayPanel`, a fixed banner under the grid that pushed the calendar up and left the
+day you tapped a long way from its own list.
+
+- **`MonthView` renders explicit week rows**, not one `flex-wrap` grid, because the drawer
+  goes *between* two rows and a wrapping grid has no seam to put it in. The frame is still
+  one bordered box: the container draws left/top, the cells draw right/bottom, and the
+  drawer spans the full content width carrying the same right/bottom hairlines.
+- **Exactly one drawer exists across the list.** `drawerAfterWeek` is `-1` unless the
+  month being rendered owns the selected date, and the week index comes from the same
+  `mondayFirstOffset` the grid is built with — so the drawer cannot land in the wrong row.
+- **It is always open**, for whichever day is selected (today, on first mount). There is no
+  "no day selected" state to represent, and the old panel was always visible too.
+- **Variable month height is fine here.** `getItemLayout` is deliberately not set on the
+  `FlatList` (there is a commented-out line and it should stay commented), so FlatList
+  measures rows; and months already differ by a week row between 5- and 6-row months.
+  `DAY_ROW_HEIGHT` is fixed so week rows line up, *not* so months match. The prepend
+  anchoring in `InfiniteListCalendar` keys off row *keys and indices*, never offsets, so
+  it is unaffected — but if you ever enable `getItemLayout`, the drawer breaks it.

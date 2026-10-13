@@ -37,7 +37,7 @@ const BootstrapScreen = ({ error, onRetry, onSignOut }: BootstrapScreenProps) =>
         </Text>
         <Text className='font-nunito text-[15px] leading-6 text-ink-muted'>
           It only needs to work once. After that netup runs entirely on your device — you
-          can add people and reminders with no signal at all.
+          can add people and outreach with no signal at all.
         </Text>
         {error && (
           <Text className='font-nunito text-[12px] leading-4 text-ink-subtle'>{error.message}</Text>

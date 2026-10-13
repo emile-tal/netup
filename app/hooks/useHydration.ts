@@ -13,7 +13,7 @@ export type HydrationState = 'checking' | 'hydrating' | 'failed' | 'hydrated';
  * *used* on a new device until its data has arrived, because the alternative is showing
  * someone an empty app that looks exactly like data loss. After one successful pull the
  * flag is durable and no network is ever required again on this device — which is what
- * lets a user add a reminder on a plane.
+ * lets a user add a outreach on a plane.
  *
  * The state lives here rather than being inferred from `syncStore`, whose `status` starts
  * at `'idle'` and returns to `'idle'` on success: indistinguishable from "never ran".

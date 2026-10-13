@@ -14,7 +14,7 @@ import { useTierInfo } from '../hooks/useTierInfo';
 /**
  * The 5-15-50 board: which circle each contact is in, and the only place that is changed.
  *
- * Moving a contact between circles rewrites their generated outreach reminder, so the
+ * Moving a contact between circles rewrites their generated outreach outreach, so the
  * calendar reflects a drag immediately (see `db/repo/outreach.ts`).
  */
 const NetworkPage = () => {

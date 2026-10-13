@@ -161,13 +161,11 @@ const DatePickerModal = ({
                 >
                   <Text
                     className={`font-nunito text-[14px] ${
-                      selected
+                      selected || isToday
                         ? 'text-black'
                         : disabled
                           ? 'text-ink-subtle'
-                          : isToday
-                            ? 'text-blue-dark'
-                            : 'text-ink'
+                          : 'text-ink'
                     }`}
                   >
                     {date.getDate()}

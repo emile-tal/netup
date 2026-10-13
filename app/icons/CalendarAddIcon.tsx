@@ -3,7 +3,7 @@ import { Path, Svg } from 'react-native-svg';
 
 /**
  * The calendar frame from `CalendarIcon` with a plus centred in its body — the "add
- * reminder" action (never the bare plus). Both paths share one `fill`, so the plus is
+ * outreach" action (never the bare plus). Both paths share one `fill`, so the plus is
  * drawn as a solid cross inside the frame's empty interior.
  */
 const CalendarAddIcon = ({ color = DEFAULT_ICON_COLOR, size = DEFAULT_ICON_SIZE }: IconProps) => {

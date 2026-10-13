@@ -42,7 +42,7 @@ export interface Contact {
   /** Which 5-15-50 circle the contact sits in; `null` while unassigned. */
   tier: Tier | null;
   /**
-   * When the user last reached out. Set by completing a generated outreach reminder,
+   * When the user last reached out. Set by completing a generated outreach outreach,
    * and the anchor the next one is counted from.
    */
   lastOutreachAt?: Date;

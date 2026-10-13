@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
-import ContactReminders from '../../../components/contacts/ContactReminders';
+import ContactOutreach from '../../../components/contacts/ContactOutreach';
 import EditIcon from '../../../icons/EditIcon';
 import Header from '../../../components/Header';
 import ProfileCard from '../../../components/profile/ProfileCard';
@@ -34,7 +34,7 @@ const ContactsPage = () => {
       {contact ? (
         <ProfileCard
           contact={contact}
-          footer={<ContactReminders contactId={contact.id} />}
+          footer={<ContactOutreach contactId={contact.id} />}
         />
       ) : (
         <ScreenState

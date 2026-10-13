@@ -63,7 +63,7 @@ const TierColumn = ({ target, count, isOver, children }: TierColumnProps) => {
           {target ? TIER_DESCRIPTIONS[target] : 'Not in a circle yet.'}
         </Text>
         <Text numberOfLines={1} className='font-nunito text-[10px] text-ink-muted'>
-          {target ? TIER_CADENCE_LABELS[target] : 'No reminders'}
+          {target ? TIER_CADENCE_LABELS[target] : 'No outreach'}
         </Text>
       </View>
       <View className='gap-1.5 p-1.5'>{children}</View>

@@ -1,10 +1,12 @@
 import { Text, View } from 'react-native';
 
 import DayCell from './DayCell';
+import DayDrawer from './DayDrawer';
 import { gridWidthFor, mondayFirstOffset } from './weekdays';
 import { useMemo } from 'react';
+import useCalendarStore from '../../stores/calendarStore';
 
-/** Fixed so every month is the same height — the list's scroll anchoring depends on it. */
+/** Fixed, so every week row in every month lines up. */
 export const DAY_ROW_HEIGHT = 92;
 
 interface MonthViewProps {
@@ -16,18 +18,31 @@ interface MonthViewProps {
 
 const MonthView = ({ year, month, columnWidth }: MonthViewProps) => {
   const title = new Date(year, month, 1).toLocaleString('en-US', { month: 'long' });
+  const selectedDate = useCalendarStore(state => state.selectedDate);
 
-  // Leading blanks pad the month to its first weekday; trailing blanks fill the last row
-  // so every row draws a complete set of cell borders.
-  const cells = useMemo(() => {
+  // Weeks, not one wrapping row of cells: the selected day's drawer is injected *between*
+  // two week rows, which a `flex-wrap` grid has no seam for.
+  const weeks = useMemo(() => {
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const offset = mondayFirstOffset(year, month);
+    // Leading blanks pad the month to its first weekday; trailing blanks fill the last
+    // row so every row draws a complete set of cell borders.
     const days = Array.from({ length: offset + daysInMonth }, (_, i) =>
       i < offset ? '' : String(i - offset + 1)
     );
     const trailing = (7 - (days.length % 7)) % 7;
-    return [...days, ...Array.from({ length: trailing }, () => '')];
+    const cells = [...days, ...Array.from({ length: trailing }, () => '')];
+    return Array.from({ length: cells.length / 7 }, (_, row) =>
+      cells.slice(row * 7, row * 7 + 7)
+    );
   }, [year, month]);
+
+  // Which week row the drawer follows — only in the month that owns the selected day, so
+  // exactly one drawer exists across the whole list.
+  const drawerAfterWeek =
+    selectedDate.getFullYear() === year && selectedDate.getMonth() === month
+      ? Math.floor((mondayFirstOffset(year, month) + selectedDate.getDate() - 1) / 7)
+      : -1;
 
   return (
     <View className='pb-6'>
@@ -36,18 +51,25 @@ const MonthView = ({ year, month, columnWidth }: MonthViewProps) => {
         <Text className='font-nunito text-[22px] text-ink-muted'>{year}</Text>
       </View>
       <View
-        className='flex-row flex-wrap border-l border-t border-line'
+        className='border-l border-t border-line'
         style={{ width: gridWidthFor(columnWidth) }}
       >
-        {cells.map((day, index) => (
-          <DayCell
-            key={`${year}-${month}-${index}`}
-            day={day}
-            month={month}
-            year={year}
-            columnWidth={columnWidth}
-            rowHeight={DAY_ROW_HEIGHT}
-          />
+        {weeks.map((week, weekIndex) => (
+          <View key={weekIndex}>
+            <View className='flex-row'>
+              {week.map((day, index) => (
+                <DayCell
+                  key={`${year}-${month}-${weekIndex}-${index}`}
+                  day={day}
+                  month={month}
+                  year={year}
+                  columnWidth={columnWidth}
+                  rowHeight={DAY_ROW_HEIGHT}
+                />
+              ))}
+            </View>
+            {weekIndex === drawerAfterWeek && <DayDrawer date={selectedDate} />}
+          </View>
         ))}
       </View>
     </View>

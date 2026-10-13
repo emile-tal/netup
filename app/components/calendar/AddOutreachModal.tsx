@@ -10,21 +10,21 @@ import { notify } from '@/app/utils/alert';
 import useCalendarStore from '@/app/stores/calendarStore';
 import { useDB } from '@/db/dbProvider';
 
-interface AddReminderModalProps {
+interface AddOutreachModalProps {
   visible: boolean;
   onRequestClose: () => void;
-  /** Set when adding from a contact screen, so the reminder is linked to that contact. */
+  /** Set when adding from a contact screen, so the outreach is linked to that contact. */
   contactId?: string;
 }
 
-const AddReminderModal = ({
+const AddOutreachModal = ({
   visible,
   onRequestClose,
   contactId,
-}: AddReminderModalProps) => {
+}: AddOutreachModalProps) => {
   const db = useDB();
   const selectedDate = useCalendarStore(state => state.selectedDate);
-  const [reminderTitle, setReminderTitle] = useState('');
+  const [draftTitle, setDraftTitle] = useState('');
   const [dateText, setDateText] = useState(() => toDateInputValue(selectedDate));
   const [saving, setSaving] = useState(false);
   const inputRef = useRef<TextInput>(null);
@@ -38,7 +38,7 @@ const AddReminderModal = ({
   const invalidDate = dateText.trim().length > 0 && !parsedDate;
 
   const reset = () => {
-    setReminderTitle('');
+    setDraftTitle('');
     onRequestClose();
   };
 
@@ -52,8 +52,8 @@ const AddReminderModal = ({
 
   const handleAdd = async () => {
     if (saving) return;
-    if (!reminderTitle.trim()) {
-      notify('Title required', 'Give the reminder a title.');
+    if (!draftTitle.trim()) {
+      notify('Title required', 'Give the outreach a title.');
       return;
     }
     if (invalidDate) {
@@ -64,14 +64,14 @@ const AddReminderModal = ({
     setSaving(true);
     try {
       await createReminder(db, {
-        title: reminderTitle.trim(),
+        title: draftTitle.trim(),
         date: parsedDate,
         contactId,
       });
       reset();
     } catch (error) {
-      console.error('Error creating reminder:', error);
-      notify('Could not save', 'The reminder was not created. Please try again.');
+      console.error('Error creating outreach:', error);
+      notify('Could not save', 'The outreach was not created. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -81,12 +81,12 @@ const AddReminderModal = ({
     <ModalShell
       visible={visible}
       onRequestClose={handleClose}
-      title='New reminder'
+      title='New outreach'
       footer={
         <>
           <Button label='Cancel' variant='grey' onPress={reset} />
           <Button
-            label={saving ? 'Adding…' : 'Add reminder'}
+            label={saving ? 'Adding…' : 'Add outreach'}
             onPress={handleAdd}
             disabled={saving}
           />
@@ -98,8 +98,8 @@ const AddReminderModal = ({
           ref={inputRef}
           label='Title'
           placeholder='Coffee with Sarah'
-          value={reminderTitle}
-          onChangeText={setReminderTitle}
+          value={draftTitle}
+          onChangeText={setDraftTitle}
         />
         <TextField
           label='Date'
@@ -114,4 +114,4 @@ const AddReminderModal = ({
   );
 };
 
-export default AddReminderModal;
+export default AddOutreachModal;

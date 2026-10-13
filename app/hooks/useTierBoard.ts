@@ -42,7 +42,7 @@ export function useTierBoard() {
 
   const buckets = useMemo(() => bucketByTier(contacts), [contacts]);
 
-  // No optimistic state: `setContactTier` also rewrites the contact's outreach reminder,
+  // No optimistic state: `setContactTier` also rewrites the contact's outreach outreach,
   // and the observable pushes the moved contact back within a frame.
   const move = useCallback(
     (contactId: string, target: DropTarget) => {

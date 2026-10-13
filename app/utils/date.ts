@@ -1,7 +1,7 @@
 // Shared date helpers. Dates are epoch-ms in the DB and JS `Date` in the DTOs
 // (see db/repo/*), so everything here works on `Date`.
 
-/** Midnight (local) of the given date — the canonical "day" for reminders. */
+/** Midnight (local) of the given date — the canonical "day" for outreach. */
 export function startOfDay(date: Date): Date {
   const d = new Date(date);
   d.setHours(0, 0, 0, 0);

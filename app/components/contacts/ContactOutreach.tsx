@@ -2,27 +2,27 @@ import { Text, View } from 'react-native';
 import { useEffect, useState } from 'react';
 
 import AddItemButton from '../profile/AddItemButton';
-import AddReminderModal from '../calendar/AddReminderModal';
+import AddOutreachModal from '../calendar/AddOutreachModal';
 import Card from '../Card';
-import { Reminder } from '../../types/reminders';
+import { Outreach } from '../../types/outreach';
 import { formatShortDate } from '../../utils/date';
 import { observeContactReminders } from '@/db/repo/reminders';
 import { useDB } from '@/db/dbProvider';
 
-interface ContactRemindersProps {
+interface ContactOutreachProps {
   contactId: string;
 }
 
-/** Reminders attached to one contact, shown under their profile. */
-const ContactReminders = ({ contactId }: ContactRemindersProps) => {
+/** Outreach attached to one contact, shown under their profile. */
+const ContactOutreach = ({ contactId }: ContactOutreachProps) => {
   const db = useDB();
-  const [reminders, setReminders] = useState<Reminder[]>([]);
+  const [outreach, setOutreach] = useState<Outreach[]>([]);
   const [addVisible, setAddVisible] = useState(false);
 
   useEffect(() => {
     const subscription = observeContactReminders(db, contactId).subscribe({
-      next: setReminders,
-      error: error => console.error('Error loading contact reminders:', error),
+      next: setOutreach,
+      error: error => console.error('Error loading contact outreach:', error),
     });
     return () => subscription.unsubscribe();
   }, [db, contactId]);
@@ -30,34 +30,34 @@ const ContactReminders = ({ contactId }: ContactRemindersProps) => {
   return (
     <Card flush className='py-2'>
       <Text className='font-nunito px-4 pb-1 pt-2 text-[12px] uppercase tracking-wider text-ink-subtle'>
-        Reminders
+        Outreach
       </Text>
-      {reminders.length === 0 ? (
+      {outreach.length === 0 ? (
         <Text className='font-nunito px-4 py-2 text-[14px] text-ink-subtle'>None yet</Text>
       ) : (
-        reminders.map(reminder => (
+        outreach.map(outreach => (
           <View
-            key={reminder.id}
+            key={outreach.id}
             className='flex-row items-center justify-between gap-3 px-4 py-2'
           >
             <Text
               numberOfLines={2}
               className={`font-nunito flex-1 text-[15px] ${
- reminder.completed ? 'text-ink-subtle line-through' : 'text-ink'
+ outreach.completed ? 'text-ink-subtle line-through' : 'text-ink'
  }`}
             >
-              {reminder.title}
+              {outreach.title}
             </Text>
-            {reminder.date && (
+            {outreach.date && (
               <Text className='font-nunito text-[13px] text-ink-subtle'>
-                {formatShortDate(reminder.date)}
+                {formatShortDate(outreach.date)}
               </Text>
             )}
           </View>
         ))
       )}
-      <AddItemButton label='Add reminder' onPress={() => setAddVisible(true)} />
-      <AddReminderModal
+      <AddItemButton label='Add outreach' onPress={() => setAddVisible(true)} />
+      <AddOutreachModal
         visible={addVisible}
         onRequestClose={() => setAddVisible(false)}
         contactId={contactId}
@@ -66,4 +66,4 @@ const ContactReminders = ({ contactId }: ContactRemindersProps) => {
   );
 };
 
-export default ContactReminders;
+export default ContactOutreach;

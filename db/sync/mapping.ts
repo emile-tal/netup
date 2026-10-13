@@ -9,7 +9,7 @@
 
 import type { Contact } from '../../app/types/contacts';
 import type { Profile } from '../../app/types/profile';
-import type { Reminder, ReminderOrigin } from '../../app/types/reminders';
+import type { Outreach, OutreachOrigin } from '../../app/types/outreach';
 
 import { toTier } from '../../app/utils/outreach';
 
@@ -150,7 +150,7 @@ export function toRemoteProfile(profile: Profile, userId: string) {
 }
 
 /** Reminders have no children, so they go up as a plain upsert. */
-export function toRemoteReminder(reminder: Reminder, userId: string) {
+export function toRemoteReminder(reminder: Outreach, userId: string) {
   return {
     id: reminder.id,
     user_id: userId,
@@ -221,13 +221,13 @@ export function fromRemoteContact(
   };
 }
 
-export function fromRemoteReminder(row: RemoteReminder): Reminder {
+export function fromRemoteReminder(row: RemoteReminder): Outreach {
   return {
     id: row.id,
     contactId: row.contact_id ?? undefined,
     title: row.title ?? '',
     date: fromIso(row.date_ts),
     completed: row.completed ?? false,
-    origin: (row.origin === 'auto' ? 'auto' : 'manual') as ReminderOrigin,
+    origin: (row.origin === 'auto' ? 'auto' : 'manual') as OutreachOrigin,
   };
 }

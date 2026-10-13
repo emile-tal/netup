@@ -22,7 +22,7 @@ interface ConfirmDialogProps {
 /**
  * The app's one confirmation dialog. It replaced a `window.confirm`-backed helper, which
  * could not be styled and read as a browser warning rather than as part of the app.
- * Follows the modal shape established by AddReminderModal.
+ * Follows the modal shape established by AddOutreachModal.
  */
 const ConfirmDialog = ({
   visible,

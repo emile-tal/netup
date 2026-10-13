@@ -1,30 +1,30 @@
-import { ReminderSummary } from '../types/reminders';
+import { OutreachSummary } from '../types/outreach';
 import { create } from 'zustand';
 import { toDayKey } from '../utils/date';
 
 interface CalendarStore {
   selectedDate: Date;
   setSelectedDate: (date: Date) => void;
-  /** Reminders loaded from the DB (see observeReminderSummaries). */
-  reminders: ReminderSummary[];
+  /** Outreach loaded from the DB (see observeReminderSummaries). */
+  outreach: OutreachSummary[];
   /**
-   * The same reminders bucketed by `YYYY-MM-DD`, built once per update so the calendar's
-   * day cells look their reminders up instead of each filtering the whole list.
+   * The same outreach bucketed by `YYYY-MM-DD`, built once per update so the calendar's
+   * day cells look their outreach up instead of each filtering the whole list.
    */
-  remindersByDay: Record<string, ReminderSummary[]>;
-  setReminders: (reminders: ReminderSummary[]) => void;
-  remindersLoading: boolean;
-  setRemindersLoading: (loading: boolean) => void;
-  remindersError: Error | null;
-  setRemindersError: (error: Error | null) => void;
+  outreachByDay: Record<string, OutreachSummary[]>;
+  setOutreach: (outreach: OutreachSummary[]) => void;
+  outreachLoading: boolean;
+  setOutreachLoading: (loading: boolean) => void;
+  outreachError: Error | null;
+  setOutreachError: (error: Error | null) => void;
 }
 
-function groupByDay(reminders: ReminderSummary[]): Record<string, ReminderSummary[]> {
-  const byDay: Record<string, ReminderSummary[]> = {};
-  for (const reminder of reminders) {
-    if (!reminder.date) continue;
-    const key = toDayKey(reminder.date);
-    (byDay[key] ??= []).push(reminder);
+function groupByDay(items: OutreachSummary[]): Record<string, OutreachSummary[]> {
+  const byDay: Record<string, OutreachSummary[]> = {};
+  for (const item of items) {
+    if (!item.date) continue;
+    const key = toDayKey(item.date);
+    (byDay[key] ??= []).push(item);
   }
   return byDay;
 }
@@ -32,14 +32,14 @@ function groupByDay(reminders: ReminderSummary[]): Record<string, ReminderSummar
 const useCalendarStore = create<CalendarStore>(set => ({
   selectedDate: new Date(),
   setSelectedDate: (date: Date) => set({ selectedDate: date }),
-  reminders: [],
-  remindersByDay: {},
-  setReminders: (reminders: ReminderSummary[]) =>
-    set({ reminders, remindersByDay: groupByDay(reminders) }),
-  remindersLoading: true,
-  setRemindersLoading: (loading: boolean) => set({ remindersLoading: loading }),
-  remindersError: null,
-  setRemindersError: (error: Error | null) => set({ remindersError: error }),
+  outreach: [],
+  outreachByDay: {},
+  setOutreach: (outreach: OutreachSummary[]) =>
+    set({ outreach, outreachByDay: groupByDay(outreach) }),
+  outreachLoading: true,
+  setOutreachLoading: (loading: boolean) => set({ outreachLoading: loading }),
+  outreachError: null,
+  setOutreachError: (error: Error | null) => set({ outreachError: error }),
 }));
 
 export default useCalendarStore;

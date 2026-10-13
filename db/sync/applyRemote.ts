@@ -11,7 +11,7 @@ import Profile from '../models/Profile';
 import type { Profile as ProfileType } from '../../app/types/profile';
 import { Q } from '@nozbe/watermelondb';
 import Reminder from '../models/Reminder';
-import type { Reminder as ReminderType } from '../../app/types/reminders';
+import type { Outreach as OutreachDTO } from '../../app/types/outreach';
 
 /**
  * Writes pulled rows into WatermelonDB.
@@ -46,7 +46,7 @@ function applyContactFields(row: Contact, dto: ContactType) {
   row.firstMetLocation = dto.firstMeeting?.location;
 }
 
-function applyReminderFields(row: Reminder, dto: ReminderType) {
+function applyReminderFields(row: Reminder, dto: OutreachDTO) {
   row.title = dto.title;
   row.dateTs = dto.date?.getTime();
   row.contactId = dto.contactId;
@@ -163,7 +163,7 @@ export async function applyRemoteContactDeletion(
 
 export async function applyRemoteReminder(
   db: Database,
-  dto: ReminderType,
+  dto: OutreachDTO,
   serverUpdatedAt: number
 ) {
   const existing = await db

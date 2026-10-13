@@ -12,7 +12,7 @@ interface CheckboxProps {
 /**
  * A labelled checkbox for forms and dialogs.
  *
- * Deliberately not shared with `ReminderRow`'s round completion toggle: that one marks a
+ * Deliberately not shared with `OutreachRow`'s round completion toggle: that one marks a
  * data row done, this one sets a preference, and squashing them together would make both
  * harder to change.
  */

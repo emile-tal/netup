@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 
 import CheckIcon from '../../icons/CheckIcon';
 import ConfirmDialog from '../ConfirmDialog';
-import { ReminderSummary } from '../../types/reminders';
+import { OutreachSummary } from '../../types/outreach';
 import XIcon from '../../icons/XIcon';
 import { colors } from '../../theme';
 import { fullName } from '../../utils/string';
@@ -13,16 +13,16 @@ import { noFocusRing } from '../../utils/inputStyle';
 import { useDB } from '@/db/dbProvider';
 import { useDebouncedCallback } from '../../hooks/useDebouncedCallback';
 
-interface ReminderRowProps {
-  item: ReminderSummary;
+interface OutreachRowProps {
+  item: OutreachSummary;
 }
 
 /**
- * One editable reminder: check off, rename, delete. Generated 5-15-50 reminders are
+ * One editable outreach: check off, rename, delete. Generated 5-15-50 outreach are
  * ordinary rows here — checking one off records the outreach and queues the next touch,
  * deleting one skips that touch (see `db/repo/outreach.ts`).
  */
-const ReminderRow = ({ item }: ReminderRowProps) => {
+const OutreachRow = ({ item }: OutreachRowProps) => {
   const db = useDB();
   // Local echo of the title so typing stays responsive; the DB write is debounced and
   // the observable pushes the canonical value back in.
@@ -36,8 +36,8 @@ const ReminderRow = ({ item }: ReminderRowProps) => {
 
   const persistTitle = useDebouncedCallback((text: string) => {
     updateReminder(db, item.id, { title: text }).catch(error => {
-      console.error('Error updating reminder title:', error);
-      notify('Could not save', 'The reminder title was not updated.');
+      console.error('Error updating outreach title:', error);
+      notify('Could not save', 'The outreach title was not updated.');
     });
   });
 
@@ -50,8 +50,8 @@ const ReminderRow = ({ item }: ReminderRowProps) => {
     try {
       await updateReminder(db, item.id, { completed: !item.completed });
     } catch (error) {
-      console.error('Error updating reminder:', error);
-      notify('Could not save', 'The reminder was not updated.');
+      console.error('Error updating outreach:', error);
+      notify('Could not save', 'The outreach was not updated.');
     }
   };
 
@@ -62,9 +62,9 @@ const ReminderRow = ({ item }: ReminderRowProps) => {
       await deleteReminder(db, item.id);
       // No dismiss on success: the row unmounts when the observable re-emits without it.
     } catch (error) {
-      console.error('Error deleting reminder:', error);
+      console.error('Error deleting outreach:', error);
       setConfirmingDelete(false);
-      notify('Could not delete', 'The reminder was not deleted.');
+      notify('Could not delete', 'The outreach was not deleted.');
     } finally {
       setDeleting(false);
     }
@@ -98,7 +98,7 @@ const ReminderRow = ({ item }: ReminderRowProps) => {
           className={`font-nunito text-[15px] ${item.completed ? 'text-ink-subtle' : 'text-ink'}`}
           value={title}
           onChangeText={updateTitle}
-          placeholder='Untitled reminder'
+          placeholder='Untitled outreach'
           placeholderTextColor={colors.inkSubtle}
           multiline
           style={[
@@ -114,7 +114,7 @@ const ReminderRow = ({ item }: ReminderRowProps) => {
       <Pressable
         onPress={() => setConfirmingDelete(true)}
         accessibilityRole='button'
-        accessibilityLabel='Delete reminder'
+        accessibilityLabel='Delete outreach'
         className='h-8 w-8 items-center justify-center rounded-full hover:bg-error-lighter'
       >
         <XIcon size={16} color={colors.inkSubtle} />
@@ -122,7 +122,7 @@ const ReminderRow = ({ item }: ReminderRowProps) => {
 
       <ConfirmDialog
         visible={confirmingDelete}
-        title='Delete reminder'
+        title='Delete outreach'
         message={
           item.origin === 'auto'
             ? `Remove "${item.title}"? This counts as skipping the touch, so the next one is rescheduled.`
@@ -139,4 +139,4 @@ const ReminderRow = ({ item }: ReminderRowProps) => {
   );
 };
 
-export default ReminderRow;
+export default OutreachRow;

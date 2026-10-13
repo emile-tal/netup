@@ -1,19 +1,18 @@
 import { colors } from '../theme';
 import CalendarAddIcon from '../icons/CalendarAddIcon';
-import AddReminderModal from '../components/calendar/AddReminderModal';
+import AddOutreachModal from '../components/calendar/AddOutreachModal';
 import Header from '../components/Header';
 import InfiniteListCalendar from '../components/calendar/InfiniteListCalendar';
 import ScreenLayout from '../components/ScreenLayout';
-import SelectedDayPanel from '../components/calendar/SelectedDayPanel';
 import WeekdayHeader from '../components/calendar/WeekdayHeader';
 import { GRID_BORDER_WIDTH } from '../components/calendar/weekdays';
 import { View } from 'react-native';
-import { useReminders } from '../hooks/useReminders';
+import { useOutreach } from '../hooks/useOutreach';
 import { useState } from 'react';
 
 const CalendarPage = () => {
-  // Keeps the calendar store in sync with the reminders table; DayCell reads from it.
-  useReminders();
+  // Keeps the calendar store in sync with the outreach table; DayCell reads from it.
+  useOutreach();
   const [addVisible, setAddVisible] = useState(false);
   // Measured rather than derived from the window, because the content column is capped
   // and padded — the grid has to fit the column, not the viewport.
@@ -29,7 +28,7 @@ const CalendarPage = () => {
           title='Calendar'
           actionIcon={<CalendarAddIcon size={22} color={colors.black} />}
           actionEmphasis='brand'
-          actionLabel='Add reminder'
+          actionLabel='Add outreach'
           onActionPress={() => setAddVisible(true)}
         />
       }
@@ -45,8 +44,7 @@ const CalendarPage = () => {
           </>
         )}
       </View>
-      <SelectedDayPanel />
-      <AddReminderModal
+      <AddOutreachModal
         visible={addVisible}
         onRequestClose={() => setAddVisible(false)}
       />

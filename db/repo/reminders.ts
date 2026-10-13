@@ -2,18 +2,18 @@ import type { Database } from '@nozbe/watermelondb';
 import { Q } from '@nozbe/watermelondb';
 import { from, map, of, switchMap } from 'rxjs';
 import type {
-  ReminderOrigin,
-  Reminder as ReminderType,
-  ReminderInput,
-  ReminderSummary,
-} from '../../app/types/reminders';
+  OutreachOrigin,
+  Outreach as OutreachDTO,
+  OutreachInput,
+  OutreachSummary,
+} from '../../app/types/outreach';
 import Contact from '../models/Contact';
 import Reminder from '../models/Reminder';
 import { markDeletedMeta, upsertMeta } from './metadata';
 import { enqueueOutbox } from './outbox';
 import { recordOutreach, scheduleNextOutreach } from './outreach';
 
-function toDTO(row: Reminder): ReminderType {
+function toDTO(row: Reminder): OutreachDTO {
   return {
     id: row.id,
     contactId: row.contactId || undefined,
@@ -21,7 +21,7 @@ function toDTO(row: Reminder): ReminderType {
     date: row.dateTs ? new Date(row.dateTs) : undefined,
     completed: row.completed ?? false,
     // Rows predating the origin column, and every hand-written one, are manual.
-    origin: row.origin === 'auto' ? 'auto' : ('manual' as ReminderOrigin),
+    origin: row.origin === 'auto' ? 'auto' : ('manual' as OutreachOrigin),
   };
 }
 
@@ -29,7 +29,7 @@ function toDTO(row: Reminder): ReminderType {
  * Attaches contact names to reminders in one extra query (rather than one per row) so
  * the calendar and agenda can label a reminder without touching the contacts table.
  */
-async function toSummaries(db: Database, rows: Reminder[]): Promise<ReminderSummary[]> {
+async function toSummaries(db: Database, rows: Reminder[]): Promise<OutreachSummary[]> {
   const contactIds = [...new Set(rows.map(r => r.contactId).filter(Boolean))] as string[];
 
   const contacts = contactIds.length
@@ -58,7 +58,7 @@ export function observeReminderSummaries(db: Database) {
     .observeWithColumns(['title', 'date_ts', 'completed', 'contact_id'])
     .pipe(
       switchMap(rows =>
-        rows.length ? from(toSummaries(db, rows)) : of([] as ReminderSummary[])
+        rows.length ? from(toSummaries(db, rows)) : of([] as OutreachSummary[])
       ),
       // Undated reminders sort to the top of the agenda; the rest go by date.
       map(summaries =>
@@ -84,12 +84,12 @@ export function observeContactReminders(db: Database, contactId: string) {
 export async function readReminder(
   db: Database,
   id: string
-): Promise<ReminderType | null> {
+): Promise<OutreachDTO | null> {
   const rows = await db.get<Reminder>('reminders').query(Q.where('id', id)).fetch();
   return rows[0] ? toDTO(rows[0]) : null;
 }
 
-export async function createReminder(db: Database, input: ReminderInput) {
+export async function createReminder(db: Database, input: OutreachInput) {
   let created!: Reminder;
 
   await db.write(async () => {
@@ -111,7 +111,7 @@ export async function createReminder(db: Database, input: ReminderInput) {
 export async function updateReminder(
   db: Database,
   id: string,
-  changes: Partial<Omit<ReminderType, 'id'>>
+  changes: Partial<Omit<OutreachDTO, 'id'>>
 ) {
   await db.write(async () => {
     const reminder = await db.get<Reminder>('reminders').find(id);
