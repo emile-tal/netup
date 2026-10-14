@@ -10,6 +10,7 @@ import { OutreachSummary } from '../../types/outreach';
 import XIcon from '../../icons/XIcon';
 import { colors } from '../../theme';
 import { fullName } from '../../utils/string';
+import { mentionPlainText } from '../../utils/mentions';
 import { notify } from '../../utils/alert';
 import { useDB } from '@/db/dbProvider';
 import { useDebouncedCallback } from '../../hooks/useDebouncedCallback';
@@ -131,8 +132,8 @@ const OutreachRow = ({ item, contacts }: OutreachRowProps) => {
         title='Delete outreach'
         message={
           item.origin === 'auto'
-            ? `Remove "${item.title}"? This counts as skipping the touch, so the next one is rescheduled.`
-            : `Remove "${item.title}"?`
+            ? `Remove "${mentionPlainText(item.title)}"? This counts as skipping the touch, so the next one is rescheduled.`
+            : `Remove "${mentionPlainText(item.title)}"?`
         }
         confirmLabel='Delete'
         busyLabel='Deleting…'

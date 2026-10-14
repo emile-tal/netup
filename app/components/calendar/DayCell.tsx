@@ -1,6 +1,9 @@
 import { Pressable, Text, View } from 'react-native';
 import { isSameDay, toDayKey } from '../../utils/date';
 
+import MentionText from '../MentionText';
+import { mentionPlainText } from '../../utils/mentions';
+
 import useCalendarStore from '../../stores/calendarStore';
 
 /** Outreach past this count collapse into a "+N more" line. */
@@ -22,7 +25,11 @@ const DayCell = ({ day, month, year, columnWidth, rowHeight }: DayCellProps) => 
   // Selects the map itself, not a derived array: a selector that built a new array each
   // call would hand zustand a fresh reference on every render.
   const outreachByDay = useCalendarStore(state => state.outreachByDay);
-  const outreach = date ? (outreachByDay[toDayKey(date)] ?? []) : [];
+  // An untitled outreach has nothing to preview — drawn anyway it is an empty blue sliver.
+  // It still lives in the day's drawer, where it can be given a title or deleted.
+  const outreach = (date ? (outreachByDay[toDayKey(date)] ?? []) : []).filter(
+    item => (item.contactLastName || mentionPlainText(item.title)).trim().length > 0
+  );
 
   const isToday = date ? isSameDay(date, new Date()) : false;
   const isSelected = date && selectedDate ? isSameDay(date, selectedDate) : false;
@@ -60,8 +67,9 @@ const DayCell = ({ day, month, year, columnWidth, rowHeight }: DayCellProps) => 
       </View>
 
       {outreach.slice(0, MAX_VISIBLE_OUTREACH).map(item => (
-        <Text
+        <MentionText
           key={item.id}
+          value={item.contactLastName || item.title}
           numberOfLines={1}
           // Tinted, not filled: a month grid can hold dozens of these, so the wash is a
           // `-light` and the ink does the work. Done ones cross out and go green.
@@ -70,9 +78,7 @@ const DayCell = ({ day, month, year, columnWidth, rowHeight }: DayCellProps) => 
  ? 'bg-success-lighter text-success-dark line-through'
  : 'bg-blue-lighter text-blue-dark'
  }`}
-        >
-          {item.contactLastName || item.title}
-        </Text>
+        />
       ))}
       {overflow > 0 && (
         <Text className='font-nunito px-1 text-[10px] text-ink-subtle'>+{overflow} more</Text>

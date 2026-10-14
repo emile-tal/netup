@@ -1,16 +1,19 @@
 /**
  * Tagging a contact inside a piece of free text with `@`.
  *
- * A mention is **not** a separate field or a foreign key — it is the plain characters
- * `@First Last` sitting in the outreach title, exactly as typed. That is deliberate: the
- * title is one `text` column that the repo, the outbox and the sync wire already carry
- * unchanged (CLAUDE.md §19), so a mention costs no schema, no migration and no mapping.
- * The price is that a tag is only *recognised* while the contact still exists under that
- * name — which is the right trade here, since a renamed contact should stop matching
- * rather than leave a dangling id behind.
+ * A mention is **not** a separate field or a foreign key — it lives in the outreach title
+ * itself, stored as `@[Sarah Smith](contact-id)`. The title is one `text` column that the
+ * repo, the outbox and the sync wire already carry unchanged (CLAUDE.md §19), so a mention
+ * costs no schema, no migration and no mapping. The **id is what a tag refers to**; the
+ * name beside it is what gets drawn, so a preview can render a title without looking the
+ * contact up. `refreshMentionNames` (db/repo/outreach.ts) rewrites that name on a rename.
  *
- * Everything in this file is pure: the detection the editor runs on each keystroke, and
- * the segmentation the renderer uses to draw the tag bold + underlined.
+ * Nothing on screen shows the stored form. Editors work on a `MentionDraft` — the text
+ * with each tag reduced to its name, plus the tags' ranges and ids — and the stored title
+ * is re-derived from it on every change (`serializeMentions`). Holding the ranges, rather
+ * than re-finding names in the shown text, is what lets a tag behave as one object.
+ *
+ * Everything in this file is pure.
  */
 
 import type { ContactSummary } from '../types/contacts';
@@ -94,64 +97,222 @@ export function matchMentionContacts(
 }
 
 /**
- * Replaces the half-typed tag with the chosen contact, and reports where the caret goes.
- * A trailing space is added unless there already is one, so the user keeps typing the
- * sentence rather than landing glued to the name.
+ * A tag inside the shown text, as a half-open `[start, end)` range. The name is
+ * `text.slice(start, end)`; `contactId` is who it refers to.
  */
-export function applyMention(
-  text: string,
-  mention: MentionQuery,
-  contact: ContactSummary
-): { text: string; caret: number } {
-  const before = text.slice(0, mention.start);
-  const after = text.slice(mention.start + MENTION_SIGIL.length + mention.query.length);
-  const spacer = /^\s/.test(after) ? '' : ' ';
-  const inserted = `${MENTION_SIGIL}${mentionLabel(contact)}${spacer}`;
-
-  return { text: `${before}${inserted}${after}`, caret: before.length + inserted.length };
+export interface MentionTag {
+  start: number;
+  end: number;
+  contactId: string;
 }
 
-/** One run of text, either prose or the name part of a recognised tag. */
+/** What an editor works on: the title as shown, plus where its tags sit. */
+export interface MentionDraft {
+  text: string;
+  tags: MentionTag[];
+}
+
+/** `]` closes the name and `\` escapes, so both are escaped inside it. */
+const escapeName = (name: string) => name.replace(/[\\\]]/g, match => `\\${match}`);
+
+/**
+ * Reads one stored tag starting at `i`, or `null` if `@[name](id)` is not there. Malformed
+ * input is never an error — it is just prose.
+ */
+function readTag(
+  stored: string,
+  i: number
+): { name: string; contactId: string; length: number } | null {
+  if (!stored.startsWith(`${MENTION_SIGIL}[`, i)) return null;
+  let name = '';
+  let j = i + 2;
+  while (j < stored.length && stored[j] !== ']') {
+    if (stored[j] === '\\' && j + 1 < stored.length) j += 1;
+    name += stored[j];
+    j += 1;
+  }
+  const id = /^\(([^)\s]+)\)/.exec(stored.slice(j + 1));
+  if (j >= stored.length || !name || !id) return null;
+  return { name, contactId: id[1], length: j + 1 + id[0].length - i };
+}
+
+/** Stored title → draft. Any `@` that is not a well-formed tag is prose. */
+export function parseMentions(stored: string): MentionDraft {
+  const tags: MentionTag[] = [];
+  let text = '';
+  let i = 0;
+  while (i < stored.length) {
+    const tag = stored[i] === MENTION_SIGIL ? readTag(stored, i) : null;
+    if (tag) {
+      tags.push({ start: text.length, end: text.length + tag.name.length, contactId: tag.contactId });
+      text += tag.name;
+      i += tag.length;
+    } else {
+      text += stored[i];
+      i += 1;
+    }
+  }
+  return { text, tags };
+}
+
+/** Draft → stored title. The inverse of `parseMentions`. */
+export function serializeMentions({ text, tags }: MentionDraft): string {
+  let out = '';
+  let cursor = 0;
+  for (const tag of tags) {
+    const name = escapeName(text.slice(tag.start, tag.end));
+    out += `${text.slice(cursor, tag.start)}${MENTION_SIGIL}[${name}](${tag.contactId})`;
+    cursor = tag.end;
+  }
+  return out + text.slice(cursor);
+}
+
+/** The title as a person reads it — tags reduced to names. For dialogs and labels. */
+export function mentionPlainText(stored: string): string {
+  return parseMentions(stored).text;
+}
+
+/** One run of a title for rendering: prose, or a tag's name. */
 export interface MentionSegment {
   text: string;
-  mention: boolean;
+  contactId?: string;
+}
+
+/** Splits a draft into prose and tag runs, in order, dropping empty prose runs. */
+export function mentionSegments({ text, tags }: MentionDraft): MentionSegment[] {
+  const segments: MentionSegment[] = [];
+  let cursor = 0;
+  for (const tag of tags) {
+    if (tag.start > cursor) segments.push({ text: text.slice(cursor, tag.start) });
+    segments.push({ text: text.slice(tag.start, tag.end), contactId: tag.contactId });
+    cursor = tag.end;
+  }
+  if (cursor < text.length) segments.push({ text: text.slice(cursor) });
+  return segments;
 }
 
 /**
- * Splits text into prose and tag runs for rendering. Only names in `labels` match — an
- * `@` followed by anything else is prose — and longer names are tried first so
- * "Sarah Smithson" wins over "Sarah Smith".
- *
- * The `@` itself stays in the prose run: the bold + underline marks the *person*, and
- * carrying the sigil into it makes the underline look like a typo.
+ * Rewrites every tag of `contactId` in a stored title to show `name`, or returns `null`
+ * when nothing changed — so a caller can skip the write.
  */
-export function splitMentions(text: string, labels: string[]): MentionSegment[] {
-  const sorted = [...new Set(labels.filter(Boolean))].sort((a, b) => b.length - a.length);
-  const segments: MentionSegment[] = [];
-  const push = (run: string, mention: boolean) => {
-    if (run) segments.push({ text: run, mention });
-  };
+export function renameMentions(stored: string, contactId: string, name: string): string | null {
+  const draft = parseMentions(stored);
+  if (!name || !draft.tags.some(tag => tag.contactId === contactId)) return null;
 
-  let plainStart = 0;
-  let i = 0;
-  while (i < text.length) {
-    const opensWord = i === 0 || /\s/.test(text[i - 1]);
-    if (text[i] === MENTION_SIGIL && opensWord && sorted.length > 0) {
-      const rest = text.slice(i + 1).toLowerCase();
-      const label = sorted.find(candidate => rest.startsWith(candidate.toLowerCase()));
-      if (label) {
-        push(text.slice(plainStart, i + 1), false);
-        push(text.slice(i + 1, i + 1 + label.length), true);
-        i += 1 + label.length;
-        plainStart = i;
-        continue;
-      }
-    }
-    i += 1;
+  let text = '';
+  let cursor = 0;
+  const tags: MentionTag[] = [];
+  for (const tag of draft.tags) {
+    text += draft.text.slice(cursor, tag.start);
+    const shown = tag.contactId === contactId ? name : draft.text.slice(tag.start, tag.end);
+    tags.push({ start: text.length, end: text.length + shown.length, contactId: tag.contactId });
+    text += shown;
+    cursor = tag.end;
   }
-  push(text.slice(plainStart), false);
+  text += draft.text.slice(cursor);
 
-  return segments;
+  const next = serializeMentions({ text, tags });
+  return next === stored ? null : next;
+}
+
+/** The tag the caret is strictly inside, if any — a caret at either edge is outside. */
+export function mentionTagAt(tags: MentionTag[], caret: number): MentionTag | null {
+  return tags.find(tag => tag.start < caret && caret < tag.end) ?? null;
+}
+
+/**
+ * Replaces the half-typed `@query` with the chosen contact's name as a tag, and reports
+ * where the caret goes. A trailing space is added unless there already is one, so the
+ * user keeps typing the sentence rather than landing glued to the name.
+ */
+export function insertMention(
+  draft: MentionDraft,
+  mention: MentionQuery,
+  contact: ContactSummary
+): { draft: MentionDraft; caret: number } {
+  const removedEnd = mention.start + MENTION_SIGIL.length + mention.query.length;
+  const after = draft.text.slice(removedEnd);
+  const name = mentionLabel(contact);
+  const spacer = /^\s/.test(after) ? '' : ' ';
+  const inserted = `${name}${spacer}`;
+  const shift = inserted.length - (removedEnd - mention.start);
+
+  const tags = [
+    ...draft.tags.filter(tag => tag.end <= mention.start),
+    { start: mention.start, end: mention.start + name.length, contactId: contact.id },
+    ...draft.tags
+      .filter(tag => tag.start >= removedEnd)
+      .map(tag => ({ ...tag, start: tag.start + shift, end: tag.end + shift })),
+  ];
+
+  return {
+    draft: { text: `${draft.text.slice(0, mention.start)}${inserted}${after}`, tags },
+    caret: mention.start + inserted.length,
+  };
+}
+
+/**
+ * Applies a raw text change from the field to a draft, keeping **tags atomic**:
+ *
+ * - A deletion (or a replaced selection) that touches any part of a tag removes the whole
+ *   tag — so Backspace at the end of "Sarah Smith" takes the name, not the "h".
+ * - Typing strictly inside a tag turns it back into plain text: the name was edited, so
+ *   it no longer refers to the contact.
+ * - Typing at either edge of a tag leaves it alone.
+ *
+ * `caret` is where the caret sits in `next`, when the platform reports it. It anchors the
+ * diff, which is otherwise ambiguous inside a run of repeated characters.
+ *
+ * `rewritten` is true when the result differs from `next` — the field then has to be told
+ * where the caret goes, because its content was replaced underneath it.
+ */
+export function applyMentionEdit(
+  draft: MentionDraft,
+  next: string,
+  caret = caretAfterChange(draft.text, next)
+): { draft: MentionDraft; caret: number; rewritten: boolean } {
+  const previous = draft.text;
+  const shared = Math.min(previous.length, next.length);
+
+  // The edit ends at the caret, so the unchanged tail can't reach past it.
+  let suffix = 0;
+  const suffixLimit = Math.min(shared, next.length - caret);
+  while (
+    suffix < suffixLimit &&
+    previous[previous.length - 1 - suffix] === next[next.length - 1 - suffix]
+  ) {
+    suffix += 1;
+  }
+  let prefix = 0;
+  while (prefix < shared - suffix && previous[prefix] === next[prefix]) prefix += 1;
+
+  let lo = prefix;
+  let hi = previous.length - suffix;
+  const inserted = next.slice(prefix, next.length - suffix);
+
+  const dropped = new Set<MentionTag>();
+  for (const tag of draft.tags) {
+    if (lo < hi ? tag.start < hi && tag.end > lo : tag.start < lo && lo < tag.end) {
+      dropped.add(tag);
+    }
+  }
+  // Only a removal widens to the whole tag; an insertion inside one just demotes it.
+  if (lo < hi) {
+    for (const tag of dropped) {
+      lo = Math.min(lo, tag.start);
+      hi = Math.max(hi, tag.end);
+    }
+  }
+
+  const text = `${previous.slice(0, lo)}${inserted}${previous.slice(hi)}`;
+  const shift = inserted.length - (hi - lo);
+  const tags = draft.tags
+    .filter(tag => !dropped.has(tag))
+    .map(tag =>
+      tag.start >= hi ? { ...tag, start: tag.start + shift, end: tag.end + shift } : tag
+    );
+
+  return { draft: { text, tags }, caret: lo + inserted.length, rewritten: text !== next };
 }
 
 /**

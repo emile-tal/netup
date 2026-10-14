@@ -150,7 +150,7 @@ export default function RootLayout() {
   // names `tailwind.config.js` exposes as `font-nunito` / `font-nunito-medium` /
   // `font-nunito-bold`; React Native will not synthesise a weight for a custom family, so
   // each one has to be loaded separately. Bold is the single documented exception: a
-  // tagged contact inside an outreach title (FRONTEND.md §2).
+  // tagged contact in a read-only outreach title (FRONTEND.md §2).
   const [fontsLoaded] = useFonts({
     Nunito: require('../assets/fonts/nunito/static/Nunito-Regular.ttf'),
     NunitoMedium: require('../assets/fonts/nunito/static/Nunito-Medium.ttf'),

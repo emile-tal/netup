@@ -1,13 +1,16 @@
-import { TextInput, View } from 'react-native';
-import { parseDateInputValue, toDateInputValue } from '@/app/utils/date';
+import { Text, TextInput, View } from 'react-native';
 import { useEffect, useRef, useState } from 'react';
 
 import Button from '../Button';
+import DateField from '../DateField';
+import MentionTextInput from '../MentionTextInput';
 import ModalShell from '../ModalShell';
-import TextField from '../TextField';
 import { createReminder } from '@/db/repo/reminders';
+import { mentionPlainText } from '@/app/utils/mentions';
 import { notify } from '@/app/utils/alert';
+import { startOfDay } from '@/app/utils/date';
 import useCalendarStore from '@/app/stores/calendarStore';
+import { useContactDirectory } from '@/app/hooks/useContactDirectory';
 import { useDB } from '@/db/dbProvider';
 
 interface AddOutreachModalProps {
@@ -17,35 +20,41 @@ interface AddOutreachModalProps {
   contactId?: string;
 }
 
+/**
+ * The calendar header's (and a contact profile's) "new outreach": the same `@`-tagging
+ * field as the day drawer, and the app's one date picker with no cap — an outreach is
+ * usually planned ahead. Tags here don't open their contact: leaving would throw away the
+ * half-filled form.
+ */
 const AddOutreachModal = ({
   visible,
   onRequestClose,
   contactId,
 }: AddOutreachModalProps) => {
   const db = useDB();
+  const contacts = useContactDirectory();
   const selectedDate = useCalendarStore(state => state.selectedDate);
   const [draftTitle, setDraftTitle] = useState('');
   // Falls back to today: the modal is also the calendar header's action, which is
   // reachable with no day open at all.
-  const [dateText, setDateText] = useState(() =>
-    toDateInputValue(selectedDate ?? new Date())
+  const [date, setDate] = useState<Date | undefined>(() =>
+    startOfDay(selectedDate ?? new Date())
   );
   const [saving, setSaving] = useState(false);
   const inputRef = useRef<TextInput>(null);
 
   // Re-seed the date each time the modal opens so it follows the day the user picked.
   useEffect(() => {
-    if (visible) setDateText(toDateInputValue(selectedDate ?? new Date()));
+    if (visible) setDate(startOfDay(selectedDate ?? new Date()));
   }, [visible, selectedDate]);
-
-  const parsedDate = parseDateInputValue(dateText);
-  const invalidDate = dateText.trim().length > 0 && !parsedDate;
 
   const reset = () => {
     setDraftTitle('');
     onRequestClose();
   };
 
+  // Escape (web) first leaves the field — which also shuts an open tag popup — and only a
+  // second one closes the modal.
   const handleClose = () => {
     if (inputRef.current && inputRef.current.isFocused()) {
       inputRef.current.blur();
@@ -56,22 +65,14 @@ const AddOutreachModal = ({
 
   const handleAdd = async () => {
     if (saving) return;
-    if (!draftTitle.trim()) {
+    if (!mentionPlainText(draftTitle).trim()) {
       notify('Title required', 'Give the outreach a title.');
-      return;
-    }
-    if (invalidDate) {
-      notify('Invalid date', 'Use the format YYYY-MM-DD, or clear the date.');
       return;
     }
 
     setSaving(true);
     try {
-      await createReminder(db, {
-        title: draftTitle.trim(),
-        date: parsedDate,
-        contactId,
-      });
+      await createReminder(db, { title: draftTitle.trim(), date, contactId });
       reset();
     } catch (error) {
       console.error('Error creating outreach:', error);
@@ -98,21 +99,33 @@ const AddOutreachModal = ({
       }
     >
       <View className='mt-5 gap-4'>
-        <TextField
-          ref={inputRef}
-          label='Title'
-          placeholder='Coffee with Sarah'
-          value={draftTitle}
-          onChangeText={setDraftTitle}
-        />
-        <TextField
-          label='Date'
-          placeholder='YYYY-MM-DD (optional)'
-          value={dateText}
-          onChangeText={setDateText}
-          invalid={invalidDate}
-          error='Use the format YYYY-MM-DD.'
-        />
+        <View className='gap-1.5'>
+          <Text className='font-nunito text-[12px] text-ink-subtle'>Title</Text>
+          {/* The same surface as `DateField` below, so the two read as one form. */}
+          <View className='rounded-lg bg-surface-muted px-2 py-1.5'>
+            <MentionTextInput
+              ref={inputRef}
+              value={draftTitle}
+              onChangeText={setDraftTitle}
+              contacts={contacts}
+              placeholder='Coffee with @Sarah'
+              accessibilityLabel='Outreach title'
+              onSubmit={() => void handleAdd()}
+              linkTags={false}
+            />
+          </View>
+        </View>
+        <View className='gap-1.5'>
+          <Text className='font-nunito text-[12px] text-ink-subtle'>Date</Text>
+          <DateField
+            value={date}
+            onChange={setDate}
+            placeholder='No date'
+            accessibilityLabel='Outreach date'
+            pickerTitle='When?'
+            maximumDate={null}
+          />
+        </View>
       </View>
     </ModalShell>
   );

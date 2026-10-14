@@ -142,8 +142,8 @@ export const avatarPalette = [
  *
  * Emphasis comes from size and colour, never from weight — see FRONTEND.md. `medium`
  * exists only for interactive labels (buttons, nav, the one thing you are meant to
- * press); `bold` exists only for a tagged contact inside an outreach title; everything
- * else is `regular`.
+ * press); `bold` exists only for a tagged contact in a read-only outreach title;
+ * everything else is `regular`.
  *
  * The keys are the family names registered with `expo-font` in `app/_layout.tsx` and
  * mirrored as `font-*` utilities in `tailwind.config.js`. React Native does not synthesise
@@ -153,9 +153,9 @@ export const fonts = {
   regular: 'Nunito',
   medium: 'NunitoMedium',
   /**
-   * The one exception to "nothing is bold": a contact tagged with `@` inside an outreach
-   * title, which has to read as a reference to a person rather than as prose. Nothing
-   * else in the app may use it — see FRONTEND.md §2.
+   * The one exception to "nothing is bold": a contact tagged with `@` in an outreach
+   * title, wherever it is shown read-only (`MentionText`). Nothing else may use it — see
+   * FRONTEND.md §2.
    */
   bold: 'NunitoBold',
 } as const;

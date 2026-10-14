@@ -25,19 +25,23 @@
 |------|-------------|----------|----------|
 | Regular (400) | `Nunito` | `font-nunito` | everything |
 | Medium (500) | `NunitoMedium` | `font-nunito-medium` | labels on things you press: `Button`, `NavItem` |
-| Bold (700) | `NunitoBold` | `font-nunito-bold` | **only** a contact tagged with `@` inside an outreach title |
+| Bold (700) | `NunitoBold` | `font-nunito-bold` | **only** a tagged contact in a read-only outreach title |
 
 Rules:
 
 - **Never use a bold weight, with one exception.** `font-bold`, `font-semibold`,
-  `font-black` and friends are not part of this design. If something needs to stand out,
-  make it *bigger*, give it the accent colour, or give it space. A title is a title
-  because it is 30px, not because it is heavy.
-- **The exception is a tagged contact.** `@Sarah Smith` written into an outreach title
-  renders bold **and** underlined (`font-nunito-bold underline`), because it is not
-  emphasis — it is a reference to a person embedded in prose, and it has to be
-  recognisable as one at 15px in the middle of a sentence. It is the only thing in the app
-  allowed to use `font-nunito-bold`; see CLAUDE.md §21.
+  `font-black` and friends are not part of this design. If something needs to stand out, make it *bigger*, give it
+  the accent colour, or give it space. A title is a title because it is 30px, not
+  because it is heavy.
+- **The exception is a tagged contact, read-only.** Wherever an outreach title is shown
+  rather than edited — the calendar cell preview, a contact's outreach list — a tagged
+  contact's name renders in `font-nunito-bold` with no `@` (`MentionText`). It is not
+  emphasis: it is a reference to a person embedded in prose. It is the only thing in the
+  app allowed to use `font-nunito-bold`.
+- **In the editor the same tag is a wash, not a weight.** `MentionTextInput` draws it on
+  `bg-blue-lighter` in `text-blue-darker`, because its text is a `Text` layered under a
+  transparent input and a wider glyph would push every caret position after it out of
+  register (CLAUDE.md §21).
 - **Medium is not bold.** It exists only so an interactive label holds its own against the
   text around it. If you are reaching for it on something that isn't pressable, don't.
 - **Every `<Text>` and `<TextInput>` carries a family class.** React Native does not

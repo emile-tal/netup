@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import AddItemButton from '../profile/AddItemButton';
 import AddOutreachModal from '../calendar/AddOutreachModal';
 import Card from '../Card';
+import MentionText from '../MentionText';
 import { Outreach } from '../../types/outreach';
 import { formatShortDate } from '../../utils/date';
 import { observeContactReminders } from '@/db/repo/reminders';
@@ -40,14 +41,13 @@ const ContactOutreach = ({ contactId }: ContactOutreachProps) => {
             key={outreach.id}
             className='flex-row items-center justify-between gap-3 px-4 py-2'
           >
-            <Text
+            <MentionText
+              value={outreach.title}
               numberOfLines={2}
               className={`font-nunito flex-1 text-[15px] ${
  outreach.completed ? 'text-ink-subtle line-through' : 'text-ink'
  }`}
-            >
-              {outreach.title}
-            </Text>
+            />
             {outreach.date && (
               <Text className='font-nunito text-[13px] text-ink-subtle'>
                 {formatShortDate(outreach.date)}

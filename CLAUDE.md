@@ -102,6 +102,7 @@ app/
     DatePickerModal.tsx    # THE date picker — a hand-rolled month grid, no native module
     Checkbox.tsx           # Square labelled checkbox (forms/dialogs, not OutreachRow's)
     MentionTextInput.tsx   # Auto-growing text field with `@` contact tagging (§21)
+    MentionText.tsx        # A stored title read-only: tags drawn as bold names (§21)
     FullScreenLoader.tsx   # The whole-window spinner the root layout renders
     BootstrapScreen.tsx    # "Can't reach netup" — blocks an un-downloaded device (§17)
     TierInfoModal.tsx      # The 5-15-50 explainer (first visit + header info button)
@@ -360,11 +361,8 @@ also done. What remains:
    `expo-document-picker` + `expo-file-system` + `expo-sharing` and a dev-client rebuild.
 4. **Contact picker for reminders** — a reminder can be linked to a contact only from
    that contact's screen (`ContactOutreach`). The calendar "+" creates unlinked rows.
-5. **Date entry in the outreach modal** — `AddOutreachModal` still uses a validated
-   `YYYY-MM-DD` text input. `firstMeeting` goes through `DateField` (§18), so moving the
-   modal over is a matter of swapping the field — but the cap is the opposite one (a
-   reminder is in the *future*), so `DatePickerModal` needs a `minimumDate` to match its
-   `maximumDate` first.
+5. ~~Date entry in the outreach modal~~ ✅ **done.** `AddOutreachModal` uses `DateField`
+   with `maximumDate={null}` (no cap) and the same `MentionTextInput` as the day drawer.
 6. ~~Contact routes sit outside `(tabs)`~~ ✅ **done.** They are a stack nested in the
    contacts tab now; see §13.
 
@@ -598,6 +596,15 @@ the list occupies** — the bottom bar or side rail stays put, and the form repl
 list instead of covering the window. The push transition and the `dismissTo` unwinding in
 §10 are unchanged; `dismissTo('/')` now unwinds to the list at the root of *this* stack.
 Switching tabs leaves the stack where it was, which is the standard tab behaviour.
+
+**Opening a contact from another tab passes `returnTo`.** A `back()` inside the contacts
+stack can only reach the list, so a profile opened from a calendar tag would strand the
+user there. The tag pushes `/contacts/[id]?returnTo=<current path>`; the profile's back
+arrow then does `dismissTo('/')` (so the contacts tab isn't left parked on the profile)
+followed by `navigate(returnTo)`. The profile hands `returnTo` to edit, and edit hands it
+back on `dismissTo` — **`dismissTo` replaces the target's params rather than merging
+them**, so dropping it there silently forgets where the user came from.
+`app/utils/returnTo.ts` (`readReturnTo`) only honours an in-app path.
 
 Both bars are built from `useNavDestinations(props)`, which flattens react-navigation's
 `state`/`descriptors`/`navigation` into a plain list (label, focused, `renderIcon`,
@@ -932,8 +939,14 @@ Details worth keeping:
   that is what the helper exists for.
 - **`maximumDate` defaults to today**, and days past it render but are not pressable. The
   next-month control is held at the cap rather than hidden, so the header doesn't reflow.
+  **`null` lifts the cap** — `AddOutreachModal` uses it, since outreach is planned ahead.
+- **The month and the year in the header are buttons.** The month opens a grid of the
+  twelve months, the year a page of twelve years (`PickerGrid`); picking one drops back to
+  the days, and the arrows step by whatever the view shows (month / year / page). Options
+  past the cap are dimmed exactly like days past it.
 - **The displayed month re-anchors on every open** (an effect on `visible`), or the month
-  left behind by a previous visit becomes where the next one starts.
+  left behind by a previous visit becomes where the next one starts. The view resets to
+  days with it.
 
 ---
 
@@ -1000,22 +1013,35 @@ day you tapped a long way from its own list.
 ## 21. Tagging a contact with `@`
 
 Typing `@sar` into an outreach title opens a popup of matching contacts; picking one
-writes `@Sarah Smith` into the text, and the name renders **bold and underlined**.
+replaces `@sar` with **Sarah Smith as a tag**: drawn on a `blue-lighter` wash, with no `@`
+on screen. A tag behaves as **one object** — Backspace/Delete touching any part of it
+removes the whole name, typing strictly inside it turns it back into plain text, and
+tapping it opens that contact (`/contacts/[id]`) instead of placing a caret.
 
-**A tag is plain characters in the title, not a relation.** There is no join table, no
-second column and no id: the title is one `text` column that the repo, the outbox and the
-sync wire already carry unchanged (§19), so tagging costs no schema and no migration. A
-tag is *recognised* by matching the text against the live contact list, which means a
-renamed contact simply stops matching rather than leaving a dangling id behind. The
-trade: a tag is not a queryable link. **`reminders.contact_id` is still the real link**
-(§14) — the generated 5-15-50 rows and anything created from a contact's profile use it,
-and §9.4's contact picker is about that column, not about this.
+Everywhere a title is shown rather than edited — the calendar cell preview, a contact's
+outreach list — `MentionText` draws each tag as the contact's name in **bold**, no `@`.
+
+**A tag is stored in the title as `@[Sarah Smith](contact-id)`, not as a relation.** There
+is no join table and no second column: the title is one `text` column that the repo, the
+outbox and the sync wire already carry unchanged (§19), so tagging costs no schema and no
+migration. **The id is what a tag refers to** — tapping opens that contact, and two
+contacts with the same name are told apart. The name beside it is what gets drawn, so a
+preview renders a title without a contact lookup; `refreshMentionNames`
+(`db/repo/outreach.ts`, called by `updateContact` on any first/last-name change) rewrites
+it on a rename, across *every* outreach, not just the contact's own. A deleted contact's
+tag keeps its last name and stops being tappable. The trade: a tag is still not a
+queryable link. **`reminders.contact_id` is the real link** (§14) — the generated 5-15-50
+rows and anything created from a contact's profile use it, and §9.4's contact picker is
+about that column, not about this.
+
+Titles tagged before the id format (`@Sarah Smith`) are not upgraded: they read as plain
+prose with a literal `@`.
 
 The pieces:
 
 | Concern | Where |
 |---------|-------|
-| Detection, matching, insertion, segmentation, caret maths | `app/utils/mentions.ts` — all pure |
+| Detection, matching, the draft model (parse/serialise/insert/edit), caret maths | `app/utils/mentions.ts` — all pure |
 | The field: two layers, auto-grow, key handling | `app/components/MentionTextInput.tsx` |
 | The popup's position | `components/mentions/MentionMenu.tsx` / `.web.tsx` (§12) |
 | The popup's contents | `components/mentions/MentionList.tsx` + `menu.ts` |
@@ -1028,21 +1054,52 @@ The pieces:
   must follow it, and the query may not contain whitespace. That last one is why *the
   spacebar closes the popup with no handling at all* — not a coincidence to be optimised
   away.
+- **No screen ever shows the stored form.** Editors work on a `MentionDraft` — the text
+  with each tag reduced to its name, plus the tags' ranges and ids — and
+  `serializeMentions` rebuilds the stored title on every change. The field's draft is its
+  own state and is **re-parsed from `value` only when the title changes from outside** (a
+  pull, a rename, the trailing row clearing itself), so its own echo never resets it.
+  Anything that prints a title as a plain string (a dialog) goes through
+  `mentionPlainText`; anything that draws one goes through `MentionText`.
+- **`@[` is unambiguous, so a stored tag needs no word boundary.** Only *typing* a tag
+  (`findMentionQuery`) requires the `@` to open a word. Malformed `@[…` is prose, never an
+  error, and `]` / `\` in a name are backslash-escaped.
+- **Every edit goes through `applyMentionEdit`.** It diffs the old and new text (anchored
+  at the caret where the platform reports one — web's `onChange` hands over the textarea,
+  whose `selectionStart` is exact) and widens any removal that touches a tag to the whole
+  tag. When that rewrites what the input holds, the caret is put back with the one-shot
+  `selection` prop, or the browser drops it at the end of the text.
 - **The field is two stacked layers and has to stay that way.** A `TextInput` cannot style
   a range of its own text (on web it is a `textarea`). So a `Text` draws the styled version
-  and the input absolutely fills the box on top of it. The `Text` is the only child in the
-  layout flow, which is **also how the field auto-grows** — `onContentSizeChange` is not
-  implemented on web — up to `MENTION_INPUT_MAX_HEIGHT` (60px, ~3 lines), after which the
-  input scrolls. The input paints its own text only while focused; blurred, its ink goes
-  transparent and the styled layer shows through. Known consequence: a tag is plain while
-  you type in that field and turns bold when you leave it. Making it live would need a
-  permanently transparent input, which also hides the caret — browsers take `caret-color`
-  from `color`.
-- **The caret is derived by diffing, not read.** `onSelectionChange` fires on web only
-  when a *range* is selected — a keystroke or a caret move does not fire it — so
-  `caretAfterChange(previous, next)` is what keeps the popup pointed at the right `@`.
-  Arrow/Home/End keys close the popup for the same reason: the field cannot tell where the
-  caret went.
+  and the input absolutely fills the box on top of it, **with transparent ink and an
+  explicit caret colour** (`mirroredInput` in `app/utils/inputStyle`; browsers otherwise
+  take `caret-color` from `color`). Every glyph you read is the `Text`; every click, caret
+  and selection is the input's. That only stays in register because both use the same
+  face, size and line height — **which is why a tag is a wash, not bold**: a wider glyph
+  shifts every caret position after it. The web textarea's scrollbar is hidden for the
+  same reason (it narrows the line box and changes the wrapping).
+- **The `Text` sizes the box**, which is how the field auto-grows (`onContentSizeChange`
+  is not implemented on web), up to `MENTION_INPUT_MAX_HEIGHT` (60px, ~3 lines). It ends
+  in a zero-width space: a trailing newline adds no line to a `Text`, so without it the box
+  stayed a line short after every Enter and the input scrolled its first line out of view.
+  Past the cap the input scrolls and `onScroll` shifts the `Text` by the same offset.
+- **A tap on a tag is read from the caret it lands.** Web: `onClick` (forwarded to the
+  textarea by react-native-web) reads `selectionStart`/`selectionEnd`. Native:
+  `onPressIn` sets a flag and the next `onSelectionChange` checks it. Only a collapsed
+  caret *strictly inside* a tag counts, so clicking at either edge still edits. The tag's
+  id is checked against the directory first, so a deleted contact's tag just takes the
+  caret. The native half has not been run on a device (§10); iOS may snap a first tap to
+  a word boundary, which lands inside a two-word name but at the edge of a one-word one.
+  The push carries `returnTo` (§13) so the profile's back arrow returns to the calendar.
+- **Hovering a tag shows a pointer (web).** The input is on top, so the tags never see
+  the mouse: `onMouseMove` hit-tests the pointer against the tag spans' line boxes
+  (`isPointOverAny`, `app/utils/hitTest.ts` / `.web.ts`) and flips the input's `cursor`.
+- **`linkTags={false}` makes tags inert** — no navigation, no pointer — but they still
+  delete as one. `AddOutreachModal` uses it: following a tag would discard the form.
+- **An outreach with no visible text is not previewed** in a calendar cell (`DayCell`
+  filters on `mentionPlainText`); it is still in the day's drawer to be titled or deleted.
+- **The web popup sits at `zIndex: 10000`**, above react-native-web's `Modal` (9999), so
+  it shows inside `AddOutreachModal`.
 - **Keys come through `onKeyPress`, which on web is the keydown event.** `key` sits on the
   event itself there and on `nativeEvent` on native, so read both. `preventDefault()` is
   what stops Enter inserting a newline and Tab moving focus — and react-native-web checks
@@ -1060,6 +1117,6 @@ The pieces:
   list down. It holds its own subscription rather than reading `contactStore`, which the
   contacts screen keeps filtered by the search query — sharing it would mean a popup that
   can only find whatever was last searched for (§6).
-- **Bold is allowed here and nowhere else.** `font-nunito-bold` (the `NunitoBold` face,
-  registered in `app/_layout.tsx`) exists for this one token, because a tag is a reference
-  to a person embedded in prose rather than emphasis. See FRONTEND.md §2.
+- **Bold is allowed in `MentionText` and nowhere else.** `font-nunito-bold` (the
+  `NunitoBold` face, registered in `app/_layout.tsx`) exists for a tag shown read-only. The
+  editor cannot use it (above), so the same tag is a wash there. See FRONTEND.md §2.

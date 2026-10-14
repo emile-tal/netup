@@ -20,6 +20,7 @@ import { markDeletedMeta, upsertMeta } from './metadata';
 import { enqueueOutbox } from './outbox';
 import {
   outreachAnchor,
+  refreshMentionNames,
   refreshOutreachTitles,
   scheduleNextOutreach,
 } from './outreach';
@@ -381,6 +382,9 @@ export async function updateContact(
       await scheduleNextOutreach(db, id, anchor);
     } else if (changes.firstName !== undefined || changes.lastName !== undefined) {
       await refreshOutreachTitles(db, id);
+    }
+    if (changes.firstName !== undefined || changes.lastName !== undefined) {
+      await refreshMentionNames(db, id);
     }
 
     await upsertMeta(db, 'contact', id);

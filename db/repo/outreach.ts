@@ -2,6 +2,7 @@ import type { Database } from '@nozbe/watermelondb';
 import { Q } from '@nozbe/watermelondb';
 import type { Tier } from '../../app/types/contacts';
 import { nextOutreachDate, outreachTitle, toTier } from '../../app/utils/outreach';
+import { mentionLabel, renameMentions } from '../../app/utils/mentions';
 import Contact from '../models/Contact';
 import Reminder from '../models/Reminder';
 import { markDeletedMeta, upsertMeta } from './metadata';
@@ -138,6 +139,37 @@ export async function refreshOutreachTitles(db: Database, contactId: string) {
 
   for (const row of all) {
     if (row.title === title) continue;
+    await row.update((r: Reminder) => {
+      r.title = title;
+    });
+    await upsertMeta(db, 'reminder', row.id);
+    await enqueueOutbox(db, 'reminder', 'update', { id: row.id, title });
+  }
+}
+
+/**
+ * Keeps the name inside every `@` tag of a contact in step with a rename. A tag is matched
+ * by the contact id it stores, and the name beside the id is what previews draw, so it has
+ * to be rewritten rather than looked up (see `app/utils/mentions.ts`). Any outreach can
+ * carry a tag, not just this contact's own, hence the search over titles.
+ *
+ * Must run inside a `db.write(...)`.
+ */
+export async function refreshMentionNames(db: Database, contactId: string) {
+  const contact = await findContact(db, contactId);
+  if (!contact) return;
+
+  const name = mentionLabel(contact);
+  // `sanitizeLikeString` turns the punctuation into single-character wildcards, so this is
+  // a superset; `renameMentions` is the exact check.
+  const rows = await db
+    .get<Reminder>('reminders')
+    .query(Q.where('title', Q.like(`%${Q.sanitizeLikeString(`](${contactId})`)}%`)))
+    .fetch();
+
+  for (const row of rows) {
+    const title = renameMentions(row.title, contactId, name);
+    if (title === null) continue;
     await row.update((r: Reminder) => {
       r.title = title;
     });

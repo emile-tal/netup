@@ -12,6 +12,7 @@ import ScreenLayout from '../../../../components/ScreenLayout';
 import ScreenState from '../../../../components/ScreenState';
 import XIcon from '@/app/icons/XIcon';
 import { colors } from '@/app/theme';
+import { readReturnTo } from '../../../../utils/returnTo';
 import { useContact } from '../../../../hooks/useContact';
 import {
   useContactEditStore,
@@ -20,7 +21,8 @@ import {
 import { useDB } from '@/db/dbProvider';
 
 const EditContactPage = () => {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, returnTo } = useLocalSearchParams<{ id: string; returnTo?: string }>();
+  const origin = readReturnTo(returnTo);
   const router = useRouter();
   const db = useDB();
   const { contact, loading, error, reload } = useContact(id);
@@ -49,7 +51,13 @@ const EditContactPage = () => {
    * button landed on edit, whose own back button returned to the profile — a loop with no
    * way out. `dismissTo` unwinds the stack to the profile already sitting under us.
    */
-  const closeToContact = () => router.dismissTo(`/contacts/${id}`);
+  const closeToContact = () =>
+    // `dismissTo` replaces the profile's params with these, so `returnTo` has to be
+    // passed back or the profile forgets it was opened from another tab.
+    router.dismissTo({
+      pathname: '/contacts/[id]',
+      params: origin ? { id, returnTo: origin as string } : { id },
+    });
 
   const handleSave = async () => {
     const working = useContactEditStore.getState().workingContact;

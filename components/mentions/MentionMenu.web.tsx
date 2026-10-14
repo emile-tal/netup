@@ -41,7 +41,7 @@ const MentionMenu = ({ anchor, ...listProps }: MentionMenuProps) => {
 
   return createPortal(
     <div
-      style={{ position: 'fixed', top, left, zIndex: 1000 }}
+      style={{ position: 'fixed', top, left, zIndex: 10000 }}
       // Keeps the field focused when a row is clicked. Without it the mousedown blurs the
       // input, and a blur is what commits the draft line at the bottom of a day — so
       // picking a contact with the mouse would save the half-typed "@sar" instead.

@@ -12,8 +12,8 @@ interface DateFieldProps {
   /** `undefined` means cleared — the field can always get back to "no date". */
   onChange: (date: Date | undefined) => void;
   placeholder?: string;
-  /** Latest selectable day. Defaults to today, i.e. no future dates. */
-  maximumDate?: Date;
+  /** Latest selectable day. Defaults to today (no future dates); `null` for no cap. */
+  maximumDate?: Date | null;
   accessibilityLabel?: string;
   /** Heading on the picker, e.g. "When did you meet?". */
   pickerTitle?: string;
