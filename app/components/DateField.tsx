@@ -17,6 +17,11 @@ interface DateFieldProps {
   accessibilityLabel?: string;
   /** Heading on the picker, e.g. "When did you meet?". */
   pickerTitle?: string;
+  /**
+   * Offers the **x** and the picker's Clear (default). Off where a date is required — an
+   * outreach is always on some day — so `onChange` then only ever receives a `Date`.
+   */
+  clearable?: boolean;
 }
 
 /**
@@ -34,6 +39,7 @@ const DateField = ({
   maximumDate,
   accessibilityLabel,
   pickerTitle,
+  clearable = true,
 }: DateFieldProps) => {
   const [open, setOpen] = useState(false);
 
@@ -51,7 +57,7 @@ const DateField = ({
           {value ? formatShortDate(value) : placeholder}
         </Text>
       </Pressable>
-      {value && (
+      {value && clearable && (
         <IconButton
           accessibilityLabel='Clear date'
           onPress={() => onChange(undefined)}
@@ -68,7 +74,7 @@ const DateField = ({
           setOpen(false);
         }}
         onClear={
-          value
+          value && clearable
             ? () => {
                 onChange(undefined);
                 setOpen(false);

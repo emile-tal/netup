@@ -362,7 +362,9 @@ also done. What remains:
 4. **Contact picker for reminders** — a reminder can be linked to a contact only from
    that contact's screen (`ContactOutreach`). The calendar "+" creates unlinked rows.
 5. ~~Date entry in the outreach modal~~ ✅ **done.** `AddOutreachModal` uses `DateField`
-   with `maximumDate={null}` (no cap) and the same `MentionTextInput` as the day drawer.
+   with `maximumDate={null}` (no cap) and `clearable={false}` — the UI never creates an
+   undated outreach, though `reminders.date_ts` is still optional in the schema — and the
+   same `MentionTextInput` as the day drawer.
 6. ~~Contact routes sit outside `(tabs)`~~ ✅ **done.** They are a stack nested in the
    contacts tab now; see §13.
 

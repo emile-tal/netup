@@ -23,7 +23,8 @@ interface AddOutreachModalProps {
 /**
  * The calendar header's (and a contact profile's) "new outreach": the same `@`-tagging
  * field as the day drawer, and the app's one date picker with no cap — an outreach is
- * usually planned ahead. Tags here don't open their contact: leaving would throw away the
+ * usually planned ahead — and no clearing, since an undated outreach has no place on the
+ * calendar. Tags here don't open their contact: leaving would throw away the
  * half-filled form.
  */
 const AddOutreachModal = ({
@@ -37,7 +38,7 @@ const AddOutreachModal = ({
   const [draftTitle, setDraftTitle] = useState('');
   // Falls back to today: the modal is also the calendar header's action, which is
   // reachable with no day open at all.
-  const [date, setDate] = useState<Date | undefined>(() =>
+  const [date, setDate] = useState<Date>(() =>
     startOfDay(selectedDate ?? new Date())
   );
   const [saving, setSaving] = useState(false);
@@ -119,8 +120,8 @@ const AddOutreachModal = ({
           <Text className='font-nunito text-[12px] text-ink-subtle'>Date</Text>
           <DateField
             value={date}
-            onChange={setDate}
-            placeholder='No date'
+            onChange={next => next && setDate(next)}
+            clearable={false}
             accessibilityLabel='Outreach date'
             pickerTitle='When?'
             maximumDate={null}
