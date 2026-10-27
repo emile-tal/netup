@@ -1,7 +1,7 @@
 import { View } from 'react-native';
 
 import DayCell from './DayCell';
-import DayDrawer from './DayDrawer';
+import DrawerSlot from './DrawerSlot';
 import MonthTitle from './MonthTitle';
 import { gridWidthFor, mondayFirstOffset } from './weekdays';
 import { useMemo } from 'react';
@@ -9,6 +9,13 @@ import useCalendarStore from '../../stores/calendarStore';
 
 /** Fixed, so every week row in every month lines up. */
 export const DAY_ROW_HEIGHT = 92;
+
+/**
+ * The month's own title band, above its grid. Fixed so the list can scroll a month's
+ * grid flush under the weekday header, leaving the title (which the toolbar already
+ * shows) just out of view.
+ */
+export const MONTH_HEADER_HEIGHT = 64;
 
 interface MonthViewProps {
   year: number;
@@ -49,7 +56,7 @@ const MonthView = ({ year, month, columnWidth }: MonthViewProps) => {
 
   return (
     <View className='pb-6'>
-      <View className='px-1 pb-3 pt-5'>
+      <View className='justify-end px-1 pb-3' style={{ height: MONTH_HEADER_HEIGHT }}>
         <MonthTitle year={year} month={month} />
       </View>
       <View
@@ -70,9 +77,7 @@ const MonthView = ({ year, month, columnWidth }: MonthViewProps) => {
                 />
               ))}
             </View>
-            {weekIndex === drawerAfterWeek && selectedDate && (
-              <DayDrawer date={selectedDate} />
-            )}
+            <DrawerSlot date={weekIndex === drawerAfterWeek ? selectedDate : null} />
           </View>
         ))}
       </View>

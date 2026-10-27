@@ -8,7 +8,8 @@ import React, {
 } from 'react';
 
 import { FlatList } from 'react-native';
-import MonthView from './MonthView';
+import MonthView, { MONTH_HEADER_HEIGHT } from './MonthView';
+import { GRID_BORDER_WIDTH } from './weekdays';
 import type { ViewToken } from 'react-native';
 import useCalendarStore from '../../stores/calendarStore';
 
@@ -45,6 +46,13 @@ function buildRange(
   return rows;
 }
 
+/**
+ * How far past a month's top to land when jumping to it: its title band plus the grid's
+ * top border, so the grid tucks under the weekday header's bottom border and the two read
+ * as one line. The toolbar already names the month, so its own title would be a repeat.
+ */
+const MONTH_JUMP_OFFSET = -(MONTH_HEADER_HEIGHT + GRID_BORDER_WIDTH);
+
 /** Months rendered either side of today on first mount; also today’s initial index. */
 const INITIAL_SPAN = 12;
 
@@ -70,6 +78,11 @@ const InfiniteListCalendar = ({
   const [data, setData] = useState(() => buildRange(today, INITIAL_SPAN, INITIAL_SPAN));
   const listRef = useRef<FlatList<MonthRow>>(null);
 
+  /** Jumps to a month with its grid flush under the weekday header. */
+  const scrollToMonth = useCallback((index: number, animated: boolean) => {
+    listRef.current?.scrollToIndex({ index, animated, viewOffset: MONTH_JUMP_OFFSET });
+  }, []);
+
   // Key of the row to keep under the viewport after a prepend, and a latch so only one
   // prepend is in flight at a time.
   const anchorKeyRef = useRef<string | null>(null);
@@ -82,10 +95,10 @@ const InfiniteListCalendar = ({
   // reactive value is involved, which is what keeps this a genuine run-once effect.
   useEffect(() => {
     requestAnimationFrame(() => {
-      listRef.current?.scrollToIndex({ index: INITIAL_SPAN, animated: false });
+      scrollToMonth(INITIAL_SPAN, false);
       readyRef.current = true;
     });
-  }, []);
+  }, [scrollToMonth]);
 
   // maintainVisibleContentPosition is iOS-only, so everywhere else a prepend leaves the
   // viewport pinned at offset 0 — which re-triggers the prepend. Restore the anchor row
@@ -160,10 +173,10 @@ const InfiniteListCalendar = ({
         const index = data.findIndex(
           r => r.key === monthKey(now.getFullYear(), now.getMonth())
         );
-        if (index >= 0) listRef.current?.scrollToIndex({ index, animated: true });
+        if (index >= 0) scrollToMonth(index, true);
       },
     }),
-    [data]
+    [data, scrollToMonth]
   );
 
   // Read through a ref: FlatList fixes its viewability callbacks at mount.
@@ -218,9 +231,7 @@ const InfiniteListCalendar = ({
           offset: index * averageItemLength,
           animated: false,
         });
-        requestAnimationFrame(() =>
-          listRef.current?.scrollToIndex({ index, animated: false })
-        );
+        requestAnimationFrame(() => scrollToMonth(index, false));
       }}
       // Backward growth
       viewabilityConfigCallbackPairs={viewabilityConfigCallbackPairs}

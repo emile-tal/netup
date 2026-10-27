@@ -121,7 +121,8 @@ app/
     calendar/              # InfiniteListCalendar, MonthView, MonthTitle, DayCell, WeekdayHeader,
                            #   weekdays.ts, AddOutreachModal, OutreachRow,
                            #   NewOutreachRow (the trailing blank line — §20),
-                           #   DayDrawer (the selected day, inside the grid — §20)
+                           #   DayDrawer (the selected day, inside the grid — §20),
+                           #   DrawerSlot (animates it open/shut via ../Collapsible)
     TierPill.tsx           # A contact's 5-15-50 circle as a pill (board + profile)
   hooks/                   # useContact, useOutreach, useDebouncedCallback,
                            #   useLayoutMode, useNavDestinations, useTierBoard,
@@ -660,6 +661,10 @@ there too: `getDay() - 1` returns `-1` for a month starting on a Sunday.
 - **"Today"** (the toolbar's `secondaryActionText`) calls the list's imperative
   `scrollToToday()` (React 19 `ref` prop + `useImperativeHandle`): it scrolls to the
   current month by *key* — the index moves with every prepend — and opens today's drawer.
+  Both it and the first-mount scroll go through `scrollToMonth`, whose `viewOffset` skips
+  the month's own title band (`MONTH_HEADER_HEIGHT`, fixed in `MonthView`) plus the grid's
+  1px top border, so the grid sits flush under the weekday header's bottom border and the
+  toolbar's title isn't repeated just below it. Resize that band and the offset follows.
 
 ---
 
@@ -1013,7 +1018,13 @@ day you tapped a long way from its own list.
   goes *between* two rows and a wrapping grid has no seam to put it in. The frame is still
   one bordered box: the container draws left/top, the cells draw right/bottom, and the
   drawer spans the full content width carrying the same right/bottom hairlines.
-- **Exactly one drawer exists across the list.** `drawerAfterWeek` is `-1` unless the
+- **The drawer folds open and shut.** `MonthView` puts a `DrawerSlot` under every week
+  row; the slot wraps `DayDrawer` in `app/components/Collapsible.tsx` (plain `Animated`
+  height, so web and native match — `LayoutAnimation` is a no-op on web) and keeps the
+  last day rendered until the fold finishes. Once open, `Collapsible` drops its fixed
+  height and clipping, so new rows and the `@` popup (§21) aren't cut off.
+- **Exactly one drawer is open across the list.** (While one folds shut and another opens,
+  two are briefly mounted.) `drawerAfterWeek` is `-1` unless the
   month being rendered owns the selected date, and the week index comes from the same
   `mondayFirstOffset` the grid is built with — so the drawer cannot land in the wrong row.
 - **Pressing a day is a toggle.** The cell that opened the drawer closes it again
