@@ -51,7 +51,7 @@ const INITIAL_SPAN = 12;
 interface InfiniteListCalendarProps {
   /** Grid column width, measured by the screen so the weekday header can match it. */
   columnWidth: number;
-  /** The month filling most of the viewport, as it changes — the toolbar's sticky title. */
+  /** The month at the top of the viewport, as it changes — the toolbar's sticky title. */
   onVisibleMonthChange?: (month: CalendarMonth) => void;
   ref?: React.Ref<InfiniteListCalendarHandle>;
 }
@@ -175,8 +175,11 @@ const InfiniteListCalendar = ({
 
   // Two viewability passes, because they want different thresholds. A sliver of a month
   // is enough to say we're "near start" and prepend — anchored on that row so the restore
-  // effect can put it back under the viewport. The toolbar title, though, should name the
-  // month you are actually looking at, so it waits for one to be half on screen.
+  // effect can put it back under the viewport. The toolbar title behaves like a sticky
+  // header: it names the month crossing the top of the viewport, and only moves on once
+  // that month has scrolled off. The threshold is a share of the *viewport* (not of the
+  // month, which is what made the title flip halfway through), and it is 1% rather than 0
+  // so a rounding sliver of last month left above a scrollToIndex never names the page.
   const viewabilityConfigCallbackPairs = useRef([
     {
       viewabilityConfig: { itemVisiblePercentThreshold: 10 },
@@ -187,7 +190,7 @@ const InfiniteListCalendar = ({
       },
     },
     {
-      viewabilityConfig: { itemVisiblePercentThreshold: 50 },
+      viewabilityConfig: { viewAreaCoveragePercentThreshold: 1 },
       onViewableItemsChanged: ({ viewableItems }: { viewableItems: ViewToken<MonthRow>[] }) => {
         if (!viewableItems.length) return;
         const { year, month } = firstByIndex(viewableItems).item;

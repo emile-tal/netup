@@ -650,8 +650,11 @@ there too: `getDay() - 1` returns `-1` for a month starting on a Sunday.
 - **The month on the left is sticky.** `InfiniteListCalendar` reports the month in view
   through `onVisibleMonthChange`, and the toolbar draws it with the same `MonthTitle` each
   month in the list uses. The list runs **two** viewability passes
-  (`viewabilityConfigCallbackPairs`): the 10% one drives the prepend (§12), the 50% one
-  picks the title, so a sliver of last month never names the page. FlatList fixes those
+  (`viewabilityConfigCallbackPairs`): the 10% one drives the prepend (§12), and the
+  title takes the first month covering at least 1% of the *viewport*
+  (`viewAreaCoveragePercentThreshold`), so it behaves like a sticky header: it changes only
+  once the month above has scrolled off. Don't measure it against the month's own height
+  (`itemVisiblePercentThreshold: 50` flipped the title halfway through a month). FlatList fixes those
   callbacks at mount — read anything that changes through a ref. The page drops repeat
   reports of the same month so a scroll doesn't re-render it.
 - **"Today"** (the toolbar's `secondaryActionText`) calls the list's imperative
