@@ -107,7 +107,7 @@ selected day in the calendar, and the tick inside a checkbox.
 
 The primary action is the exception that proves the rule. Black on the full `blue` is
 4.66:1 — legal, but the label has to work for it — so **the primary button and the
-brand-filled header `IconButton` rest on `blue-light`** (black 7.71:1) and *deepen* to
+brand-filled toolbar `IconButton` rest on `blue-light`** (black 7.71:1) and *deepen* to
 `blue` on hover, which still clears the bar. **The active nav destination is a primary
 button** and uses the same pair, with its label and icon black in both states — the fill
 is the only thing that marks the current tab. The full `blue` stays the accent where it
@@ -191,7 +191,7 @@ Four variants, and the call site picks a **role**, never a colour (`app/componen
 
 - **`ScreenLayout` is the only place page chrome is set** — background, safe-area edges,
   and a `self-center` column capped at `max-w-content` (720px) or `max-w-wide` (1040px,
-  calendar only), padded `px-4 md:px-8`. Screens render `Header` and their content *inside*
+  calendar only), padded `px-4 md:px-8`. Screens render their `PageToolbar` and content *inside*
   it, never their own `SafeAreaView`.
 - **`Card` is the one surface panel.** White, hairline border, `rounded-2xl`.
 - **`ModalShell` is the one modal surface.** Every dialog is built on it; don't hand-roll a

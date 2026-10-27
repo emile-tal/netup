@@ -92,10 +92,10 @@ app/
       contacts/edit/[id].tsx # Edit + delete (→ updateContact / deleteContact) ✅
     calendar.tsx           # Month grid; the day list unfolds inside it (§20) ✅
     network.tsx            # The 5-15-50 board — drag contacts between circles ✅
-    settings.tsx           # Account + sync status + sign out ✅
+    profile.tsx            # The user's own page: name, password, sign out (§22) ✅
   components/
-    ScreenLayout.tsx       # Page bg + safe area + the white header bar + the column
-    Header.tsx             # THE header row: back control / title+subtitle left / actions right
+    ScreenLayout.tsx       # Page bg + safe area + the column + the `toolbar` slot
+    PageToolbar.tsx        # THE page controls row: back / label or search / actions (§13)
     Card.tsx               # THE surface panel (white, hairline border, rounded-2xl)
     ModalShell.tsx         # THE modal surface — every modal is built on this
     DateField.tsx          # Date input: value + clear x, opens DatePickerModal (§18)
@@ -105,31 +105,34 @@ app/
     MentionText.tsx        # A stored title read-only: tags drawn as bold names (§21)
     FullScreenLoader.tsx   # The whole-window spinner the root layout renders
     BootstrapScreen.tsx    # "Can't reach netup" — blocks an un-downloaded device (§17)
-    TierInfoModal.tsx      # The 5-15-50 explainer (first visit + header info button)
+    TierInfoModal.tsx      # The 5-15-50 explainer (first visit + toolbar info button)
     Button.tsx             # Pill button: primary / secondary / ghost / danger
     IconButton.tsx         # Circular tap target for a bare icon
     Avatar.tsx             # Initials circle, colour derived from the name
     TextField.tsx          # Bordered labelled input (modals/forms)
     SearchBar.tsx          # Pill search input with a clear control
     ScreenState.tsx        # Shared loading / error+retry / empty rendering
-    nav/                   # NavBar (picks) → SideNav | BottomNav → NavItem
+    nav/                   # NavBar (picks) → TopNav | BottomNav → NavItem
     contacts/              # ContactLink, ContactSearchBar, ContactOutreach,
                            #   ImportContactsModal (CSV import, §16)
     profile/               # ProfileCard + per-field sub-cards + CardRow + utils.ts
-    calendar/              # InfiniteListCalendar, MonthView, DayCell, WeekdayHeader,
+                           #   (a *contact's* profile — not the user's, see account/)
+    account/               # AccountRow, EditNameModal, ChangePasswordModal (§22)
+    calendar/              # InfiniteListCalendar, MonthView, MonthTitle, DayCell, WeekdayHeader,
                            #   weekdays.ts, AddOutreachModal, OutreachRow,
                            #   NewOutreachRow (the trailing blank line — §20),
                            #   DayDrawer (the selected day, inside the grid — §20)
     TierPill.tsx           # A contact's 5-15-50 circle as a pill (board + profile)
   hooks/                   # useContact, useOutreach, useDebouncedCallback,
-                           #   useIsWideLayout, useNavDestinations, useTierBoard,
+                           #   useLayoutMode, useNavDestinations, useTierBoard,
                            #   useOutreachRepair, useSync, useHydration, useTierInfo,
                            #   useContactDirectory (every contact, for `@` tagging — §21)
   providers/               # ProfileProvider — the app's one profile subscription
   utils/                   # date.ts, string.ts, id.ts, avatar.ts, outreach.ts,
                            #   inputStyle.ts(+.web), csv.ts, contactCsv.ts,
                            #   csvFile.ts(+.web), prefs.ts (per-device flags),
-                           #   mentions.ts (the pure `@` tagging logic — §21)
+                           #   mentions.ts (the pure `@` tagging logic — §21),
+                           #   tabs.ts (TAB_TITLES — the nav's labels, one list)
   stores/                  # zustand: contactStore, calendarStore, contactEditStore,
                            #   syncStore
   types/                   # Frontend DTOs: contacts.ts, outreach.ts, sync.ts, profile.ts
@@ -516,7 +519,7 @@ ever typechecks the non-suffixed file.
   observable re-emits. The default animation flies the overlay back to the source chip in the
   meantime, which looks exactly like the contact snapping back to the circle it came from.
 - **Prefer `useWindowDimensions()` over `Dimensions.get('window')`** — the latter is captured
-  once and never re-measures on browser resize. `useIsWideLayout()` is built on it. The
+  once and never re-measures on browser resize. `useLayoutMode()` is built on it. The
   calendar goes further and *measures* its container with `onLayout` (see §13).
 - **`maintainVisibleContentPosition` is iOS-only.** `InfiniteListCalendar` prepends months
   when you scroll near the top; on web and Android the viewport stays pinned at offset 0
@@ -551,7 +554,7 @@ ever typechecks the non-suffixed file.
 - **Ink on a colour is always black, never white** — no `DEFAULT` in the palette clears
   4.5:1 against white and all of them do against black. A fill's hover step is whichever
   neighbour keeps black above that, so a `DEFAULT` fill hovers *lighter*; the primary
-  button and the brand-filled header `IconButton` are the exception, resting on
+  button and the brand-filled toolbar `IconButton` are the exception, resting on
   `blue-light` (7.71:1) and deepening to `blue`. Text on paper stays `ink` (`#1A1A1A`);
   pure `black` is only ever used inside a fill. `bg-blue-500` and the other stock Tailwind
   ramps no longer compile, on purpose. See FRONTEND.md §3.
@@ -562,39 +565,48 @@ ever typechecks the non-suffixed file.
 
 ### Layout
 - **`ScreenLayout` is the only place page chrome is set**: background, safe-area edges,
-  the white header bar, and a `self-center` (auto-margin) column padded `px-4 md:px-8`.
+  and a `self-center` (auto-margin) column padded `px-4 md:px-8`.
   Screens render their list *inside* it — never their own `SafeAreaView`.
-- **Every app page is `max-w-wide` (1040px)** — one page size, so the title and actions
+- **Every app page is `max-w-wide` (1040px)** — one page size, so the toolbar's controls
   land in the same place on every tab. `max-w-content` (720px) is now only for the
   signed-out and first-run screens (auth, onboarding, `BootstrapScreen`,
   `reset-password`), which are short centred forms; they pass `width='content'`.
-- **The header goes in `ScreenLayout`'s `header` slot, not the page body.** The slot
-  draws the full-bleed white bar (hairline bottom border) and owns the **top safe-area
-  inset**, so the status bar reads as part of it — which is why `ScreenLayout` drops the
-  `top` edge when a header is present. `Header` itself sets no background. The slot takes
-  a node, so anything that belongs in the bar rather than the scrolling page goes in it
-  too: the contacts search field is in there, which is how it stays put while the list
-  scrolls. The gap under the bar is the slot's (`pt-4`); don't re-add it per screen.
-- **Every page uses `Header`, with the title on the left and the actions on the right.**
-  One filled (`brand`) action per screen, and the add actions are *specific* icons:
+- **There are no page titles.** The nav's filled destination says which page you are on,
+  on both mobile and desktop. The only white bar is the desktop nav itself.
+- **Page controls go in `ScreenLayout`'s `toolbar` slot, as a `PageToolbar`.** It sits at
+  the top of the page column on the page's own ground, outside the scrolling content, and
+  is identical on mobile and desktop: back (or a form's X) on the left, actions on the
+  right, and between them either a muted `label` ("New contact", "4 of 12 in a circle")
+  or `children` — the contacts search field, which is how it stays put while the list
+  scrolls. The gap under it (`pb-3`) and above it (`pt-3 md:pt-6`) are the layout's;
+  don't re-add them per screen.
+- **A back control can name where it goes** (`backText`): a contact's profile says
+  "← Contacts", or the tab it was opened from via `returnTo` ("← Calendar"), looked up
+  with `tabTitleForPath` from `app/utils/tabs.ts` — the same `TAB_TITLES` the nav draws.
+- One filled (`brand`) action per screen, and the add actions are *specific* icons:
   `PersonAddIcon` on contacts, `CalendarAddIcon` on the calendar. `AddIcon` (the bare
-  plus) is for inline "add another row" controls, never a header's primary action.
-- Safe-area edges follow the nav: the bottom bar owns the bottom inset on mobile, the
-  left rail owns the left inset on desktop, so `ScreenLayout` swaps `edges` accordingly.
+  plus) is for inline "add another row" controls, never a toolbar's primary action.
+- Safe-area edges follow the nav: the bottom bar owns the bottom inset on mobile, the top
+  bar owns the top inset on desktop, so `ScreenLayout` swaps `edges` accordingly. It tells
+  a tab page from a signed-out/first-run screen by `BottomTabBarHeightContext` (only the
+  tab navigator provides it); the latter have no nav and take all four edges.
   Don't re-add `insets.bottom` padding in a screen's `contentContainerStyle`.
 
-### Navigation (tabs ⇄ side rail)
-`useIsWideLayout()` (Tailwind's `md`, 768px, from `layout.navBreakpoint`) is the single
-breakpoint. Two things read it and **must stay in sync**:
-1. `app/(tabs)/_layout.tsx` sets `tabBarPosition: isWide ? 'left' : 'bottom'`, which is
-   what makes react-navigation lay the bar out on the correct axis.
-2. `components/nav/NavBar.tsx` renders `SideNav` or `BottomNav`.
+### Navigation (bottom bar ⇄ top bar)
+`useLayoutMode()` (`'mobile' | 'desktop'`, plus the `useIsDesktop()` shorthand, in
+`app/hooks/useLayoutMode.ts`) is the app's one mobile/desktop switch: Tailwind's `md`,
+768px, from `layout.desktopBreakpoint`. It is a *width*, not `Platform.OS`. Two things
+read it and **must stay in sync**:
+1. `app/(tabs)/_layout.tsx` sets `tabBarPosition: isDesktop ? 'top' : 'bottom'`, which is
+   what makes react-navigation put the bar on the correct edge.
+2. `components/nav/NavBar.tsx` renders `TopNav` (wordmark left, destinations right, in the
+   same `max-w-wide` column as the page) or `BottomNav`.
 
 **The contacts tab is a nested stack, and that is deliberate.** `app/(tabs)/(contacts)/`
 is a *group* (parens ⇒ no URL segment) with its own `Stack` layout: `index.tsx` is the
 list at `/`, and the profile / add / edit screens are pushed on top of it at
 `/contacts/...`. Because the stack lives inside the tab, a contact opens **in the region
-the list occupies** — the bottom bar or side rail stays put, and the form replaces the
+the list occupies** — the nav stays put, and the form replaces the
 list instead of covering the window. The push transition and the `dismissTo` unwinding in
 §10 are unchanged; `dismissTo('/')` now unwinds to the list at the root of *this* stack.
 Switching tabs leaves the stack where it was, which is the standard tab behaviour.
@@ -633,6 +645,18 @@ React Native is border-box, so the grid's 1px left border eats into the space th
 columns get — `weekdays.ts` owns that arithmetic (`GRID_BORDER_WIDTH`, `gridWidthFor`).
 Get it wrong and the seventh column wraps onto its own row. `mondayFirstOffset` lives
 there too: `getDay() - 1` returns `-1` for a month starting on a Sunday.
+
+### The calendar toolbar
+- **The month on the left is sticky.** `InfiniteListCalendar` reports the month in view
+  through `onVisibleMonthChange`, and the toolbar draws it with the same `MonthTitle` each
+  month in the list uses. The list runs **two** viewability passes
+  (`viewabilityConfigCallbackPairs`): the 10% one drives the prepend (§12), the 50% one
+  picks the title, so a sliver of last month never names the page. FlatList fixes those
+  callbacks at mount — read anything that changes through a ref. The page drops repeat
+  reports of the same month so a scroll doesn't re-render it.
+- **"Today"** (the toolbar's `secondaryActionText`) calls the list's imperative
+  `scrollToToday()` (React 19 `ref` prop + `useImperativeHandle`): it scrolls to the
+  current month by *key* — the index moves with every prepend — and opens today's drawer.
 
 ---
 
@@ -821,7 +845,7 @@ Rules that are easy to break:
 
 ## 16. CSV contact import
 
-The contacts header carries two actions: the brand-filled "+" and, to its left, a plain
+The contacts toolbar carries two actions: the brand-filled "+" and, to its left, a plain
 **import** button that opens `app/components/contacts/ImportContactsModal.tsx`. The modal
 downloads a CSV template and accepts a CSV upload. **Web only** for now — the native half
 of the file seam just says so (§12).
@@ -1001,7 +1025,7 @@ day you tapped a long way from its own list.
   for. This is the same move as the contact form's collections, where the trailing blank
   row *is* the add control (§6). There is no "nothing scheduled" empty state any more —
   an empty day is that one blank line, which says what to do instead of what is missing.
-  **`AddOutreachModal` is still the calendar header's action**, where no day is implied,
+  **`AddOutreachModal` is still the calendar toolbar's action**, where no day is implied,
   and the contact profile's.
 - **Variable month height is fine here.** `getItemLayout` is deliberately not set on the
   `FlatList` (there is a commented-out line and it should stay commented), so FlatList
@@ -1122,3 +1146,30 @@ The pieces:
 - **Bold is allowed in `MentionText` and nowhere else.** `font-nunito-bold` (the
   `NunitoBold` face, registered in `app/_layout.tsx`) exists for a tag shown read-only. The
   editor cannot use it (above), so the same tag is a wash there. See FRONTEND.md §2.
+
+---
+
+## 22. The user's profile tab
+
+The fourth tab is the signed-in user's own page (`app/(tabs)/profile.tsx`, `PersonIcon`) —
+not to be confused with a *contact's* profile (`ProfileCard`, `/contacts/[id]`). It
+replaced Settings. It shows the avatar, name and email, and offers exactly three actions:
+
+| Action | Where | Writes |
+|--------|-------|--------|
+| Change name | `account/EditNameModal` | `updateProfile` → the `profiles` row, synced (§15) |
+| Change password | `account/ChangePasswordModal` | `useAuth().changePassword` |
+| Sign out | `ConfirmDialog` | `useAuth().signOut` |
+
+- **Sync status is deliberately not shown.** `syncStore` still tracks it (and `useSync`
+  still fills it); it is just not the user's concern. Read it from there if a debug view
+  ever needs it.
+- **`changePassword` proves the current password first** by signing in again with it,
+  then calls `updateUser`. Without that, anyone holding an unlocked device could lock the
+  owner out, and the fresh session also satisfies Supabase's "recent login" rule for
+  password changes. A wrong current password throws `WrongPasswordError`, which the modal
+  shows on that field. Re-signing-in is safe: everything that holds the database keys on
+  the user *id*, which does not change.
+- `app/reset-password.tsx` (the emailed-link flow) still uses `updatePassword` alone —
+  there the link *is* the proof.
+

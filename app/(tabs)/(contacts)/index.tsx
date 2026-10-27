@@ -5,9 +5,9 @@ import PersonAddIcon from '../../icons/PersonAddIcon';
 import Card from '../../components/Card';
 import ContactLink from '../../components/contacts/ContactLink';
 import ContactSearchBar from '../../components/contacts/ContactSearchBar';
-import Header from '../../components/Header';
 import ImportContactsModal from '../../components/contacts/ImportContactsModal';
 import ImportIcon from '../../icons/ImportIcon';
+import PageToolbar from '../../components/PageToolbar';
 import ScreenLayout from '../../components/ScreenLayout';
 import ScreenState from '../../components/ScreenState';
 import { colors } from '../../theme';
@@ -60,28 +60,21 @@ const Contacts = () => {
 
   return (
     <ScreenLayout
-      header={
-        <>
-          <Header
-            title='Contacts'
-            subtitle={
-              count > 0 ? `${count} ${count === 1 ? 'person' : 'people'}` : undefined
-            }
-            actionIcon={<PersonAddIcon size={22} color={colors.black} />}
-            actionEmphasis='brand'
-            actionLabel='Add contact'
-            // `push`, so the form sits above the list and its X can simply pop.
-            onActionPress={() => router.push('/contacts/add')}
-            secondaryActionIcon={<ImportIcon size={20} color={colors.ink} />}
-            secondaryActionLabel='Import contacts from CSV'
-            onSecondaryActionPress={() => setImportVisible(true)}
-          />
-          {/* The search field belongs to the header bar, not the page: the list below it
-              scrolls, and the field must not scroll away with it. */}
-          <View className='pb-3'>
-            <ContactSearchBar />
-          </View>
-        </>
+      toolbar={
+        <PageToolbar
+          actionIcon={<PersonAddIcon size={22} color={colors.black} />}
+          actionEmphasis='brand'
+          actionLabel='Add contact'
+          // `push`, so the form sits above the list and its X can simply pop.
+          onActionPress={() => router.push('/contacts/add')}
+          secondaryActionIcon={<ImportIcon size={20} color={colors.ink} />}
+          secondaryActionLabel='Import contacts from CSV'
+          onSecondaryActionPress={() => setImportVisible(true)}
+        >
+          {/* In the toolbar, not the page: the list below scrolls, and the field must not
+              scroll away with it. */}
+          <ContactSearchBar />
+        </PageToolbar>
       }
     >
       {count === 0 ? (

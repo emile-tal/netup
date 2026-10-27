@@ -2,12 +2,13 @@ import CalendarIcon from '../icons/CalendarIcon';
 import ContactsIcon from '../icons/ContactsIcon';
 import NavBar from '../components/nav/NavBar';
 import NetworkIcon from '../icons/NetworkIcon';
-import SettingsIcon from '../icons/SettingsIcon';
+import PersonIcon from '../icons/PersonIcon';
 import { StatusBar } from 'expo-status-bar';
+import { TAB_TITLES } from '../utils/tabs';
 import { Tabs } from 'expo-router';
 import type { IconProps } from '../icons/types';
 import { colors } from '../theme';
-import { useIsWideLayout } from '../hooks/useIsWideLayout';
+import { useIsDesktop } from '../hooks/useLayoutMode';
 import { useOutreachRepair } from '../hooks/useOutreachRepair';
 
 /** react-navigation hands `tabBarIcon` a tint and size; our icons take exactly those. */
@@ -24,7 +25,7 @@ const tabIcon = (Icon: (props: IconProps) => React.ReactElement) => {
 export const unstable_settings = { initialRouteName: '(contacts)' };
 
 const Layout = () => {
-  const isWide = useIsWideLayout();
+  const isDesktop = useIsDesktop();
   // The tab layout mounts once for the life of the app, so this is where the 5-15-50
   // schedule gets its one launch-time repair pass.
   useOutreachRepair();
@@ -33,12 +34,12 @@ const Layout = () => {
     <>
       <StatusBar style='dark' />
       <Tabs
-        // NavBar renders the rail or the bar; tabBarPosition tells the navigator which
-        // axis to lay it out on, so both must read the same breakpoint.
+        // NavBar renders the top bar or the bottom bar; tabBarPosition tells the navigator
+        // which edge to lay it out on, so both must read the same hook.
         tabBar={props => <NavBar {...props} />}
         screenOptions={{
           headerShown: false,
-          tabBarPosition: isWide ? 'left' : 'bottom',
+          tabBarPosition: isDesktop ? 'top' : 'bottom',
           sceneStyle: { backgroundColor: colors.surfaceMuted },
         }}
       >
@@ -47,19 +48,19 @@ const Layout = () => {
             does. The parens keep the group out of the URL, so the list is still `/`. */}
         <Tabs.Screen
           name='(contacts)'
-          options={{ title: 'Contacts', tabBarIcon: tabIcon(ContactsIcon) }}
+          options={{ title: TAB_TITLES.contacts, tabBarIcon: tabIcon(ContactsIcon) }}
         />
         <Tabs.Screen
           name='calendar'
-          options={{ title: 'Calendar', tabBarIcon: tabIcon(CalendarIcon) }}
+          options={{ title: TAB_TITLES.calendar, tabBarIcon: tabIcon(CalendarIcon) }}
         />
         <Tabs.Screen
           name='network'
-          options={{ title: '5-15-50', tabBarIcon: tabIcon(NetworkIcon) }}
+          options={{ title: TAB_TITLES.network, tabBarIcon: tabIcon(NetworkIcon) }}
         />
         <Tabs.Screen
-          name='settings'
-          options={{ title: 'Settings', tabBarIcon: tabIcon(SettingsIcon) }}
+          name='profile'
+          options={{ title: TAB_TITLES.profile, tabBarIcon: tabIcon(PersonIcon) }}
         />
       </Tabs>
     </>

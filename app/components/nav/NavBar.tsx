@@ -1,16 +1,14 @@
 import BottomNav from './BottomNav';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import SideNav from './SideNav';
-import { useIsWideLayout } from '../../hooks/useIsWideLayout';
+import TopNav from './TopNav';
+import { useIsDesktop } from '../../hooks/useLayoutMode';
 
 /**
- * The app's tab bar. Below the `md` breakpoint it is a bottom bar; at desktop widths it
- * becomes a left rail. The navigator is told where to put it via `tabBarPosition` in
- * `app/(tabs)/_layout.tsx`, which reads the same breakpoint.
+ * The app's nav. On mobile it is a bottom tab bar; on desktop a bar across the top. The
+ * navigator is told where to put it via `tabBarPosition` in `app/(tabs)/_layout.tsx`,
+ * which reads the same hook.
  */
-const NavBar = (props: BottomTabBarProps) => {
-  const isWide = useIsWideLayout();
-  return isWide ? <SideNav {...props} /> : <BottomNav {...props} />;
-};
+const NavBar = (props: BottomTabBarProps) =>
+  useIsDesktop() ? <TopNav {...props} /> : <BottomNav {...props} />;
 
 export default NavBar;

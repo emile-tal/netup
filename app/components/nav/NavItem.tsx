@@ -6,12 +6,12 @@ interface NavItemProps {
   focused: boolean;
   onPress: () => void;
   onLongPress?: () => void;
-  /** `row` is the desktop rail (icon beside label), `column` the bottom bar. */
+  /** `row` is the desktop top bar (icon beside label), `column` the mobile bottom bar. */
   orientation: 'row' | 'column';
 }
 
 /**
- * One destination, shared by the side rail and the bottom tab bar.
+ * One destination, shared by the desktop top bar and the mobile bottom bar.
  *
  * **The active destination is a primary button**, and it is drawn exactly like one: the
  * `blue-light` fill deepening to `blue` on hover (see `Button`'s `primary`). The fill is
@@ -40,7 +40,7 @@ const NavItem = ({
       onLongPress={onLongPress}
       className={`rounded-xl ${
         isRow
-          ? 'flex-row items-center gap-3 px-3 py-2.5'
+          ? 'flex-row items-center gap-2 px-3.5 py-2'
           : 'flex-1 items-center justify-center gap-1 px-2 py-2'
       } ${focused ? 'bg-blue-light hover:bg-blue' : 'hover:bg-grey-light'}`}
     >

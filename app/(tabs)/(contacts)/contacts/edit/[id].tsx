@@ -6,7 +6,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import Button from '../../../../components/Button';
 import ConfirmDialog from '../../../../components/ConfirmDialog';
 import CheckIcon from '@/app/icons/CheckIcon';
-import Header from '../../../../components/Header';
+import PageToolbar from '../../../../components/PageToolbar';
 import ProfileCard from '../../../../components/profile/ProfileCard';
 import ScreenLayout from '../../../../components/ScreenLayout';
 import ScreenState from '../../../../components/ScreenState';
@@ -93,11 +93,11 @@ const EditContactPage = () => {
 
   return (
     <ScreenLayout
-      header={
-        <Header
-          title='Edit contact'
-          backButton
-          backIconProp={<XIcon size={20} color={colors.ink} />}
+      toolbar={
+        <PageToolbar
+          label='Edit contact'
+          backIcon={<XIcon size={20} color={colors.ink} />}
+          backLabel='Discard changes'
           onBackPress={closeToContact}
           actionIcon={<CheckIcon size={20} color={colors.black} />}
           actionEmphasis='brand'

@@ -455,9 +455,11 @@ Standard expo-router protected-route effect on `useSegments()`:
 
 ### 4.4 Where sign-out lives
 
-Add a fourth destination, **`app/(tabs)/settings.tsx`**. `useNavDestinations` flattens
+Add a fourth destination, **`app/(tabs)/settings.tsx`** *(since replaced by the user's
+Profile tab, `app/(tabs)/profile.tsx`, which no longer shows sync status — see CLAUDE.md
+§22)*. `useNavDestinations` flattens
 react-navigation state into a plain list, so a new tab is one entry in
-`app/(tabs)/_layout.tsx` and both `SideNav` and `BottomNav` pick it up automatically.
+`app/(tabs)/_layout.tsx` and both `TopNav` and `BottomNav` pick it up automatically.
 
 Shows: signed-in email, sign-out `Button` (`variant="danger"`), last-synced time, pending
 op count.

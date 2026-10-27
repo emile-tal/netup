@@ -1,7 +1,8 @@
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 
 import DayCell from './DayCell';
 import DayDrawer from './DayDrawer';
+import MonthTitle from './MonthTitle';
 import { gridWidthFor, mondayFirstOffset } from './weekdays';
 import { useMemo } from 'react';
 import useCalendarStore from '../../stores/calendarStore';
@@ -17,7 +18,6 @@ interface MonthViewProps {
 }
 
 const MonthView = ({ year, month, columnWidth }: MonthViewProps) => {
-  const title = new Date(year, month, 1).toLocaleString('en-US', { month: 'long' });
   const selectedDate = useCalendarStore(state => state.selectedDate);
 
   // Weeks, not one wrapping row of cells: the selected day's drawer is injected *between*
@@ -49,9 +49,8 @@ const MonthView = ({ year, month, columnWidth }: MonthViewProps) => {
 
   return (
     <View className='pb-6'>
-      <View className='flex-row items-baseline gap-2 px-1 pb-3 pt-5'>
-        <Text className='font-nunito text-[22px] text-ink'>{title}</Text>
-        <Text className='font-nunito text-[22px] text-ink-muted'>{year}</Text>
+      <View className='px-1 pb-3 pt-5'>
+        <MonthTitle year={year} month={month} />
       </View>
       <View
         className='border-l border-t border-line'

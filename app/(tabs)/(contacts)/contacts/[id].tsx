@@ -2,12 +2,13 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import ContactOutreach from '../../../components/contacts/ContactOutreach';
 import EditIcon from '../../../icons/EditIcon';
-import Header from '../../../components/Header';
+import PageToolbar from '../../../components/PageToolbar';
 import ProfileCard from '../../../components/profile/ProfileCard';
 import ScreenLayout from '../../../components/ScreenLayout';
 import ScreenState from '../../../components/ScreenState';
 import { colors } from '../../../theme';
 import { readReturnTo } from '../../../utils/returnTo';
+import { tabTitleForPath } from '../../../utils/tabs';
 import { useContact } from '../../../hooks/useContact';
 
 const ContactsPage = () => {
@@ -33,11 +34,11 @@ const ContactsPage = () => {
 
   return (
     <ScreenLayout
-      header={
-        <Header
-          title='Contact'
-          backButton
+      toolbar={
+        <PageToolbar
           onBackPress={goBack}
+          // Name the page back actually lands on: the tab the profile was opened from.
+          backText={tabTitleForPath(origin ? String(origin) : '/')}
           actionIcon={contact ? <EditIcon size={20} color={colors.black} /> : undefined}
           actionEmphasis='brand'
           actionLabel='Edit contact'

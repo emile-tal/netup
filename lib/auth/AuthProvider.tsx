@@ -27,6 +27,19 @@ interface AuthValue {
   sendPasswordReset: (email: string) => Promise<void>;
   /** Sets a new password for the session established by that link. */
   updatePassword: (password: string) => Promise<void>;
+  /**
+   * Changes a signed-in user's password, after proving they know the current one. Throws
+   * `WrongPasswordError` when they don't.
+   */
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
+}
+
+/** `changePassword`'s current password was wrong — the form shows it on that field. */
+export class WrongPasswordError extends Error {
+  constructor() {
+    super('That is not your current password');
+    this.name = 'WrongPasswordError';
+  }
 }
 
 const AuthContext = createContext<AuthValue | null>(null);
@@ -115,6 +128,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       updatePassword: async password => {
         const { error } = await supabase.auth.updateUser({ password });
+        if (error) throw error;
+      },
+
+      changePassword: async (currentPassword, newPassword) => {
+        const email = session?.user.email;
+        if (!email) throw new Error('You need to be signed in to change your password.');
+
+        // `updateUser` alone would accept a new password from anyone holding an unlocked
+        // device. Signing in again proves the current one, and the fresh session also
+        // satisfies the project's "recent login" rule for password changes.
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password: currentPassword,
+        });
+        if (signInError) {
+          if (signInError.code === 'invalid_credentials') throw new WrongPasswordError();
+          throw signInError;
+        }
+
+        const { error } = await supabase.auth.updateUser({ password: newPassword });
         if (error) throw error;
       },
     }),

@@ -1,9 +1,26 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import { FlatList } from 'react-native';
 import MonthView from './MonthView';
+import type { ViewToken } from 'react-native';
+import useCalendarStore from '../../stores/calendarStore';
 
 type MonthRow = { key: string; year: number; month: number }; // month 0-11
+
+export type CalendarMonth = { year: number; month: number };
+
+/** What the calendar screen can ask of the list from its toolbar. */
+export interface InfiniteListCalendarHandle {
+  /** Scrolls back to the current month and opens today's drawer. */
+  scrollToToday: () => void;
+}
 
 // helpers
 function addMonths({ year, month }: { year: number; month: number }, delta: number) {
@@ -34,9 +51,16 @@ const INITIAL_SPAN = 12;
 interface InfiniteListCalendarProps {
   /** Grid column width, measured by the screen so the weekday header can match it. */
   columnWidth: number;
+  /** The month filling most of the viewport, as it changes — the toolbar's sticky title. */
+  onVisibleMonthChange?: (month: CalendarMonth) => void;
+  ref?: React.Ref<InfiniteListCalendarHandle>;
 }
 
-const InfiniteListCalendar = ({ columnWidth }: InfiniteListCalendarProps) => {
+const InfiniteListCalendar = ({
+  columnWidth,
+  onVisibleMonthChange,
+  ref,
+}: InfiniteListCalendarProps) => {
   const today = useMemo(() => {
     const d = new Date();
     return { year: d.getFullYear(), month: d.getMonth() };
@@ -127,20 +151,50 @@ const InfiniteListCalendar = ({ columnWidth }: InfiniteListCalendarProps) => {
     });
   }, []);
 
-  // Use viewability to decide when we’re “near start”
-  const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
-    if (!viewableItems.length) return;
-    // If the first real item index in viewport is small, prepend — anchored on that row
-    // so the restore effect can put it back under the viewport.
-    const first = viewableItems.reduce((a: any, b: any) =>
-      (a.index ?? Infinity) <= (b.index ?? Infinity) ? a : b
-    );
-    if ((first.index ?? Infinity) <= 2) {
-      maybePrepend(first.item.key);
-    }
-  }).current;
+  useImperativeHandle(
+    ref,
+    () => ({
+      scrollToToday: () => {
+        const now = new Date();
+        useCalendarStore.getState().setSelectedDate(now);
+        const index = data.findIndex(
+          r => r.key === monthKey(now.getFullYear(), now.getMonth())
+        );
+        if (index >= 0) listRef.current?.scrollToIndex({ index, animated: true });
+      },
+    }),
+    [data]
+  );
 
-  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 10 }).current;
+  // Read through a ref: FlatList fixes its viewability callbacks at mount.
+  const onVisibleMonthChangeRef = useRef(onVisibleMonthChange);
+  onVisibleMonthChangeRef.current = onVisibleMonthChange;
+
+  const firstByIndex = (tokens: ViewToken<MonthRow>[]) =>
+    tokens.reduce((a, b) => ((a.index ?? Infinity) <= (b.index ?? Infinity) ? a : b));
+
+  // Two viewability passes, because they want different thresholds. A sliver of a month
+  // is enough to say we're "near start" and prepend — anchored on that row so the restore
+  // effect can put it back under the viewport. The toolbar title, though, should name the
+  // month you are actually looking at, so it waits for one to be half on screen.
+  const viewabilityConfigCallbackPairs = useRef([
+    {
+      viewabilityConfig: { itemVisiblePercentThreshold: 10 },
+      onViewableItemsChanged: ({ viewableItems }: { viewableItems: ViewToken<MonthRow>[] }) => {
+        if (!viewableItems.length) return;
+        const first = firstByIndex(viewableItems);
+        if ((first.index ?? Infinity) <= 2) maybePrepend(first.item.key);
+      },
+    },
+    {
+      viewabilityConfig: { itemVisiblePercentThreshold: 50 },
+      onViewableItemsChanged: ({ viewableItems }: { viewableItems: ViewToken<MonthRow>[] }) => {
+        if (!viewableItems.length) return;
+        const { year, month } = firstByIndex(viewableItems).item;
+        onVisibleMonthChangeRef.current?.({ year, month });
+      },
+    },
+  ]).current;
 
   return (
     <FlatList
@@ -166,8 +220,7 @@ const InfiniteListCalendar = ({ columnWidth }: InfiniteListCalendarProps) => {
         );
       }}
       // Backward growth
-      onViewableItemsChanged={onViewableItemsChanged}
-      viewabilityConfig={viewabilityConfig}
+      viewabilityConfigCallbackPairs={viewabilityConfigCallbackPairs}
       // Helps avoid jumps on iOS when prepending:
       // (supported on FlatList & SectionList, iOS only)
       maintainVisibleContentPosition={{ minIndexForVisible: 0 }}

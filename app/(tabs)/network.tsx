@@ -1,7 +1,7 @@
 import { ScrollView, Text, View } from 'react-native';
 
-import Header from '../components/Header';
 import InfoIcon from '../icons/InfoIcon';
+import PageToolbar from '../components/PageToolbar';
 import ScreenLayout from '../components/ScreenLayout';
 import ScreenState from '../components/ScreenState';
 import TierBoard from '@/components/network/TierBoard';
@@ -24,10 +24,9 @@ const NetworkPage = () => {
 
   return (
     <ScreenLayout
-      header={
-        <Header
-          title='5-15-50'
-          subtitle={total > 0 ? `${assigned} of ${total} in a circle` : undefined}
+      toolbar={
+        <PageToolbar
+          label={total > 0 ? `${assigned} of ${total} in a circle` : undefined}
           secondaryActionIcon={<InfoIcon size={20} color={colors.inkMuted} />}
           onSecondaryActionPress={openInfo}
           secondaryActionLabel='About the 5-15-50 model'

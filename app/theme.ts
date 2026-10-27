@@ -165,11 +165,10 @@ export const layout = {
   contentMaxWidth: 720,
   /** The calendar grid, which wants more room. */
   wideMaxWidth: 1040,
-  /** Width of the desktop side rail. */
-  sideNavWidth: 232,
   /**
-   * Tailwind's `md`. Below it the nav is a bottom tab bar, at or above it becomes the
-   * side rail — keep this in sync with the `md:` classes used for padding.
+   * Tailwind's `md`, and the one line between mobile and desktop (`useLayoutMode`). Below
+   * it the nav is a bottom tab bar, at or above it a top bar — keep this in sync with the
+   * `md:` classes used for padding.
    */
-  navBreakpoint: 768,
+  desktopBreakpoint: 768,
 } as const;

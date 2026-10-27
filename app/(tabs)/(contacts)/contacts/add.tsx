@@ -6,7 +6,7 @@ import {
 import { useEffect, useState } from 'react';
 
 import CheckIcon from '../../../icons/CheckIcon';
-import Header from '../../../components/Header';
+import PageToolbar from '../../../components/PageToolbar';
 import ProfileCard from '../../../components/profile/ProfileCard';
 import ScreenLayout from '../../../components/ScreenLayout';
 import XIcon from '../../../icons/XIcon';
@@ -55,11 +55,11 @@ const AddContactPage = () => {
 
   return (
     <ScreenLayout
-      header={
-        <Header
-          title='New contact'
-          backButton
-          backIconProp={<XIcon size={20} color={colors.ink} />}
+      toolbar={
+        <PageToolbar
+          label='New contact'
+          backIcon={<XIcon size={20} color={colors.ink} />}
+          backLabel='Discard new contact'
           onBackPress={() => router.back()}
           actionIcon={<CheckIcon size={20} color={colors.black} />}
           actionEmphasis='brand'

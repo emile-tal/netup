@@ -12,7 +12,7 @@ export interface NavDestination {
 }
 
 /**
- * Flattens react-navigation's tab bar props into a plain list, so the side rail and the
+ * Flattens react-navigation's tab bar props into a plain list, so the top bar and the
  * bottom bar render the same destinations without each re-deriving them.
  */
 export function useNavDestinations({
