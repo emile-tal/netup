@@ -11,7 +11,15 @@ interface ModalShellProps {
   children?: React.ReactNode;
   /** Actions, laid out in a right-aligned row below the content. */
   footer?: React.ReactNode;
+  /** `wide` is for reading, not forms — a panel of prose that would wrap too tightly. */
+  width?: 'default' | 'wide';
 }
+
+// Whole literal classes, so NativeWind's source scan generates both.
+const PANEL_WIDTH = {
+  default: 'max-w-[420px]',
+  wide: 'max-w-[600px]',
+} as const;
 
 /**
  * The app's one modal surface: dimmed backdrop, centred panel, title, content, actions.
@@ -26,6 +34,7 @@ const ModalShell = ({
   title,
   children,
   footer,
+  width = 'default',
 }: ModalShellProps) => {
   return (
     <Modal
@@ -43,7 +52,9 @@ const ModalShell = ({
             className='absolute inset-0'
           />
         )}
-        <View className='w-full max-w-[420px] rounded-2xl border border-line bg-surface p-6'>
+        <View
+          className={`w-full ${PANEL_WIDTH[width]} rounded-2xl border border-line bg-surface p-6`}
+        >
           {title && <Text className='font-nunito text-[21px] text-ink'>{title}</Text>}
           {children}
           {footer && <View className='mt-6 flex-row justify-end gap-2'>{footer}</View>}

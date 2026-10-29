@@ -3,13 +3,13 @@ import {
   TIERS,
   TIER_CADENCE_LABELS,
   TIER_DESCRIPTIONS,
+  TIER_LABELS,
   TIER_STYLES,
 } from '../utils/outreach';
 
 import Button from './Button';
 import Checkbox from './Checkbox';
 import ModalShell from './ModalShell';
-import TierPill from './TierPill';
 import { useEffect, useState } from 'react';
 
 const PARAGRAPH = 'font-nunito text-[14px] leading-5 text-ink-muted';
@@ -43,6 +43,7 @@ const TierInfoModal = ({ visible, onClose }: TierInfoModalProps) => {
       visible={visible}
       onRequestClose={() => onClose(dontShowAgain)}
       title='The 5-15-50 model'
+      width='wide'
       footer={
         <View className='flex-1 flex-row items-center justify-between gap-2'>
           <Checkbox
@@ -60,42 +61,52 @@ const TierInfoModal = ({ visible, onClose }: TierInfoModalProps) => {
         contentContainerStyle={{ gap: 16 }}
       >
         <Text className={PARAGRAPH}>
-          Oxford professor Robin Dunbar&apos;s research suggests we can maintain about 150
-          meaningful relationships, arranged in layers that grow less close as they grow
-          larger. The 5-15-50 rule applies that to your professional network: sort contacts
-          into three circles, and give each circle its own rhythm of contact.
+          Nobody can stay equally close to everyone they know. There are a few people you
+          lean on, a wider ring you trust, and a larger group you know well enough to call
+          on. The 5-15-50 model gives each of those rings a name and a rhythm, so the
+          people who matter don&apos;t quietly drift away.
         </Text>
 
-        {TIERS.map(tier => (
-          <View key={tier} className={`gap-1.5 rounded-xl p-3 ${TIER_STYLES[tier].wash}`}>
-            <View className='flex-row items-center justify-between gap-2'>
-              <TierPill tier={tier} />
-              <Text className={`font-nunito text-[12px] ${TIER_STYLES[tier].text}`}>
-                {TIER_CADENCE_LABELS[tier]}
-              </Text>
+        <View className='overflow-hidden rounded-xl border border-line'>
+          {TIERS.map((tier, i) => (
+            <View
+              key={tier}
+              className={`flex-row items-start gap-3 px-4 py-3 ${i > 0 ? 'border-t border-line' : ''}`}
+            >
+              <View
+                className={`h-9 w-9 items-center justify-center rounded-full ${TIER_STYLES[tier].fill}`}
+              >
+                <Text className='font-nunito text-[14px] text-black'>{tier}</Text>
+              </View>
+              <View className='flex-1 gap-0.5'>
+                <View className='flex-row flex-wrap items-baseline justify-between gap-x-2'>
+                  <Text className='font-nunito text-[15px] text-ink'>
+                    {TIER_LABELS[tier]}
+                  </Text>
+                  <Text className={`font-nunito text-[12px] ${TIER_STYLES[tier].text}`}>
+                    {TIER_CADENCE_LABELS[tier]}
+                  </Text>
+                </View>
+                <Text className='font-nunito text-[13px] leading-5 text-ink-muted'>
+                  {TIER_DESCRIPTIONS[tier]}
+                </Text>
+              </View>
             </View>
-            <Text className='font-nunito text-[13px] leading-5 text-ink-muted'>
-              {TIER_DESCRIPTIONS[tier]}
-            </Text>
-          </View>
-        ))}
+          ))}
+        </View>
 
         <Text className={PARAGRAPH}>
-          A 2022 study of 20 million LinkedIn users, published in Science, found that
-          moderately weak ties (people you know, but not closely) were the most valuable
-          for changing jobs.
+          Don&apos;t underrate the outer circle. People you know a little tend to move in
+          different worlds from you, and that is often where the next opportunity turns
+          up.
         </Text>
         <Text className={PARAGRAPH}>
-          Keeping up 70 relationships, each on its own schedule, is hard to do from memory.
-          netup sorts your network by circle and reminds you when each person is due.
+          Seventy relationships on three different schedules is a lot to hold in your
+          head. netup sorts your network by circle and tells you when each person is due.
         </Text>
         <Text className={PARAGRAPH}>
           Hold and drag a contact to move them between circles, or tap one to open their
           profile.
-        </Text>
-        <Text className='font-nunito text-[12px] leading-4 text-ink-subtle'>
-          Rajkumar et al., &ldquo;A causal test of the strength of weak ties,&rdquo; Science
-          377 (2022).
         </Text>
       </ScrollView>
     </ModalShell>
