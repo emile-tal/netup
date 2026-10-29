@@ -1,4 +1,4 @@
-import { ScrollView, Text, View } from 'react-native';
+import { ScrollView } from 'react-native';
 
 import InfoIcon from '../icons/InfoIcon';
 import PageToolbar from '../components/PageToolbar';
@@ -14,11 +14,12 @@ import { useTierInfo } from '../hooks/useTierInfo';
 /**
  * The 5-15-50 board: which circle each contact is in, and the only place that is changed.
  *
- * Moving a contact between circles rewrites their generated outreach outreach, so the
- * calendar reflects a drag immediately (see `db/repo/outreach.ts`).
+ * Moving a contact between circles rewrites their generated outreach, so the calendar
+ * reflects a drag immediately (see `db/repo/outreach.ts`). Tapping one opens their profile,
+ * whose back arrow returns here.
  */
 const NetworkPage = () => {
-  const { buckets, loading, error, move, total } = useTierBoard();
+  const { buckets, loading, error, move, open, total } = useTierBoard();
   const { visible: infoVisible, open: openInfo, close: closeInfo } = useTierInfo();
   const assigned = TIERS.reduce((sum, tier) => sum + buckets.byTier[tier].length, 0);
 
@@ -46,13 +47,9 @@ const NetworkPage = () => {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 24 }}
         >
-          <View className='pb-3'>
-            <Text className='font-nunito text-[13px] leading-5 text-ink-muted'>
-              Hold a contact and drag them between circles. Each circle sets how often
-              netup reminds you to reach out.
-            </Text>
-          </View>
-          <TierBoard buckets={buckets} onMove={move} />
+          {/* How to use the board and what the circles mean live in the info panel —
+              the toolbar's info button, and it opens by itself on the first visit. */}
+          <TierBoard buckets={buckets} onMove={move} onOpen={open} />
         </ScrollView>
       )}
 

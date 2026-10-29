@@ -14,6 +14,7 @@ interface DraggableChipProps {
   /** Called on every move so the board can highlight the column being hovered. */
   onDragMove: (x: number, y: number) => void;
   onDragEnd: () => void;
+  onPress: (contactId: string) => void;
 }
 
 /** How long to hold before the chip lifts, leaving shorter drags to scroll the page. */
@@ -34,36 +35,47 @@ const DraggableChip = ({
   onDragStart,
   onDragMove,
   onDragEnd,
+  onPress,
 }: DraggableChipProps) => {
   const [dragging, setDragging] = useState(false);
   const offset = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
 
-  const pan = useMemo(
-    () =>
-      Gesture.Pan()
-        .activateAfterLongPress(LIFT_DELAY_MS)
-        .runOnJS(true)
-        .onStart(() => {
-          setDragging(true);
-          onDragStart(contact.id);
-        })
-        .onUpdate(event => {
-          offset.setValue({ x: event.translationX, y: event.translationY });
-          onDragMove(event.absoluteX, event.absoluteY);
-        })
-        .onEnd(event => onDrop(contact.id, event.absoluteX, event.absoluteY))
-        // Runs after onEnd, and also when the gesture is cancelled, so the chip always
-        // snaps home and the board always clears its highlight.
-        .onFinalize(() => {
-          setDragging(false);
-          offset.setValue({ x: 0, y: 0 });
-          onDragEnd();
-        }),
-    [contact.id, offset, onDrop, onDragStart, onDragMove, onDragEnd]
-  );
+  const gesture = useMemo(() => {
+    const pan = Gesture.Pan()
+      .activateAfterLongPress(LIFT_DELAY_MS)
+      .runOnJS(true)
+      .onStart(() => {
+        setDragging(true);
+        onDragStart(contact.id);
+      })
+      .onUpdate(event => {
+        offset.setValue({ x: event.translationX, y: event.translationY });
+        onDragMove(event.absoluteX, event.absoluteY);
+      })
+      .onEnd(event => onDrop(contact.id, event.absoluteX, event.absoluteY))
+      // Runs after onEnd, and also when the gesture is cancelled, so the chip always
+      // snaps home and the board always clears its highlight.
+      .onFinalize(() => {
+        setDragging(false);
+        offset.setValue({ x: 0, y: 0 });
+        onDragEnd();
+      });
+
+    // A quick tap opens the contact. `Exclusive` gives the pan first claim, so the tap
+    // only fires once the pan has failed — released before the long-press lifted it.
+    const tap = Gesture.Tap()
+      // A swipe that starts on a chip is the page scrolling, not a tap.
+      .maxDistance(10)
+      .runOnJS(true)
+      .onEnd((_event, success) => {
+        if (success) onPress(contact.id);
+      });
+
+    return Gesture.Exclusive(pan, tap);
+  }, [contact.id, offset, onDrop, onDragStart, onDragMove, onDragEnd, onPress]);
 
   return (
-    <GestureDetector gesture={pan}>
+    <GestureDetector gesture={gesture}>
       <Animated.View
         style={{
           transform: offset.getTranslateTransform(),

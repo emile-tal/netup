@@ -3,7 +3,7 @@
 // drop-target vocabulary and the hit-testing live here so they can't drift.
 
 import type { ContactSummary, Tier } from '@/app/types/contacts';
-import { TIERS, isTier } from '@/app/utils/outreach';
+import { isTier } from '@/app/utils/outreach';
 
 /** Where a contact can be dropped: into one of the three circles, or out of them. */
 export type DropTarget = Tier | null;
@@ -17,6 +17,8 @@ export interface TierBoardProps {
   buckets: TierBuckets;
   /** Called once per completed drag. `null` drops the contact out of the 5-15-50. */
   onMove: (contactId: string, target: DropTarget) => void;
+  /** A tap (native) or click (web) on a chip: opens that contact's profile. */
+  onOpen: (contactId: string) => void;
 }
 
 /** Splits the contact list into the four board regions, preserving the repo's ordering. */
@@ -33,6 +35,13 @@ export function bucketByTier(contacts: ContactSummary[]): TierBuckets {
 }
 
 export const UNASSIGNED_KEY = 'unassigned';
+
+/**
+ * A chip's width in the unassigned pool: three to a row at phone width, so the pool's
+ * chips line up with the circle columns beneath it, and four from `md` up. A whole
+ * literal because NativeWind scans source text.
+ */
+export const POOL_CHIP_WIDTH = 'w-[31.5%] md:w-[23.8%]';
 
 /** Stable id for a drop zone — dnd-kit needs a string, the native board keys a Map by it. */
 export function dropZoneKey(target: DropTarget): string {
@@ -74,5 +83,3 @@ export function hitTest(
   return undefined;
 }
 
-/** Board regions in render order: the three circles, then the unassigned pool. */
-export const BOARD_TARGETS: readonly DropTarget[] = [...TIERS, null];

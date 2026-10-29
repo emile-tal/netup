@@ -1,10 +1,17 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { View } from 'react-native';
 
 import type { Rect } from './board';
 
 interface DropZoneProps {
-  onMeasure: (rect: Rect) => void;
+  zoneKey: string;
+  /** `null` when the zone unmounts, so a hidden zone can't keep catching drops. */
+  onMeasure: (zoneKey: string, rect: Rect | null) => void;
+  /**
+   * Re-measures whenever this changes. `onLayout` doesn't fire when the page scrolls, so
+   * the board bumps it at the start of each drag to catch rects the scroll has moved.
+   */
+  measureSignal?: unknown;
   /**
    * Lifts the whole zone above its siblings. A chip's own `zIndex` only orders it within
    * its parent, so without this a chip dragged rightward would slide *under* the next
@@ -24,14 +31,27 @@ interface DropZoneProps {
  * resize or a device rotation — the reason this measures rather than deriving positions
  * from the window size (CLAUDE.md §12).
  */
-const DropZone = ({ onMeasure, elevated, className, children }: DropZoneProps) => {
+const DropZone = ({
+  zoneKey,
+  onMeasure,
+  measureSignal,
+  elevated,
+  className,
+  children,
+}: DropZoneProps) => {
   const ref = useRef<View>(null);
 
   const measure = useCallback(() => {
     ref.current?.measureInWindow((x, y, width, height) => {
-      onMeasure({ x, y, width, height });
+      onMeasure(zoneKey, { x, y, width, height });
     });
-  }, [onMeasure]);
+  }, [zoneKey, onMeasure]);
+
+  useEffect(() => {
+    if (measureSignal) measure();
+  }, [measureSignal, measure]);
+
+  useEffect(() => () => onMeasure(zoneKey, null), [zoneKey, onMeasure]);
 
   return (
     <View

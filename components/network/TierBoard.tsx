@@ -1,12 +1,13 @@
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 import { useCallback, useRef, useState } from 'react';
 
 import DraggableChip from './DraggableChip';
 import DropZone from './DropZone';
+import EmptyColumnHint from './EmptyColumnHint';
 import TierColumn from './TierColumn';
 import type { ContactSummary } from '@/app/types/contacts';
 import type { DropTarget, Rect, TierBoardProps } from './board';
-import { dropZoneKey, hitTest } from './board';
+import { POOL_CHIP_WIDTH, dropZoneKey, hitTest } from './board';
 import { TIERS } from '@/app/utils/outreach';
 
 /**
@@ -18,15 +19,16 @@ import { TIERS } from '@/app/utils/outreach';
  * this file for `TierBoard.web.tsx`, which hands the same job to dnd-kit; both take
  * `TierBoardProps` and render the same `TierColumn`/`ContactChip`.
  */
-const TierBoard = ({ buckets, onMove }: TierBoardProps) => {
+const TierBoard = ({ buckets, onMove, onOpen }: TierBoardProps) => {
   const zones = useRef(new Map<string, Rect>()).current;
   // `undefined` means "over no zone at all"; `null` is a real target (unassigned).
   const [hovered, setHovered] = useState<DropTarget | undefined>(undefined);
   const [draggingId, setDraggingId] = useState<string | null>(null);
 
   const registerZone = useCallback(
-    (target: DropTarget) => (rect: Rect) => {
-      zones.set(dropZoneKey(target), rect);
+    (key: string, rect: Rect | null) => {
+      if (rect) zones.set(key, rect);
+      else zones.delete(key);
     },
     [zones]
   );
@@ -64,6 +66,7 @@ const TierBoard = ({ buckets, onMove }: TierBoardProps) => {
       onDragStart={handleDragStart}
       onDragMove={handleDragMove}
       onDragEnd={handleDragEnd}
+      onPress={onOpen}
     />
   );
 
@@ -71,12 +74,46 @@ const TierBoard = ({ buckets, onMove }: TierBoardProps) => {
     !!draggingId && contacts.some(contact => contact.id === draggingId);
 
   return (
-    <View className='gap-3'>
-      <View className='flex-row gap-2'>
+    <View className='gap-3 md:gap-4'>
+      {/* The pool is the to-do list, so it leads — and it is only drawn while it has
+          someone in it. `DropZone` unregisters itself on unmount, so a hidden pool
+          can't keep catching drops. */}
+      {buckets.unassigned.length > 0 && (
+        <DropZone
+          zoneKey={dropZoneKey(null)}
+          onMeasure={registerZone}
+          measureSignal={draggingId}
+          elevated={holdsDragged(buckets.unassigned)}
+        >
+          <TierColumn
+            target={null}
+            count={buckets.unassigned.length}
+            isOver={hovered === null}
+          >
+            <View className='flex-row flex-wrap gap-2'>
+              {buckets.unassigned.map(contact => (
+                <View
+                  key={contact.id}
+                  className={POOL_CHIP_WIDTH}
+                  // Same sibling-stacking problem as the columns, one level down.
+                  style={
+                    draggingId === contact.id ? { zIndex: 30, elevation: 30 } : undefined
+                  }
+                >
+                  {renderChip(contact)}
+                </View>
+              ))}
+            </View>
+          </TierColumn>
+        </DropZone>
+      )}
+      <View className='flex-row gap-2 md:gap-4'>
         {TIERS.map(tier => (
           <DropZone
             key={tier}
-            onMeasure={registerZone(tier)}
+            zoneKey={dropZoneKey(tier)}
+            onMeasure={registerZone}
+            measureSignal={draggingId}
             elevated={holdsDragged(buckets.byTier[tier])}
             className='flex-1'
           >
@@ -86,9 +123,7 @@ const TierBoard = ({ buckets, onMove }: TierBoardProps) => {
               isOver={hovered === tier}
             >
               {buckets.byTier[tier].length === 0 ? (
-                <Text className='font-nunito px-1 py-3 text-center text-[11px] text-ink-subtle'>
-                  Drag someone here
-                </Text>
+                <EmptyColumnHint />
               ) : (
                 buckets.byTier[tier].map(renderChip)
               )}
@@ -96,37 +131,6 @@ const TierBoard = ({ buckets, onMove }: TierBoardProps) => {
           </DropZone>
         ))}
       </View>
-      <DropZone
-        onMeasure={registerZone(null)}
-        elevated={holdsDragged(buckets.unassigned)}
-      >
-        <TierColumn
-          target={null}
-          count={buckets.unassigned.length}
-          isOver={hovered === null}
-        >
-          <View className='flex-row flex-wrap gap-1.5'>
-            {buckets.unassigned.length === 0 ? (
-              <Text className='font-nunito px-1 py-3 text-[11px] text-ink-subtle'>
-                Everyone is in a circle.
-              </Text>
-            ) : (
-              buckets.unassigned.map(contact => (
-                <View
-                  key={contact.id}
-                  className='w-[31%]'
-                  // Same sibling-stacking problem as the columns, one level down.
-                  style={
-                    draggingId === contact.id ? { zIndex: 30, elevation: 30 } : undefined
-                  }
-                >
-                  {renderChip(contact)}
-                </View>
-              ))
-            )}
-          </View>
-        </TierColumn>
-      </DropZone>
     </View>
   );
 };

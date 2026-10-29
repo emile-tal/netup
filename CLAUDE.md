@@ -674,13 +674,13 @@ Every contact sits in one **circle**, or none:
 
 | Tier | Label | What it means | Cadence | Colour token |
 |------|-------|---------------|---------|--------------|
-| `5` | Inner circle | Your closest allies: Mentors, sponsors, champions. | every 14 days | `blue` |
-| `15` | Trusted network | Strategic contacts who would advocate for you. | monthly | `yellow` |
-| `50` | Strategic network | Valuable weak ties that open new doors. | quarterly | `red` |
+| `5` | Inner circle | Mentors and closest collaborators. | every 14 days | `blue` |
+| `15` | Trusted network | Former managers, trusted peers, key contacts. | monthly | `yellow` |
+| `50` | Strategic network | Classmates, industry contacts, people from events. | quarterly | `red` |
 | `null` | Unassigned | — | none | neutral |
 
 The "what it means" column is `TIER_DESCRIPTIONS`, and it is the **user's copy** — shown on
-the board columns and under the circle picker on a profile. Do not paraphrase it.
+the 5-15-50 info panel and under the circle picker on a profile. Do not paraphrase it.
 
 `app/utils/outreach.ts` is the single config: labels, descriptions, cadence intervals, the
 Tailwind class triples (`TIER_STYLES`), `nextOutreachDate()`, `outreachTitle()`. Change a cadence there and
@@ -732,16 +732,25 @@ Rules that are easy to break:
 screen owns `contactStore` and keeps it search-filtered, so the board must not share that
 slice) → `TierBoard`.
 
-Three columns plus an **Unassigned** pool, side by side even on a phone (~110px each), and
-the header shows `count/target` so an over- or under-filled circle is obvious, over the
-circle's `TIER_DESCRIPTIONS` line and its cadence. The head carries the circle's `-lighter`
-wash with the label in its `-darker` tone; **the wash stops at the head** — twelve chips on a
-tinted field turn the column into a highlighter block. That head carries a
-`min-h-[112px] md:min-h-0`, because at phone width
-the label and description wrap to different line counts per column and the first chip in
-each would otherwise start at a different y. The columns
-are deliberately **not `Card`s and not scrollable**: `Card` clips, and a dragged chip has to
-travel out of the column it started in. The page scrolls as one.
+Three columns side by side even on a phone (~110px each), under an **Unassigned** pool
+that leads the page and is **only drawn while someone is in it** — so once everyone is
+sorted, unassigning a contact means the profile's circle picker, not a drag. Each head
+shows the label, `count/target` (so an over- or under-filled circle is obvious) and the
+cadence. **The board carries no explanatory text**: `TIER_DESCRIPTIONS`, the background
+and the how-to-drag hint all live in `TierInfoModal` (toolbar info button; auto-opens on
+the first visit). Chips grow at `md` and add the contact's role. The head carries the
+circle's `-lighter` wash with the label in its `-darker` tone; **the wash stops at the
+head** — twelve chips on a tinted field turn the column into a highlighter block. The
+label reserves two lines below `md`, because "Strategic network" wraps where "Inner circle"
+may not and the first chip in each column would otherwise start at a different y. The
+columns are deliberately **not `Card`s and not scrollable**: `Card` clips, and a dragged
+chip has to travel out of the column it started in. The page scrolls as one.
+
+**Tapping a chip opens the contact** with `returnTo` (§13), so the profile's back arrow
+lands on the board. Native: `Gesture.Exclusive(pan, tap)` — the tap only fires once the
+long-press pan has failed. Web: the chip `div`'s `onClick`; dnd-kit's 4px activation
+distance is what keeps a click from being a drag. A drop onto the circle a contact is
+already in is a no-op (`useTierBoard.move`), so it can't re-derive a hand-nudged date.
 
 Native drag notes, since none of it has run on a device:
 - `Gesture.Pan().activateAfterLongPress(200).runOnJS(true)` — long-press activation is what
@@ -750,7 +759,9 @@ Native drag notes, since none of it has run on a device:
   involved and the movement is a plain `Animated.ValueXY`.
 - Drop zones are **measured** (`DropZone` → `measureInWindow`) and the gesture reports the
   finger in the same window coordinates, so one `hitTest` works at any width or orientation.
-  `onLayout` re-fires on resize, which keeps the rects honest.
+  `onLayout` re-fires on resize but **not on scroll**, so every zone also re-measures at the
+  start of each drag (`measureSignal`). A zone deletes its rect on unmount — the hidden
+  pool must not keep catching drops.
 - React Native `zIndex` only orders siblings *within a parent*, so the board also lifts the
   whole `DropZone` the dragged chip came from (`elevated`). Without it a chip dragged
   rightward slides under the next column.

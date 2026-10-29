@@ -10,15 +10,15 @@ import {
 } from '@dnd-kit/core';
 import { useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 
 import { TIERS } from '@/app/utils/outreach';
-import type { ContactSummary } from '@/app/types/contacts';
 import type { TierBoardProps } from './board';
-import { dropZoneTarget } from './board';
+import { POOL_CHIP_WIDTH, dropZoneTarget } from './board';
 import ContactChip from './ContactChip';
 import DndKitChip from './DndKitChip.web';
 import DndKitColumn from './DndKitColumn.web';
+import EmptyColumnHint from './EmptyColumnHint';
 
 /**
  * The web 5-15-50 board, on dnd-kit.
@@ -34,7 +34,7 @@ import DndKitColumn from './DndKitColumn.web';
  * drop itself, so none of the native board's coordinate measuring is needed here, and
  * `DragOverlay` draws the chip that follows the cursor.
  */
-const TierBoard = ({ buckets, onMove }: TierBoardProps) => {
+const TierBoard = ({ buckets, onMove, onOpen }: TierBoardProps) => {
   // The distance constraint keeps a click on a chip a click, not a 0px drag. The keyboard
   // sensor is what makes the announcements dnd-kit already renders actually usable —
   // space to lift, arrows to move, space to drop.
@@ -62,17 +62,6 @@ const TierBoard = ({ buckets, onMove }: TierBoardProps) => {
     onMove(String(event.active.id), target);
   };
 
-  const renderChips = (contacts: ContactSummary[], emptyHint: string) => {
-    if (contacts.length === 0) {
-      return (
-        <Text className='font-nunito px-1 py-3 text-center text-[11px] text-ink-subtle'>
-          {emptyHint}
-        </Text>
-      );
-    }
-    return contacts.map(contact => <DndKitChip key={contact.id} contact={contact} />);
-  };
-
   const dragging = draggingId ? byId.get(draggingId) : undefined;
 
   return (
@@ -82,29 +71,32 @@ const TierBoard = ({ buckets, onMove }: TierBoardProps) => {
       onDragEnd={handleDragEnd}
       onDragCancel={() => setDraggingId(null)}
     >
-      <View className='gap-3'>
-        <View className='flex-row gap-2'>
+      <View className='gap-3 md:gap-4'>
+        {/* The pool leads, and only while it has someone in it (see TierBoard.tsx). */}
+        {buckets.unassigned.length > 0 && (
+          <DndKitColumn target={null} count={buckets.unassigned.length}>
+            <View className='flex-row flex-wrap gap-2'>
+              {buckets.unassigned.map(contact => (
+                <View key={contact.id} className={POOL_CHIP_WIDTH}>
+                  <DndKitChip contact={contact} onOpen={onOpen} />
+                </View>
+              ))}
+            </View>
+          </DndKitColumn>
+        )}
+        <View className='flex-row gap-2 md:gap-4'>
           {TIERS.map(tier => (
             <DndKitColumn key={tier} target={tier} count={buckets.byTier[tier].length}>
-              {renderChips(buckets.byTier[tier], 'Drag someone here')}
+              {buckets.byTier[tier].length === 0 ? (
+                <EmptyColumnHint />
+              ) : (
+                buckets.byTier[tier].map(contact => (
+                  <DndKitChip key={contact.id} contact={contact} onOpen={onOpen} />
+                ))
+              )}
             </DndKitColumn>
           ))}
         </View>
-        <DndKitColumn target={null} count={buckets.unassigned.length}>
-          <View className='flex-row flex-wrap gap-1.5'>
-            {buckets.unassigned.length === 0 ? (
-              <Text className='font-nunito px-1 py-3 text-[11px] text-ink-subtle'>
-                Everyone is in a circle.
-              </Text>
-            ) : (
-              buckets.unassigned.map(contact => (
-                <View key={contact.id} className='w-[31%]'>
-                  <DndKitChip contact={contact} />
-                </View>
-              ))
-            )}
-          </View>
-        </DndKitColumn>
       </View>
       {createPortal(
         <DragOverlay dropAnimation={null}>
