@@ -1,12 +1,11 @@
 import { Pressable, Text, View } from 'react-native';
 import {
-  CONTACT_CSV_COLUMNS,
-  ContactCsvError,
-  contactCsvTemplate,
-  parseContactsCsv,
-  type ContactCsvRowError,
-} from '@/app/utils/contactCsv';
-import { pickCsvText, saveCsvFile } from '@/app/utils/csvFile';
+  ContactImportError,
+  contactTemplateCsv,
+  parseContactRows,
+  type ContactImportRowError,
+} from '@/app/utils/contactImport';
+import { pickSpreadsheetRows, saveCsvFile } from '@/lib/files/spreadsheetFile';
 import { useEffect, useState } from 'react';
 
 import Button from '../Button';
@@ -25,13 +24,13 @@ interface ImportContactsModalProps {
 interface ImportSummary {
   imported: number;
   skipped: number;
-  errors: ContactCsvRowError[];
+  errors: ContactImportRowError[];
 }
 
 /** Only the first few row errors are worth showing; the rest would fill the panel. */
 const MAX_LISTED_ERRORS = 5;
 
-const TEMPLATE_FILENAME = 'netup-contacts-template.csv';
+const TEMPLATE_FILENAME = 'NetUp_Network_Template.csv';
 
 const ImportContactsModal = ({ visible, onRequestClose }: ImportContactsModalProps) => {
   const db = useDB();
@@ -51,7 +50,7 @@ const ImportContactsModal = ({ visible, onRequestClose }: ImportContactsModalPro
 
   const handleDownloadTemplate = async () => {
     try {
-      await saveCsvFile(TEMPLATE_FILENAME, contactCsvTemplate());
+      await saveCsvFile(TEMPLATE_FILENAME, contactTemplateCsv());
     } catch (error) {
       console.error('Error saving CSV template:', error);
       notify('Could not download', 'The template was not saved. Please try again.');
@@ -63,14 +62,14 @@ const ImportContactsModal = ({ visible, onRequestClose }: ImportContactsModalPro
 
     setImporting(true);
     try {
-      const text = await pickCsvText();
-      if (text === null) return;
+      const rows = await pickSpreadsheetRows();
+      if (rows === null) return;
 
-      const { contacts, errors } = parseContactsCsv(text);
+      const { contacts, errors } = parseContactRows(rows);
       const { imported, skipped } = await importContacts(db, contacts);
       setSummary({ imported, skipped, errors });
     } catch (error) {
-      if (error instanceof ContactCsvError) {
+      if (error instanceof ContactImportError) {
         notify("That file can't be read", error.message);
       } else {
         console.error('Error importing contacts:', error);
@@ -96,7 +95,7 @@ const ImportContactsModal = ({ visible, onRequestClose }: ImportContactsModalPro
           />
           {!summary && (
             <Button
-              label={importing ? 'Importing…' : 'Choose CSV file'}
+              label={importing ? 'Importing…' : 'Choose file'}
               onPress={handlePickFile}
               disabled={importing}
             />
@@ -125,17 +124,12 @@ const ImportContactsModal = ({ visible, onRequestClose }: ImportContactsModalPro
       ) : (
         <View className='mt-2 gap-4'>
           <Text className='font-nunito text-[14px] leading-5 text-ink-muted'>
-            Upload a CSV whose first row lists the column names. Contacts whose email
-            already exists are skipped.
+            Download the template, fill in your contacts, then upload it as a CSV or
+            Excel file. Contacts whose email already exists are skipped.
           </Text>
-          <View className='rounded-xl bg-surface-sunken p-3'>
-            <Text className='font-nunito text-[12px] leading-4 text-ink-muted'>
-              {CONTACT_CSV_COLUMNS.join(', ')}
-            </Text>
-          </View>
           <Pressable
             accessibilityRole='button'
-            accessibilityLabel='Download CSV template'
+            accessibilityLabel='Download template'
             onPress={handleDownloadTemplate}
             className='flex-row items-center gap-1.5 self-start'
           >

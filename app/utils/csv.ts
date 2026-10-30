@@ -1,5 +1,5 @@
 // Minimal RFC-4180 CSV reader/writer. Format only — nothing here knows what a contact
-// is; the column mapping lives in `contactCsv.ts`.
+// is; the column mapping lives in `contactImport.ts`.
 
 const QUOTE = '"';
 

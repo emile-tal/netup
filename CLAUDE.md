@@ -114,7 +114,7 @@ app/
     ScreenState.tsx        # Shared loading / error+retry / empty rendering
     nav/                   # NavBar (picks) → TopNav | BottomNav → NavItem
     contacts/              # ContactLink, ContactSearchBar, ContactOutreach,
-                           #   ImportContactsModal (CSV import, §16)
+                           #   ImportContactsModal (CSV/Excel import, §16)
     profile/               # ProfileCard + per-field sub-cards + CardRow + utils.ts
                            #   (a *contact's* profile — not the user's, see account/)
     account/               # AccountRow, EditNameModal, ChangePasswordModal (§22)
@@ -130,8 +130,8 @@ app/
                            #   useContactDirectory (every contact, for `@` tagging — §21)
   providers/               # ProfileProvider — the app's one profile subscription
   utils/                   # date.ts, string.ts, id.ts, avatar.ts, outreach.ts,
-                           #   inputStyle.ts(+.web), csv.ts, contactCsv.ts,
-                           #   csvFile.ts(+.web), prefs.ts (per-device flags),
+                           #   inputStyle.ts(+.web), csv.ts, contactImport.ts,
+                           #   prefs.ts (per-device flags),
                            #   mentions.ts (the pure `@` tagging logic — §21),
                            #   tabs.ts (TAB_TITLES — the nav's labels, one list)
   stores/                  # zustand: contactStore, calendarStore, contactEditStore,
@@ -161,6 +161,8 @@ db/
 lib/                       # ⚠️ NOT under app/ — same reason as components/ (§12)
   supabase.ts(+.web)       # the Supabase client; URL derived from the project id
   auth/                    # AuthProvider, useAuthDeepLink(+.web)
+  files/                   # spreadsheetFile(+.web) — pick a CSV/.xlsx, save a CSV;
+                           #   readXlsx (web-only, fflate) — §16
 
 supabase/
   migrations/              # the Postgres schema, RLS policies, triggers, push_contact
@@ -361,7 +363,7 @@ also done. What remains:
    layer's pure logic: `nextOutreachDate`/`addMonths` in `app/utils/outreach.ts` (month-end
    clamping, the past-date clamp), child diffing in `syncChildren`, and date parsing in
    `app/utils/date.ts`.
-3. **Native CSV import** — `app/utils/csvFile.ts` is a stub (§16). Filling it in needs
+3. **Native contact import** — `lib/files/spreadsheetFile.ts` is a stub (§16). Filling it in needs
    `expo-document-picker` + `expo-file-system` + `expo-sharing` and a dev-client rebuild.
 4. **Contact picker for reminders** — a reminder can be linked to a contact only from
    that contact's screen (`ContactOutreach`). The calendar "+" creates unlinked rows.
@@ -485,7 +487,7 @@ ever typechecks the non-suffixed file.
 | DB adapter (`db/adapter.ts` / `.web.ts`) | `SQLiteAdapter` | `LokiJSAdapter` → IndexedDB |
 | Alerts (`app/utils/alert.ts` / `.web.ts`) | `Alert.alert` | `window.alert` / `window.confirm` |
 | 5-15-50 drag (`components/network/TierBoard.tsx` / `.web.tsx`) | gesture-handler pan + measured drop zones | dnd-kit (`DndContext`, `DragOverlay`) |
-| CSV file I/O (`app/utils/csvFile.ts` / `.web.ts`) | stub — `notify()` says web-only | `<input type=file>` + `FileReader`, `Blob` + `<a download>` |
+| Spreadsheet file I/O (`lib/files/spreadsheetFile.ts` / `.web.ts`) | stub — `notify()` says web-only | `<input type=file>` + `FileReader` (CSV, or .xlsx via `readXlsx`), `Blob` + `<a download>` |
 | `@` tag popup (`components/mentions/MentionMenu.tsx` / `.web.tsx`) | absolute child of the field it belongs to | `react-dom` portal to `document.body`, `position: fixed` |
 
 - **Missing migrations behave differently per adapter.** `LokiJSAdapter` throws; `SQLiteAdapter`
@@ -862,33 +864,50 @@ Rules that are easy to break:
 
 ---
 
-## 16. CSV contact import
+## 16. Contact import (CSV or Excel)
 
 The contacts toolbar carries two actions: the brand-filled "+" and, to its left, a plain
 **import** button that opens `app/components/contacts/ImportContactsModal.tsx`. The modal
-downloads a CSV template and accepts a CSV upload. **Web only** for now — the native half
-of the file seam just says so (§12).
+downloads a template and accepts a **CSV or .xlsx** upload. **Web only** for now — the
+native half of the file seam just says so (§12). The modal deliberately does **not** list
+the column names; the template is how the user learns them.
 
+- **`assets/NetUp_Network_Template.xlsx` is the template's design** (title row,
+  instructions row, header row 3, a hint row, an example "Jane Doe" row). It is not read
+  at runtime. **`app/utils/contactImport.ts`'s `TEMPLATE_COLUMNS` mirrors it** — header,
+  hint and example per column — and drives both `contactTemplateCsv()` (the download:
+  header + hint + example rows, saved as `NetUp_Network_Template.csv`) and
+  `parseContactRows()`. Change the .xlsx, change `TEMPLATE_COLUMNS`.
+- **Columns → contact:** Name → first token / rest; Company; Role → `jobTitle`; Shared
+  Affiliation → `alumni`; Source of Contact → `source`; Where You Met →
+  `firstMetLocation`; First Met → `firstMetDate`; Last Contact → `lastOutreachAt` (so a
+  tiered contact's cadence counts from it, §14); Personal Notes → `notes`. **Contact
+  Channel** is free text: email addresses and phone numbers in it become real
+  emails/phones, and any leftover text ("LinkedIn") is appended to notes.
+  **Relationship Strength 1–5 → circle:** 5 → inner (5), 4 → trusted (15), 3 → strategic
+  (50), 1–2 → unassigned (`TIER_BY_STRENGTH`).
+- **The header row is found, not assumed**: the first row (of the first 10) with a
+  "Name" cell. Headers match ignoring case, spaces and punctuation; extra columns are
+  ignored. Blank rows, the hint row and the untouched example row are skipped. Row
+  numbers in errors are the sheet's own (the .xlsx reader keeps rows positional).
+- **Dates go through `parseLooseDate`** (`app/utils/date.ts`): Excel serials (what a date
+  cell in an .xlsx holds), ISO, `MM/YYYY`, `M/D/YYYY` (D/M when the first number > 12),
+  and month names. No day → the 1st.
 - **`app/utils/csv.ts`** is format-only (`parseCsv` / `toCsv`): quoted fields, `""`
-  escapes, embedded commas/newlines, CRLF *and* LF, a stripped BOM. No domain knowledge.
-- **`app/utils/contactCsv.ts`** is the single source of truth for the column set.
-  `CONTACT_CSV_COLUMNS` drives **both** `contactCsvTemplate()` and `parseContactsCsv()`,
-  so the template and the parser cannot drift. **Addresses are deliberately not in the
-  CSV.** Columns: `firstName, lastName, company, jobTitle, email, phone, tier, alumni,
-  source, notes, firstMetDate, firstMetLocation` — one header row, one row per contact,
-  one email + one phone each. Header matching is case-insensitive and extra columns are
-  ignored, so a foreign export still imports.
-- **A whole-file problem throws `ContactCsvError`; a bad row does not.** Missing header,
-  no data rows, or more than `MAX_IMPORT_ROWS` (500) rejects the file with a message. A
-  row with no name or an unparseable `firstMetDate` is collected into `errors` and the
-  rest still import.
+  escapes, embedded commas/newlines, CRLF *and* LF, a stripped BOM.
+- **`lib/files/readXlsx.ts`** is a deliberately minimal reader (first sheet → string
+  cells) on `fflate` + the browser's `DOMParser`, instead of a full spreadsheet library.
+  It lives in `lib/` with the web seam so the router's sweep of `app/` (§12) never puts
+  it in a native bundle. Old binary `.xls` is rejected with a message.
+- **A whole-file problem throws `ContactImportError`; a bad row does not.** No header
+  row, no data rows, more than `MAX_IMPORT_ROWS` (500), or an unreadable file rejects
+  with a message. A row with no name or an unparseable date is collected into `errors`
+  and the rest still import.
 - **`importContacts` in `db/repo/contacts.ts` loops `createContact`** rather than writing
   rows itself — that is what keeps `upsertMeta`, `enqueueOutbox` and `scheduleNextOutreach`
   correct per row, so a tiered import row gets its 5-15-50 reminder for free (§14). It
   skips a row whose email is already taken (existing contact, or an earlier row in the
   same file); a contact with no email is never a duplicate.
-- `tier` is narrowed with `toTier(Number(cell))` and `firstMetDate` parsed with
-  `parseDateInputValue` — the same helpers the rest of the app uses.
 
 ---
 

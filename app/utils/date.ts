@@ -85,3 +85,64 @@ export function parseDateInputValue(value: string): Date | undefined {
   if (date.getMonth() !== Number(m) - 1 || date.getDate() !== Number(d)) return undefined;
   return date;
 }
+
+const MONTH_NAMES = [
+  'jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec',
+];
+
+/** Local-midnight date, or `undefined` if the parts overflow (Feb 31, month 13). */
+function dateFromParts(year: number, month: number, day = 1): Date | undefined {
+  const date = new Date(year, month - 1, day);
+  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day)
+    return undefined;
+  return date;
+}
+
+/** Excel's day 0 is 1899-12-30 (the 1900 leap-year bug folded in). */
+const EXCEL_EPOCH_UTC = Date.UTC(1899, 11, 30);
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Parses a date the way a person (or a spreadsheet) writes one, for imports:
+ * an Excel serial (`45717`), `2025-03-14`, `2025-03`, `03/2025`, `3/14/2025` (US order,
+ * unless the first number can only be a day), `Mar 2025`, `March 14, 2025`, `14 March
+ * 2025`. A value with no day lands on the 1st. Returns `undefined` when nothing matches.
+ */
+export function parseLooseDate(value: string): Date | undefined {
+  const text = value.trim().toLowerCase();
+  if (!text) return undefined;
+
+  if (/^\d+(\.\d+)?$/.test(text)) {
+    const serial = Math.floor(Number(text));
+    if (serial < 1 || serial > 100000) return undefined;
+    const utc = new Date(EXCEL_EPOCH_UTC + serial * DAY_MS);
+    return dateFromParts(utc.getUTCFullYear(), utc.getUTCMonth() + 1, utc.getUTCDate());
+  }
+
+  let m = /^(\d{4})[-/.](\d{1,2})(?:[-/.](\d{1,2}))?$/.exec(text);
+  if (m) return dateFromParts(Number(m[1]), Number(m[2]), m[3] ? Number(m[3]) : 1);
+
+  m = /^(\d{1,2})[-/.](\d{4})$/.exec(text);
+  if (m) return dateFromParts(Number(m[2]), Number(m[1]));
+
+  m = /^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/.exec(text);
+  if (m) {
+    const [a, b] = [Number(m[1]), Number(m[2])];
+    return a > 12 ? dateFromParts(Number(m[3]), b, a) : dateFromParts(Number(m[3]), a, b);
+  }
+
+  const monthOf = (word: string) => {
+    const index = MONTH_NAMES.indexOf(word.slice(0, 3));
+    return index === -1 ? undefined : index + 1;
+  };
+
+  // `March 2025`, `Mar 14, 2025`
+  m = /^([a-z]+)\.?\s+(?:(\d{1,2}),?\s+)?(\d{4})$/.exec(text);
+  if (m && monthOf(m[1])) return dateFromParts(Number(m[3]), monthOf(m[1])!, m[2] ? Number(m[2]) : 1);
+
+  // `14 March 2025`
+  m = /^(\d{1,2})\s+([a-z]+)\.?,?\s+(\d{4})$/.exec(text);
+  if (m && monthOf(m[2])) return dateFromParts(Number(m[3]), monthOf(m[2])!, Number(m[1]));
+
+  return undefined;
+}
