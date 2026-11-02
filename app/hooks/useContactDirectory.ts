@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import type { ContactSummary } from '../types/contacts';
+import { notify } from '../utils/alert';
 import { observeContactSummaries } from '@/db/repo/contacts';
 import { useDB } from '@/db/dbProvider';
 
@@ -23,7 +24,11 @@ export function useContactDirectory(): ContactSummary[] {
   useEffect(() => {
     const subscription = observeContactSummaries(db).subscribe({
       next: setContacts,
-      error: (cause: unknown) => console.error('Error loading contacts to tag:', cause),
+      error: (cause: unknown) => {
+        console.error('Error loading contacts to tag:', cause);
+        // Otherwise `@` silently matches no one, which reads as "no such contact".
+        notify('Could not load contacts', 'Tagging with @ is unavailable right now.');
+      },
     });
 
     return () => subscription.unsubscribe();

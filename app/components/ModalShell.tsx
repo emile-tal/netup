@@ -1,5 +1,7 @@
 import { Modal, Pressable, Text, View } from 'react-native';
 
+import ErrorBanner from './ErrorBanner';
+
 interface ModalShellProps {
   visible: boolean;
   /**
@@ -13,6 +15,11 @@ interface ModalShellProps {
   footer?: React.ReactNode;
   /** `wide` is for reading, not forms — a panel of prose that would wrap too tightly. */
   width?: 'default' | 'wide';
+  /**
+   * Why the modal's action just failed, drawn above the footer. A modal reports its own
+   * failures: a toast (`notify`) would be drawn underneath it.
+   */
+  error?: string | null;
 }
 
 // Whole literal classes, so NativeWind's source scan generates both.
@@ -35,6 +42,7 @@ const ModalShell = ({
   children,
   footer,
   width = 'default',
+  error,
 }: ModalShellProps) => {
   return (
     <Modal
@@ -57,6 +65,11 @@ const ModalShell = ({
         >
           {title && <Text className='font-nunito text-[21px] text-ink'>{title}</Text>}
           {children}
+          {error && (
+            <View className='mt-4'>
+              <ErrorBanner message={error} />
+            </View>
+          )}
           {footer && <View className='mt-6 flex-row justify-end gap-2'>{footer}</View>}
         </View>
       </View>

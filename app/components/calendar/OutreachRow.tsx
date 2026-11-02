@@ -33,6 +33,7 @@ const OutreachRow = ({ item, contacts }: OutreachRowProps) => {
   const [title, setTitle] = useState(item.title);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deleteHovered, setDeleteHovered] = useState(false);
 
   useEffect(() => {
@@ -63,13 +64,13 @@ const OutreachRow = ({ item, contacts }: OutreachRowProps) => {
   const handleDelete = async () => {
     if (deleting) return;
     setDeleting(true);
+    setDeleteError(null);
     try {
       await deleteReminder(db, item.id);
       // No dismiss on success: the row unmounts when the observable re-emits without it.
     } catch (error) {
       console.error('Error deleting outreach:', error);
-      setConfirmingDelete(false);
-      notify('Could not delete', 'The outreach was not deleted.');
+      setDeleteError('The outreach was not deleted. Please try again.');
     } finally {
       setDeleting(false);
     }
@@ -114,7 +115,10 @@ const OutreachRow = ({ item, contacts }: OutreachRowProps) => {
       </View>
 
       <Pressable
-        onPress={() => setConfirmingDelete(true)}
+        onPress={() => {
+          setDeleteError(null);
+          setConfirmingDelete(true);
+        }}
         onHoverIn={() => setDeleteHovered(true)}
         onHoverOut={() => setDeleteHovered(false)}
         accessibilityRole='button'
@@ -139,6 +143,7 @@ const OutreachRow = ({ item, contacts }: OutreachRowProps) => {
         busyLabel='Deleting…'
         destructive
         busy={deleting}
+        error={deleteError}
         onConfirm={() => void handleDelete()}
         onCancel={() => setConfirmingDelete(false)}
       />

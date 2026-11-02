@@ -1,6 +1,6 @@
-// Web implementation of the file seam — a hidden <input type="file"> to read a CSV or an
-// .xlsx and a synthetic <a download> to save a CSV. Kept in a `.web` sibling so the
-// native build never sees the DOM. See `spreadsheetFile.ts` for the native half.
+// Web implementation of the file seam — a hidden <input type="file"> (or a dropped file)
+// to read a CSV or an .xlsx, and a synthetic <a download> to save a CSV. Kept in a `.web`
+// sibling so the native build never sees the DOM. See `spreadsheetFile.ts` for the native half.
 
 import { ContactImportError } from '@/app/utils/contactImport';
 import { parseCsv } from '@/app/utils/csv';
@@ -10,7 +10,16 @@ const XLSX_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.s
 
 const isXlsx = (file: File) => /\.xlsx$/i.test(file.name) || file.type === XLSX_TYPE;
 
-function readFile(file: File): Promise<string[][]> {
+// Some systems report a CSV as `application/vnd.ms-excel` or with no type at all, so the
+// extension is the real test.
+const isCsv = (file: File) => /\.csv$/i.test(file.name) || file.type === 'text/csv';
+
+/**
+ * Reads a CSV or .xlsx the user picked or dropped into rows of cells. Anything else is
+ * rejected by name before it is read: a dropped file skips the picker's `accept` filter,
+ * and a PDF parsed as CSV would only surface later as a baffling "no header row".
+ */
+export function readSpreadsheetFile(file: File): Promise<string[][]> {
   return new Promise((resolve, reject) => {
     if (/\.xls$/i.test(file.name)) {
       reject(
@@ -21,6 +30,10 @@ function readFile(file: File): Promise<string[][]> {
       return;
     }
     const xlsx = isXlsx(file);
+    if (!xlsx && !isCsv(file)) {
+      reject(new ContactImportError(`"${file.name}" isn't a CSV or Excel (.xlsx) file.`));
+      return;
+    }
     const reader = new FileReader();
     reader.onload = () => {
       try {
@@ -68,7 +81,7 @@ export async function pickSpreadsheetRows(): Promise<string[][] | null> {
         finish(null);
         return;
       }
-      readFile(file).then(finish, fail);
+      readSpreadsheetFile(file).then(finish, fail);
     });
 
     // Cancelling a file dialog fires no event of its own; regaining window focus is the

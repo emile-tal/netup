@@ -97,7 +97,10 @@ app/
     ScreenLayout.tsx       # Page bg + safe area + the column + the `toolbar` slot
     PageToolbar.tsx        # THE page controls row: back / label or search / actions (§13)
     Card.tsx               # THE surface panel (white, hairline border, rounded-2xl)
-    ModalShell.tsx         # THE modal surface — every modal is built on this
+    ModalShell.tsx         # THE modal surface — every modal is built on this (+ `error`)
+    ErrorBanner.tsx        # An inline failure message (forms, ModalShell) — §23
+    Toast.tsx / ToastHost.tsx # notify()'s in-app notices, mounted in the root layout
+    CrashScreen.tsx        # The root layout's ErrorBoundary
     DateField.tsx          # Date input: value + clear x, opens DatePickerModal (§18)
     DatePickerModal.tsx    # THE date picker — a hand-rolled month grid, no native module
     Checkbox.tsx           # Square labelled checkbox (forms/dialogs, not OutreachRow's)
@@ -114,7 +117,7 @@ app/
     ScreenState.tsx        # Shared loading / error+retry / empty rendering
     nav/                   # NavBar (picks) → TopNav | BottomNav → NavItem
     contacts/              # ContactLink, ContactSearchBar, ContactOutreach,
-                           #   ImportContactsModal (CSV/Excel import, §16)
+                           #   ImportContactsModal + FileDropZone (CSV/Excel import, §16)
     profile/               # ProfileCard + per-field sub-cards + CardRow + utils.ts
                            #   (a *contact's* profile — not the user's, see account/)
     account/               # AccountRow, EditNameModal, ChangePasswordModal (§22)
@@ -127,7 +130,8 @@ app/
   hooks/                   # useContact, useOutreach, useDebouncedCallback,
                            #   useLayoutMode, useNavDestinations, useTierBoard,
                            #   useOutreachRepair, useSync, useHydration, useTierInfo,
-                           #   useContactDirectory (every contact, for `@` tagging — §21)
+                           #   useContactDirectory (every contact, for `@` tagging — §21),
+                           #   useFileDrop(+.web) (drag a file onto a View — §16)
   providers/               # ProfileProvider — the app's one profile subscription
   utils/                   # date.ts, string.ts, id.ts, avatar.ts, outreach.ts,
                            #   inputStyle.ts(+.web), csv.ts, contactImport.ts,
@@ -135,7 +139,7 @@ app/
                            #   mentions.ts (the pure `@` tagging logic — §21),
                            #   tabs.ts (TAB_TITLES — the nav's labels, one list)
   stores/                  # zustand: contactStore, calendarStore, contactEditStore,
-                           #   syncStore
+                           #   syncStore, toastStore
   types/                   # Frontend DTOs: contacts.ts, outreach.ts, sync.ts, profile.ts
   icons/                   # SVG icons — all take `{ color?, size? }` (see types.ts)
 
@@ -485,9 +489,9 @@ ever typechecks the non-suffixed file.
 | Concern | Native | Web |
 |---------|--------|-----|
 | DB adapter (`db/adapter.ts` / `.web.ts`) | `SQLiteAdapter` | `LokiJSAdapter` → IndexedDB |
-| Alerts (`app/utils/alert.ts` / `.web.ts`) | `Alert.alert` | `window.alert` / `window.confirm` |
+| Contact-import file drop (`app/hooks/useFileDrop.ts` / `.web.ts`) | inert (`supported: false`) | DOM drag events on the `View`'s element |
 | 5-15-50 drag (`components/network/TierBoard.tsx` / `.web.tsx`) | gesture-handler pan + measured drop zones | dnd-kit (`DndContext`, `DragOverlay`) |
-| Spreadsheet file I/O (`lib/files/spreadsheetFile.ts` / `.web.ts`) | stub — `notify()` says web-only | `<input type=file>` + `FileReader` (CSV, or .xlsx via `readXlsx`), `Blob` + `<a download>` |
+| Spreadsheet file I/O (`lib/files/spreadsheetFile.ts` / `.web.ts`) | stub — rejects with a `ContactImportError` saying web-only | `<input type=file>` + `FileReader` (CSV, or .xlsx via `readXlsx`), `Blob` + `<a download>` |
 | `@` tag popup (`components/mentions/MentionMenu.tsx` / `.web.tsx`) | absolute child of the field it belongs to | `react-dom` portal to `document.body`, `position: fixed` |
 
 - **Missing migrations behave differently per adapter.** `LokiJSAdapter` throws; `SQLiteAdapter`
@@ -499,9 +503,8 @@ ever typechecks the non-suffixed file.
 - **Web data is a separate database.** LokiJS persists to IndexedDB per-origin (store
   `app-anon`); it never sees the device's SQLite data. They converge only once the sync push
   loop (§9.2) and a backend exist.
-- **Never use `Alert` from react-native directly** — it is an unimplemented no-op under
-  react-native-web, which silently swallows errors *and* destructive confirmations. Use
-  `notify()` / `confirmDestructive()` from `app/utils/alert`.
+- **Never use `Alert` from react-native, or `window.alert` / `confirm` / `prompt`.** See
+  §23 for where an error goes instead.
 - **`web.output` is `"single"` (SPA), not `"static"`.** Static rendering prerenders every
   route in Node, where `window` doesn't exist — `expo-crypto.randomUUID()` (called eagerly by
   `setGenerator`) and IndexedDB both blow up. This app is client-only and has no SEO surface,
@@ -868,7 +871,11 @@ Rules that are easy to break:
 
 The contacts toolbar carries two actions: the brand-filled "+" and, to its left, a plain
 **import** button that opens `app/components/contacts/ImportContactsModal.tsx`. The modal
-downloads a template and accepts a **CSV or .xlsx** upload. **Web only** for now — the
+downloads a template and accepts a **CSV or .xlsx** — dragged onto its middle section
+(`FileDropZone`, via `useFileDrop`), or picked by pressing that same section. Both paths
+run through one `runImport`; a dropped file is checked by extension in
+`readSpreadsheetFile`, since a drop skips the picker's `accept` filter. While the modal is
+open, a file dropped *outside* the zone is swallowed so the browser can't navigate to it. **Web only** for now — the
 native half of the file seam just says so (§12). The modal deliberately does **not** list
 the column names; the template is how the user learns them.
 
@@ -1216,4 +1223,28 @@ replaced Settings. It shows the avatar, name and email, and offers exactly three
   the user *id*, which does not change.
 - `app/reset-password.tsx` (the emailed-link flow) still uses `updatePassword` alone —
   there the link *is* the proof.
+
+---
+
+## 23. Error handling
+
+**No browser dialogs, ever.** `window.alert`/`confirm`/`prompt` and react-native's `Alert`
+are gone from the app. A failure is reported in one of three places, picked by where the
+user is looking:
+
+| Where the action happened | Report it with | Example |
+|---------------------------|----------------|---------|
+| Inside a modal / `ConfirmDialog` | the modal's `error` prop (`ModalShell` draws an `ErrorBanner` above the footer); the dialog **stays open** so the user can retry | delete contact, sign out, import, rename |
+| A form on a full page | an `ErrorBanner` in the form | sign-in, forgot / reset password |
+| A background or inline write with no surface of its own | `notify(title, message?, tone?)` → a toast (`ToastHost`, mounted in the root layout) | outreach title autosave, board drag, contact save |
+| A read (subscription) | `ScreenState` with `onRetry`, or an inline line — never an empty list that looks like no data | contacts list, calendar, a contact's outreach |
+
+- **`notify` never inside a modal.** Toasts are drawn by the root layout, under any open
+  RN `Modal` — the message would be invisible exactly when it matters.
+- `notify` is a plain function over `app/stores/toastStore`, so hooks and `.catch`
+  handlers can call it. Identical toasts de-duplicate; at most three show.
+- Always `console.error` the cause *and* tell the user; the message says what did or did
+  not happen ("The contact was not deleted"), not the raw exception.
+- A render crash lands on `CrashScreen`, exported as the root layout's `ErrorBoundary`. It
+  must stay provider-free: it replaces the layout that mounts them.
 

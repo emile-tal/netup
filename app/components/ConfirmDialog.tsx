@@ -15,6 +15,8 @@ interface ConfirmDialogProps {
   /** Disables both actions and swaps the confirm label while work is in flight. */
   busy?: boolean;
   busyLabel?: string;
+  /** Why the confirmed action failed. The dialog stays open so the user can try again. */
+  error?: string | null;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -33,6 +35,7 @@ const ConfirmDialog = ({
   destructive,
   busy,
   busyLabel,
+  error,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) => {
@@ -43,6 +46,7 @@ const ConfirmDialog = ({
       // in flight.
       onRequestClose={busy ? undefined : onCancel}
       title={title}
+      error={error}
       footer={
         <>
           <Button

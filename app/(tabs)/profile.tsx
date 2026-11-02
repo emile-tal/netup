@@ -8,7 +8,6 @@ import ChangePasswordModal from '../components/account/ChangePasswordModal';
 import ConfirmDialog from '../components/ConfirmDialog';
 import EditNameModal from '../components/account/EditNameModal';
 import ScreenLayout from '../components/ScreenLayout';
-import { notify } from '../utils/alert';
 import { useAuth } from '@/lib/auth/AuthProvider';
 import { useProfile } from '../providers/ProfileProvider';
 import { useState } from 'react';
@@ -25,6 +24,7 @@ const ProfileScreen = () => {
   const { profile } = useProfile();
   const [dialog, setDialog] = useState<Dialog>(null);
   const [signingOut, setSigningOut] = useState(false);
+  const [signOutError, setSignOutError] = useState<string | null>(null);
   const name = profile?.displayName ?? '';
   // `Avatar` wants a first and last name; a display name is one string.
   const [firstName, ...rest] = name.trim().split(/\s+/);
@@ -32,13 +32,18 @@ const ProfileScreen = () => {
   const handleSignOut = async () => {
     if (signingOut) return;
     setSigningOut(true);
+    setSignOutError(null);
     try {
       await signOut();
       // No dismiss on success: the session change swaps the navigator out from under
       // this screen, so the dialog goes with it.
     } catch (e) {
-      setDialog(null);
-      notify('Could not sign out', e instanceof Error ? e.message : undefined);
+      // `signOut` already falls back to a local sign-out, so reaching here is rare; keep
+      // the dialog up with the reason so "Sign out" can simply be pressed again.
+      console.error('Error signing out:', e);
+      setSignOutError(
+        e instanceof Error && e.message ? e.message : 'Could not sign out. Please try again.'
+      );
     } finally {
       setSigningOut(false);
     }
@@ -80,7 +85,10 @@ const ProfileScreen = () => {
         <Button
           label='Sign out'
           variant='destructive'
-          onPress={() => setDialog('signOut')}
+          onPress={() => {
+            setSignOutError(null);
+            setDialog('signOut');
+          }}
           fullWidth
         />
       </View>
@@ -102,6 +110,7 @@ const ProfileScreen = () => {
         busyLabel='Signing out…'
         destructive
         busy={signingOut}
+        error={signOutError}
         onConfirm={() => void handleSignOut()}
         onCancel={() => setDialog(null)}
       />

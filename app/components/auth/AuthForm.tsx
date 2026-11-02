@@ -1,8 +1,9 @@
-import { Text, TextInput, View } from 'react-native';
+import { Text, TextInput } from 'react-native';
 import { useRef, useState } from 'react';
 
 import Button from '../Button';
 import Card from '../Card';
+import ErrorBanner from '../ErrorBanner';
 import TextField from '../TextField';
 import {
   confirmPasswordProblem,
@@ -132,11 +133,7 @@ const AuthForm = ({
         <Text className='font-nunito -mt-2 text-[12px] text-ink-subtle'>{passwordHint}</Text>
       )}
 
-      {error && (
-        <View className='rounded-xl bg-error-lighter px-3 py-2.5'>
-          <Text className='font-nunito text-[13px] leading-5 text-error-dark'>{error}</Text>
-        </View>
-      )}
+      {error && <ErrorBanner message={error} />}
 
       <Button
         label={busy ? 'Please wait…' : submitLabel}

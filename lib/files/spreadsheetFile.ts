@@ -4,21 +4,25 @@
 // signatures identical, since TypeScript only typechecks this file (see CLAUDE.md §12).
 // Lives in `lib/`, not `app/`, because the web half pulls in an unzip library that the
 // router's sweep of `app/` would otherwise put in the native bundle.
+//
+// Each function rejects with a `ContactImportError`, whose message the import modal shows
+// inline — the same path as a file it can't read.
 
-import { notify } from '@/app/utils/alert';
+import { ContactImportError } from '@/app/utils/contactImport';
 
 const unsupported = () =>
-  notify(
-    'Not available here',
-    'Importing contacts is only available in the web app for now.'
-  );
+  new ContactImportError('Importing contacts is only available in the web app for now.');
 
 /** The picked CSV or .xlsx file as rows of cells, or `null` if the user cancelled. */
 export async function pickSpreadsheetRows(): Promise<string[][] | null> {
-  unsupported();
-  return null;
+  throw unsupported();
+}
+
+/** A CSV or .xlsx the user dropped, as rows of cells. */
+export async function readSpreadsheetFile(_file: File): Promise<string[][]> {
+  throw unsupported();
 }
 
 export async function saveCsvFile(_filename: string, _content: string): Promise<void> {
-  unsupported();
+  throw unsupported();
 }

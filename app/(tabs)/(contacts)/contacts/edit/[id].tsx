@@ -30,6 +30,7 @@ const EditContactPage = () => {
   const [saving, setSaving] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // Seed the editable copy from the first emission for this contact, and only that one.
   // `useContact` is reactive, so re-seeding on every emission would let a background
@@ -78,14 +79,14 @@ const EditContactPage = () => {
   const handleDelete = async () => {
     if (deleting) return;
     setDeleting(true);
+    setDeleteError(null);
     try {
       await deleteContact(db, id);
       // Both the edit screen and the now-dead profile beneath it have to go.
       router.dismissTo('/');
     } catch (err) {
       console.error('Error deleting contact:', err);
-      setConfirmingDelete(false);
-      notify('Could not delete', 'The contact was not deleted.');
+      setDeleteError('The contact was not deleted. Please try again.');
     } finally {
       setDeleting(false);
     }
@@ -121,7 +122,10 @@ const EditContactPage = () => {
             <Button
               label='Delete contact'
               variant='destructive'
-              onPress={() => setConfirmingDelete(true)}
+              onPress={() => {
+                setDeleteError(null);
+                setConfirmingDelete(true);
+              }}
             />
           }
         />
@@ -135,6 +139,7 @@ const EditContactPage = () => {
         busyLabel='Deleting…'
         destructive
         busy={deleting}
+        error={deleteError}
         onConfirm={() => void handleDelete()}
         onCancel={() => setConfirmingDelete(false)}
       />

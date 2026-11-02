@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from '@/lib/auth/AuthProvider';
 import BootstrapScreen from '@/app/components/BootstrapScreen';
 import { DBRootProvider } from '@/db/dbProvider';
 import FullScreenLoader from '@/app/components/FullScreenLoader';
+import ToastHost from '@/app/components/ToastHost';
 import { ProfileProvider, useProfile } from '@/app/providers/ProfileProvider';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useFonts } from 'expo-font';
@@ -145,6 +146,10 @@ const RootNavigator = () => {
   );
 };
 
+// expo-router renders this in place of the layout when anything below it throws while
+// rendering, instead of a blank window.
+export { default as ErrorBoundary } from '@/app/components/CrashScreen';
+
 export default function RootLayout() {
   // Emphasis is size and colour, never weight (see FRONTEND.md). The keys are the family
   // names `tailwind.config.js` exposes as `font-nunito` / `font-nunito-medium` /
@@ -169,6 +174,9 @@ export default function RootLayout() {
         <AuthProvider>
           <RootNavigator />
         </AuthProvider>
+        {/* After the navigator, so notices draw over every screen (but under a modal —
+            which is why a modal shows its own errors; see app/utils/alert). */}
+        <ToastHost />
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

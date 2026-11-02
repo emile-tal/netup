@@ -7,7 +7,6 @@ import MentionTextInput from '../MentionTextInput';
 import ModalShell from '../ModalShell';
 import { createReminder } from '@/db/repo/reminders';
 import { mentionPlainText } from '@/app/utils/mentions';
-import { notify } from '@/app/utils/alert';
 import { startOfDay } from '@/app/utils/date';
 import useCalendarStore from '@/app/stores/calendarStore';
 import { useContactDirectory } from '@/app/hooks/useContactDirectory';
@@ -42,6 +41,7 @@ const AddOutreachModal = ({
     startOfDay(selectedDate ?? new Date())
   );
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<TextInput>(null);
 
   // Re-seed the date each time the modal opens so it follows the day the user picked.
@@ -51,6 +51,7 @@ const AddOutreachModal = ({
 
   const reset = () => {
     setDraftTitle('');
+    setError(null);
     onRequestClose();
   };
 
@@ -67,17 +68,18 @@ const AddOutreachModal = ({
   const handleAdd = async () => {
     if (saving) return;
     if (!mentionPlainText(draftTitle).trim()) {
-      notify('Title required', 'Give the outreach a title.');
+      setError('Give the outreach a title.');
       return;
     }
 
     setSaving(true);
+    setError(null);
     try {
       await createReminder(db, { title: draftTitle.trim(), date, contactId });
       reset();
     } catch (error) {
       console.error('Error creating outreach:', error);
-      notify('Could not save', 'The outreach was not created. Please try again.');
+      setError('The outreach was not created. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -88,6 +90,7 @@ const AddOutreachModal = ({
       visible={visible}
       onRequestClose={handleClose}
       title='New outreach'
+      error={error}
       footer={
         <>
           <Button label='Cancel' variant='grey' onPress={reset} />
@@ -107,7 +110,10 @@ const AddOutreachModal = ({
             <MentionTextInput
               ref={inputRef}
               value={draftTitle}
-              onChangeText={setDraftTitle}
+              onChangeText={text => {
+                setDraftTitle(text);
+                setError(null);
+              }}
               contacts={contacts}
               placeholder='Coffee with @Sarah'
               accessibilityLabel='Outreach title'

@@ -3,6 +3,7 @@ import { useState } from 'react';
 
 import Button from '../components/Button';
 import Card from '../components/Card';
+import ErrorBanner from '../components/ErrorBanner';
 import Logo from '../icons/Logo';
 import ScreenLayout from '../components/ScreenLayout';
 import TextField from '../components/TextField';
@@ -104,11 +105,7 @@ const ForgotPasswordScreen = () => {
             editable={!busy}
           />
 
-          {error && (
-            <View className='rounded-xl bg-error-lighter px-3 py-2.5'>
-              <Text className='font-nunito text-[13px] leading-5 text-error-dark'>{error}</Text>
-            </View>
-          )}
+          {error && <ErrorBanner message={error} />}
 
           <Button
             label={busy ? 'Sending…' : 'Send reset link'}

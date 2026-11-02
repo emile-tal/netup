@@ -10,9 +10,11 @@ import { GRID_BORDER_WIDTH } from '../components/calendar/weekdays';
 import MonthTitle from '../components/calendar/MonthTitle';
 import PageToolbar from '../components/PageToolbar';
 import ScreenLayout from '../components/ScreenLayout';
+import ScreenState from '../components/ScreenState';
 import { View } from 'react-native';
 import WeekdayHeader from '../components/calendar/WeekdayHeader';
 import { colors } from '../theme';
+import useCalendarStore from '../stores/calendarStore';
 import { useOutreach } from '../hooks/useOutreach';
 
 const thisMonth = (): CalendarMonth => {
@@ -22,7 +24,10 @@ const thisMonth = (): CalendarMonth => {
 
 const CalendarPage = () => {
   // Keeps the calendar store in sync with the outreach table; DayCell reads from it.
-  useOutreach();
+  const { retry } = useOutreach();
+  // A failed read would otherwise draw an empty calendar, indistinguishable from a quiet
+  // month.
+  const outreachError = useCalendarStore(s => s.outreachError);
   const [addVisible, setAddVisible] = useState(false);
   // The month in view, reported by the list as it scrolls: the toolbar keeps it on screen
   // after that month's own title has scrolled away.
@@ -62,7 +67,9 @@ const CalendarPage = () => {
         className='flex-1'
         onLayout={event => setGridWidth(event.nativeEvent.layout.width)}
       >
-        {columnWidth > 0 && (
+        {outreachError ? (
+          <ScreenState error={outreachError} onRetry={retry} />
+        ) : columnWidth > 0 && (
           <>
             <WeekdayHeader columnWidth={columnWidth} />
             <InfiniteListCalendar

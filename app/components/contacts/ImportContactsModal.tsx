@@ -5,15 +5,19 @@ import {
   parseContactRows,
   type ContactImportRowError,
 } from '@/app/utils/contactImport';
-import { pickSpreadsheetRows, saveCsvFile } from '@/lib/files/spreadsheetFile';
+import {
+  pickSpreadsheetRows,
+  readSpreadsheetFile,
+  saveCsvFile,
+} from '@/lib/files/spreadsheetFile';
 import { useEffect, useState } from 'react';
 
 import Button from '../Button';
 import DownloadIcon from '@/app/icons/DownloadIcon';
+import FileDropZone from './FileDropZone';
 import ModalShell from '../ModalShell';
 import { colors } from '@/app/theme';
 import { importContacts } from '@/db/repo/contacts';
-import { notify } from '@/app/utils/alert';
 import { useDB } from '@/db/dbProvider';
 
 interface ImportContactsModalProps {
@@ -36,11 +40,15 @@ const ImportContactsModal = ({ visible, onRequestClose }: ImportContactsModalPro
   const db = useDB();
   const [importing, setImporting] = useState(false);
   const [summary, setSummary] = useState<ImportSummary | null>(null);
+  // Shown inline: a toast would be drawn underneath this modal (app/utils/alert).
+  const [error, setError] = useState<string | null>(null);
 
-  // Start from a clean slate each time the modal opens, so a previous run's summary
-  // doesn't greet the next import.
+  // Start from a clean slate each time the modal opens, so a previous run's summary or
+  // error doesn't greet the next import.
   useEffect(() => {
-    if (visible) setSummary(null);
+    if (!visible) return;
+    setSummary(null);
+    setError(null);
   }, [visible]);
 
   const handleClose = () => {
@@ -49,35 +57,57 @@ const ImportContactsModal = ({ visible, onRequestClose }: ImportContactsModalPro
   };
 
   const handleDownloadTemplate = async () => {
+    setError(null);
     try {
       await saveCsvFile(TEMPLATE_FILENAME, contactTemplateCsv());
-    } catch (error) {
-      console.error('Error saving CSV template:', error);
-      notify('Could not download', 'The template was not saved. Please try again.');
+    } catch (cause) {
+      if (cause instanceof ContactImportError) {
+        setError(cause.message);
+      } else {
+        console.error('Error saving CSV template:', cause);
+        setError('The template was not downloaded. Please try again.');
+      }
     }
   };
 
-  const handlePickFile = async () => {
+  /**
+   * The one import path, for a picked file and a dropped one alike: read the rows (or
+   * `null` if the picker was cancelled), parse, write. A file that can't be used says why;
+   * anything else is a write failure part-way through — `importContacts` writes row by row,
+   * so the rows before it stay, and the message says so rather than claiming a rollback.
+   */
+  const runImport = async (readRows: () => Promise<string[][] | null>) => {
     if (importing) return;
 
     setImporting(true);
+    setError(null);
     try {
-      const rows = await pickSpreadsheetRows();
+      const rows = await readRows();
       if (rows === null) return;
 
       const { contacts, errors } = parseContactRows(rows);
       const { imported, skipped } = await importContacts(db, contacts);
       setSummary({ imported, skipped, errors });
-    } catch (error) {
-      if (error instanceof ContactImportError) {
-        notify("That file can't be read", error.message);
+    } catch (cause) {
+      if (cause instanceof ContactImportError) {
+        setError(cause.message);
       } else {
-        console.error('Error importing contacts:', error);
-        notify('Could not import', 'Nothing was changed. Please try again.');
+        console.error('Error importing contacts:', cause);
+        setError(
+          'The import stopped part-way. Contacts already added were kept; importing the same file again skips any whose email is saved.'
+        );
       }
     } finally {
       setImporting(false);
     }
+  };
+
+  const handleDropFiles = (files: File[]) => {
+    if (files.length > 1) {
+      setError('Drop one file at a time.');
+      return;
+    }
+    void runImport(() => readSpreadsheetFile(files[0]));
   };
 
   return (
@@ -85,22 +115,14 @@ const ImportContactsModal = ({ visible, onRequestClose }: ImportContactsModalPro
       visible={visible}
       onRequestClose={handleClose}
       title='Import contacts'
+      error={error}
       footer={
-        <>
-          <Button
-            label={summary ? 'Done' : 'Cancel'}
-            variant='grey'
-            onPress={handleClose}
-            disabled={importing}
-          />
-          {!summary && (
-            <Button
-              label={importing ? 'Importing…' : 'Choose file'}
-              onPress={handlePickFile}
-              disabled={importing}
-            />
-          )}
-        </>
+        <Button
+          label={summary ? 'Done' : 'Cancel'}
+          variant={summary ? 'primary' : 'grey'}
+          onPress={handleClose}
+          disabled={importing}
+        />
       }
     >
       {summary ? (
@@ -124,7 +146,7 @@ const ImportContactsModal = ({ visible, onRequestClose }: ImportContactsModalPro
       ) : (
         <View className='mt-2 gap-4'>
           <Text className='font-nunito text-[14px] leading-5 text-ink-muted'>
-            Download the template, fill in your contacts, then upload it as a CSV or
+            Download the template, fill in your contacts, then drop it below as a CSV or
             Excel file. Contacts whose email already exists are skipped.
           </Text>
           <Pressable
@@ -138,6 +160,11 @@ const ImportContactsModal = ({ visible, onRequestClose }: ImportContactsModalPro
               Download template
             </Text>
           </Pressable>
+          <FileDropZone
+            onBrowse={() => void runImport(pickSpreadsheetRows)}
+            onDropFiles={handleDropFiles}
+            busy={importing}
+          />
         </View>
       )}
     </ModalShell>

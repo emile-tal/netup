@@ -19,11 +19,19 @@ const ContactOutreach = ({ contactId }: ContactOutreachProps) => {
   const db = useDB();
   const [outreach, setOutreach] = useState<Outreach[]>([]);
   const [addVisible, setAddVisible] = useState(false);
+  // Without this a failed read showed "None yet" — an empty list where there was data.
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     const subscription = observeContactReminders(db, contactId).subscribe({
-      next: setOutreach,
-      error: error => console.error('Error loading contact outreach:', error),
+      next: rows => {
+        setOutreach(rows);
+        setFailed(false);
+      },
+      error: error => {
+        console.error('Error loading contact outreach:', error);
+        setFailed(true);
+      },
     });
     return () => subscription.unsubscribe();
   }, [db, contactId]);
@@ -33,7 +41,11 @@ const ContactOutreach = ({ contactId }: ContactOutreachProps) => {
       <Text className='font-nunito px-4 pb-1 pt-2 text-[12px] uppercase tracking-wider text-ink-subtle'>
         Outreach
       </Text>
-      {outreach.length === 0 ? (
+      {failed ? (
+        <Text className='font-nunito px-4 py-2 text-[14px] text-error-dark'>
+          Couldn&apos;t load outreach. Reopen this contact to try again.
+        </Text>
+      ) : outreach.length === 0 ? (
         <Text className='font-nunito px-4 py-2 text-[14px] text-ink-subtle'>None yet</Text>
       ) : (
         outreach.map(outreach => (

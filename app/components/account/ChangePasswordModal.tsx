@@ -59,7 +59,7 @@ const ChangePasswordModal = ({ visible, onRequestClose }: ChangePasswordModalPro
     try {
       await changePassword(current, password);
       onRequestClose();
-      notify('Password changed', 'Use your new password the next time you sign in.');
+      notify('Password changed', 'Use your new password the next time you sign in.', 'success');
     } catch (e) {
       if (e instanceof WrongPasswordError) setWrongCurrent(true);
       else setError(e instanceof Error ? e.message : 'Something went wrong. Try again.');
@@ -73,6 +73,7 @@ const ChangePasswordModal = ({ visible, onRequestClose }: ChangePasswordModalPro
       visible={visible}
       onRequestClose={busy ? undefined : onRequestClose}
       title='Change password'
+      error={error}
       footer={
         <>
           <Button label='Cancel' variant='grey' onPress={onRequestClose} disabled={busy} />
@@ -141,12 +142,6 @@ const ChangePasswordModal = ({ visible, onRequestClose }: ChangePasswordModalPro
           <Text className='font-nunito -mt-2 text-[12px] text-ink-subtle'>
             At least {MIN_PASSWORD_LENGTH} characters.
           </Text>
-        )}
-
-        {error && (
-          <View className='rounded-xl bg-error-lighter px-3 py-2.5'>
-            <Text className='font-nunito text-[13px] leading-5 text-error-dark'>{error}</Text>
-          </View>
         )}
       </View>
     </ModalShell>
